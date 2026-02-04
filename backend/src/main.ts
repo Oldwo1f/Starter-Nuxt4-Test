@@ -23,7 +23,13 @@ async function bootstrap() {
   });
   
   // Enable validation
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true, // Automatically transform payloads to DTO instances
+      whitelist: true, // Strip properties that don't have decorators
+      forbidNonWhitelisted: true, // Throw error if non-whitelisted properties are present
+    }),
+  );
   
   // Swagger configuration
   const config = new DocumentBuilder()

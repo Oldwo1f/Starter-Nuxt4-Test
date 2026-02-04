@@ -40,9 +40,14 @@ const getAvatarUrl = computed(() => {
 const userMenuItems = computed<DropdownMenuItem[][]>(() => {
   const profileItems: DropdownMenuItem[] = [
     {
-      label: 'Profil',
+      label: 'Mon espace',
+      icon: 'i-heroicons-squares-2x2',
+      to: '/account',
+    },
+    {
+      label: 'Mon profil',
       icon: 'i-heroicons-user-circle',
-      to: '/profile',
+      to: '/account/profile',
     },
   ]
 

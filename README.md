@@ -193,9 +193,36 @@ frontend/
 └── public/             # Assets statiques
 ```
 
+## Résolution de problèmes
+
+### Erreur de migration : "column price contains null values"
+
+Si vous rencontrez une erreur lors du démarrage du backend concernant la colonne `price` :
+
+**Solution rapide (recommandée)** : Supprimer et recréer les listings
+
+```bash
+cd backend
+# Supprimer toutes les données de listings
+psql -U postgres -d nunaheritage -c "TRUNCATE TABLE listings CASCADE;"
+# Relancer les seeds
+npm run seed
+```
+
+**Solution alternative** : Corriger les données existantes
+
+```bash
+cd backend
+# Exécuter le script de correction
+./fix-listings.sh
+# Ou manuellement :
+psql -U postgres -d nunaheritage -f migrations/fix_listings_price_before_sync.sql
+```
+
 ## Notes
 
 -   En développement, TypeORM synchronise automatiquement le schéma de la base de données
 -   En production, utilisez les migrations TypeORM
 -   Changez le `JWT_SECRET` en production
 -   Les mots de passe sont hashés avec bcrypt (10 rounds)
+-   Les prix dans la marketplace sont maintenant des entiers uniquement (pas de décimales)

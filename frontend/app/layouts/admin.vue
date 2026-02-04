@@ -71,9 +71,9 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => [
   ],
   [
     {
-      label: 'Profil',
+      label: 'Mon profil',
       icon: 'i-heroicons-user-circle',
-      to: '/profile',
+      to: '/account/profile',
     },
     {
       label: 'Déconnexion',

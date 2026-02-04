@@ -13,6 +13,7 @@ export interface User {
   emailVerified?: boolean
   isActive?: boolean
   lastLogin?: string | null
+  walletBalance?: number
   createdAt: string
   updatedAt: string
 }

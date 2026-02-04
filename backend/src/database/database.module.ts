@@ -2,6 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { BlogPost } from '../entities/blog-post.entity';
+import { Location } from '../entities/location.entity';
+import { Category } from '../entities/category.entity';
+import { Listing } from '../entities/listing.entity';
+import { Transaction } from '../entities/transaction.entity';
 
 @Module({
   imports: [
@@ -12,11 +16,11 @@ import { BlogPost } from '../entities/blog-post.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'nunaheritage',
-      entities: [User, BlogPost],
+      entities: [User, BlogPost, Location, Category, Listing, Transaction],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
-    TypeOrmModule.forFeature([User, BlogPost]),
+    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction]),
   ],
   exports: [TypeOrmModule],
 })

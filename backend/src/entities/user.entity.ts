@@ -7,6 +7,8 @@ import {
   OneToMany,
 } from 'typeorm';
 import { BlogPost } from './blog-post.entity';
+import { Listing } from './listing.entity';
+import { Transaction } from './transaction.entity';
 
 export enum UserRole {
   // Staff roles
@@ -77,8 +79,20 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   facebookEmail: string | null;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  walletBalance: number; // Solde en coquillages
+
   @OneToMany(() => BlogPost, (blogPost) => blogPost.author)
   blogPosts: BlogPost[];
+
+  @OneToMany(() => Listing, (listing) => listing.seller)
+  listings: Listing[];
+
+  @OneToMany(() => Transaction, (transaction) => transaction.fromUser)
+  transactionsFrom: Transaction[];
+
+  @OneToMany(() => Transaction, (transaction) => transaction.toUser)
+  transactionsTo: Transaction[];
 
   @CreateDateColumn()
   createdAt: Date;

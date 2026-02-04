@@ -51,6 +51,7 @@ export class UsersService {
         'emailVerified',
         'isActive',
         'lastLogin',
+        'walletBalance',
         'createdAt',
         'updatedAt',
       ],
@@ -80,6 +81,7 @@ export class UsersService {
       'user.emailVerified',
       'user.isActive',
       'user.lastLogin',
+      'user.walletBalance',
       'user.createdAt',
       'user.updatedAt',
     ]);

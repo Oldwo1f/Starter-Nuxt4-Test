@@ -4,18 +4,54 @@ definePageMeta({
 })
 
 import { useAuthStore } from '~/stores/useAuthStore'
+import { useWalletStore } from '~/stores/useWalletStore'
+import { useMarketplaceStore } from '~/stores/useMarketplaceStore'
 
 const authStore = useAuthStore()
+const walletStore = useWalletStore()
+const marketplaceStore = useMarketplaceStore()
 const router = useRouter()
 const toast = useToast()
+
+// Stats
+const stats = ref({
+  listingsCount: 0,
+  transactionsCount: 0,
+})
+
+// Fetch data
+const fetchData = async () => {
+  if (authStore.isAuthenticated) {
+    await Promise.all([
+      authStore.fetchProfile(),
+      walletStore.fetchBalance(),
+      fetchStats(),
+    ])
+  }
+}
+
+const fetchStats = async () => {
+  try {
+    // Fetch user listings count
+    const listingsResult = await marketplaceStore.fetchListings(1, 1, {
+      sellerId: authStore.user?.id,
+    })
+    stats.value.listingsCount = listingsResult.data?.total || 0
+
+    // Fetch transactions count
+    const transactionsResult = await walletStore.fetchTransactions(1, 1)
+    stats.value.transactionsCount = transactionsResult.data?.total || 0
+  } catch (error) {
+    console.error('Error fetching stats:', error)
+  }
+}
 
 // Redirect to login if not authenticated
 onMounted(() => {
   if (!authStore.isAuthenticated) {
     router.push('/login')
   } else {
-    // Fetch full profile on mount
-    authStore.fetchProfile()
+    fetchData()
   }
 })
 
@@ -135,6 +171,49 @@ const handleAvatarUploaded = async (avatarUrl: string) => {
       <div class="space-y-2">
         <h1 class="text-3xl font-semibold tracking-tight">Mon Profil</h1>
         <p class="text-white/70">Gérez vos informations personnelles</p>
+      </div>
+
+      <!-- Wallet Balance & Stats -->
+      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <UCard class="bg-gradient-to-r from-primary-500/20 to-primary-600/20">
+          <div class="text-center">
+            <div class="mb-2 text-sm text-white/60">Solde Coquillages</div>
+            <div class="mb-2 flex items-center justify-center gap-2 text-3xl font-bold text-primary-500">
+              <span>🐚</span>
+              <span>{{ walletStore.balance.toFixed(2) }}</span>
+            </div>
+            <UButton to="/account/wallet" variant="ghost" size="sm" class="mt-2">
+              Voir le portefeuille
+            </UButton>
+          </div>
+        </UCard>
+        <UCard>
+          <div class="text-center">
+            <div class="mb-2 text-sm text-white/60">Annonces</div>
+            <div class="text-3xl font-bold">{{ stats.listingsCount }}</div>
+            <UButton to="/account/listings" variant="ghost" size="sm" class="mt-2">
+              Mes annonces
+            </UButton>
+          </div>
+        </UCard>
+        <UCard>
+          <div class="text-center">
+            <div class="mb-2 text-sm text-white/60">Transactions</div>
+            <div class="text-3xl font-bold">{{ stats.transactionsCount }}</div>
+            <UButton to="/account/transactions" variant="ghost" size="sm" class="mt-2">
+              Historique
+            </UButton>
+          </div>
+        </UCard>
+        <UCard>
+          <div class="text-center">
+            <div class="mb-2 text-sm text-white/60">Rôle</div>
+            <div class="text-lg font-semibold">{{ user?.role || 'Membre' }}</div>
+            <UBadge v-if="user?.role === 'member'" color="green" variant="subtle" class="mt-2">
+              Membre Certifié
+            </UBadge>
+          </div>
+        </UCard>
       </div>
 
       <UCard>

@@ -277,18 +277,24 @@ onUnmounted(() => {
             sticky
           >
           <template #avatar-cell="{ row }">
-            <UAvatar
-              v-if="userStore.getAvatarUrl(row.original)"
-              :src="userStore.getAvatarUrl(row.original)"
-              :alt="userStore.getDisplayName(row.original)"
-              size="sm"
-            />
-            <UAvatar
-              v-else
-              :alt="userStore.getDisplayName(row.original)"
-              :text="userStore.getAvatarText(row.original)"
-              size="sm"
-            />
+            <div class="flex items-center gap-3">
+              <UAvatar
+                v-if="userStore.getAvatarUrl(row.original)"
+                :src="userStore.getAvatarUrl(row.original)"
+                :alt="userStore.getDisplayName(row.original)"
+                size="sm"
+              />
+              <UAvatar
+                v-else
+                :alt="userStore.getDisplayName(row.original)"
+                :text="userStore.getAvatarText(row.original)"
+                size="sm"
+              />
+              <div class="flex items-center gap-1 text-primary-500 font-semibold">
+                <span>🐚</span>
+                <span>{{ Math.round(row.original.walletBalance || 0) }}</span>
+              </div>
+            </div>
           </template>
 
           <template #firstName-cell="{ row }">

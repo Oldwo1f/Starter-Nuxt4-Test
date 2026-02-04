@@ -7,37 +7,48 @@ export async function seedDatabase(dataSource: DataSource) {
   const userRepository = dataSource.getRepository(User);
   const blogPostRepository = dataSource.getRepository(BlogPost);
 
-  // Clear existing data (if tables exist)
+  // Clear existing blog posts (keep users to preserve wallet balances)
   try {
-    // Supprimer d'abord les blog posts (pour respecter les contraintes de clé étrangère)
     await dataSource.query('DELETE FROM blog_posts');
-    // Puis supprimer tous les utilisateurs
-    await dataSource.query('DELETE FROM users');
-    console.log('✓ Existing data cleared');
+    console.log('✓ Existing blog posts cleared');
   } catch (error) {
-    // Tables might not exist yet, that's okay
-    console.log('Note: Tables will be created automatically');
+    console.log('Note: Blog posts table will be created automatically');
   }
 
+  // Fixed balance: 50 coquillages for all users
+  const DEFAULT_BALANCE = 50;
+
+  // Helper function to get or create user
+  const getOrCreateUser = async (email: string, password: string, role: UserRole) => {
+    let user = await userRepository.findOne({ where: { email } });
+    if (!user) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user = userRepository.create({
+        email,
+        password: hashedPassword,
+        role,
+        walletBalance: DEFAULT_BALANCE,
+      });
+      user = await userRepository.save(user);
+      console.log(`✓ User created: ${user.email} (${user.role}) - ${user.walletBalance} 🐚`);
+    } else {
+      // Update balance to 50 if user exists but doesn't have the default balance
+      if (user.walletBalance !== DEFAULT_BALANCE) {
+        user.walletBalance = DEFAULT_BALANCE;
+        user = await userRepository.save(user);
+        console.log(`✓ User updated: ${user.email} - ${user.walletBalance} 🐚`);
+      } else {
+        console.log(`✓ User already exists: ${user.email} - ${user.walletBalance} 🐚`);
+      }
+    }
+    return user;
+  };
+
   // Create superadmin
-  const superAdminPassword = await bcrypt.hash('Alexis09', 10);
-  const superAdmin = userRepository.create({
-    email: 'alexismomcilovic@gmail.com',
-    password: superAdminPassword,
-    role: UserRole.SUPERADMIN,
-  });
-  const savedSuperAdmin = await userRepository.save(superAdmin);
-  console.log('✓ Super Admin created:', savedSuperAdmin.email);
+  const savedSuperAdmin = await getOrCreateUser('alexismomcilovic@gmail.com', 'Alexis09', UserRole.SUPERADMIN);
 
   // Create admin
-  const adminPassword = await bcrypt.hash('admin123', 10);
-  const admin = userRepository.create({
-    email: 'admin@example.com',
-    password: adminPassword,
-    role: UserRole.ADMIN,
-  });
-  const savedAdmin = await userRepository.save(admin);
-  console.log('✓ Admin created:', savedAdmin.email);
+  const savedAdmin = await getOrCreateUser('admin@example.com', 'admin123', UserRole.ADMIN);
 
   // Create regular users with various roles
   const usersData = [
@@ -59,15 +70,8 @@ export async function seedDatabase(dataSource: DataSource) {
 
   const savedUsers: User[] = [];
   for (const userData of usersData) {
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
-    const user = userRepository.create({
-      email: userData.email,
-      password: hashedPassword,
-      role: userData.role || UserRole.USER,
-    });
-    const savedUser = await userRepository.save(user);
-    savedUsers.push(savedUser);
-    console.log(`✓ User created: ${savedUser.email} (${savedUser.role})`);
+    const user = await getOrCreateUser(userData.email, userData.password, userData.role || UserRole.USER);
+    savedUsers.push(user);
   }
 
   // Create blog posts
