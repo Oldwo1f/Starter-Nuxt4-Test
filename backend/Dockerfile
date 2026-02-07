@@ -32,7 +32,7 @@ RUN npm ci && npm cache clean --force
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy source files needed for seeds
+# Copy source files needed for seeds (before changing user)
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/tsconfig*.json ./
 COPY --from=builder /app/nest-cli.json ./
