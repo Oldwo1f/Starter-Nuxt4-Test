@@ -6,9 +6,13 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  
+  // Global exception filter for better error logging
+  app.useGlobalFilters(new AllExceptionsFilter());
   
   // Enable CORS for frontend
   app.enableCors({
