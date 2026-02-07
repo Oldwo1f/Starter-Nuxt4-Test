@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: nunaheritage-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-nunaheritage}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nunaheritage-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API (NestJS)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nunaheritage-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8081
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-nunaheritage}
+      JWT_SECRET: ${JWT_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL:-https://nunaaheritage.aito-flow.com}
+      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
+      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
+      UPLOAD_DEST: uploads
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nunaheritage-network
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nunaheritage-backend.rule=Host(`api.nunaaheritage.aito-flow.com`)"
+      - "traefik.http.routers.nunaheritage-backend.entrypoints=websecure"
+      - "traefik.http.routers.nunaheritage-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.nunaheritage-backend.loadbalancer.server.port=8081"
+      - "traefik.docker.network=traefik-network"
+
+  # Frontend (Nuxt.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nunaheritage-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      HOST: 0.0.0.0
+      NUXT_PUBLIC_API_BASE_URL: https://api.nunaaheritage.aito-flow.com
+      NUXT_PUBLIC_FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
+    depends_on:
+      - backend
+    networks:
+      - nunaheritage-network
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nunaheritage-frontend.rule=Host(`nunaaheritage.aito-flow.com`)"
+      - "traefik.http.routers.nunaheritage-frontend.entrypoints=websecure"
+      - "traefik.http.routers.nunaheritage-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.nunaheritage-frontend.loadbalancer.server.port=8080"
+      - "traefik.docker.network=traefik-network"
+
+volumes:
+  postgres_data:
+    driver: local
+  backend_uploads:
+    driver: local
+
+networks:
+  nunaheritage-network:
+    driver: bridge
+  traefik-network:
+    external: true
+    name: ${TRAEFIK_NETWORK:-n8n-traefik-network}

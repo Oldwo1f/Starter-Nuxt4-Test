@@ -10,12 +10,10 @@ export default defineNuxtConfig({
   pinia: {
     storesDirs: ['./app/stores']
   },
-  ui: {
-    global: true
-  },
   runtimeConfig: {
     public: {
-      facebookAppId: process.env.FACEBOOK_APP_ID || '',
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
+      facebookAppId: process.env.NUXT_PUBLIC_FACEBOOK_APP_ID || '',
     },
   },
 })
