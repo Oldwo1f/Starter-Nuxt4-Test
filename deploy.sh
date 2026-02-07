@@ -41,10 +41,13 @@ if [ ! -f .env ]; then
 fi
 
 # Charger les variables d'environnement
+set -a
 source .env
+set +a
 
-# Vérifier que le réseau Traefik existe
+# Vérifier que le réseau Traefik existe (utiliser la valeur du .env ou la valeur par défaut)
 TRAEFIK_NETWORK=${TRAEFIK_NETWORK:-n8n_default}
+echo "🔍 Utilisation du réseau Traefik: $TRAEFIK_NETWORK"
 if ! docker network ls | grep -q "$TRAEFIK_NETWORK"; then
     echo -e "${YELLOW}⚠️  Le réseau Docker '$TRAEFIK_NETWORK' n'existe pas${NC}"
     echo "Vérifiez le nom de votre réseau Traefik avec: docker network ls"
