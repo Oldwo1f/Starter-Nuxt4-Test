@@ -30,6 +30,8 @@ Les seeds créent automatiquement :
 - **Catégories** : Catégories pour le marketplace
 - **Listings marketplace** : Annonces de test
 - **Culture videos** : Vidéos culturelles de test
+- **Partners** : 3 partenaires (Aito-flow, Akeo, Coach de la route)
+- **Goodies** : 6 goodies (mix de public et privé)
 
 ## Créer un Superadmin personnalisé
 
@@ -46,7 +48,7 @@ docker exec -it nunaheritage-backend \
 
 ⚠️ **Attention** : Réexécuter les seeds va :
 - Supprimer et recréer les articles de blog
-- Recréer les locations, catégories, listings et culture videos
+- Recréer les locations, catégories, listings, culture videos, partners et goodies
 - **Conserver les utilisateurs existants** (pour préserver les soldes de portefeuille)
 
 Pour réexécuter :
