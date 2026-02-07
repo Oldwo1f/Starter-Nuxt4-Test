@@ -25,12 +25,17 @@ WORKDIR /app
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
-# Install production dependencies only
+# Install all dependencies (including dev dependencies for seeds)
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci && npm cache clean --force
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
+
+# Copy source files needed for seeds
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/tsconfig*.json ./
+COPY --from=builder /app/nest-cli.json ./
 
 # Create uploads directory
 RUN mkdir -p uploads && chmod 777 uploads
