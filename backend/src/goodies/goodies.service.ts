@@ -36,67 +36,55 @@ export class GoodiesService {
   }
 
   async findAll(isAuthenticated: boolean = false): Promise<Goodie[]> {
-    const queryBuilder = this.goodieRepository.createQueryBuilder('goodie');
-
-    // Joindre le créateur
-    queryBuilder.leftJoinAndSelect('goodie.createdBy', 'createdBy');
-
-    // Sélectionner uniquement les champs nécessaires du créateur
-    queryBuilder.select([
-      'goodie.id',
-      'goodie.name',
-      'goodie.link',
-      'goodie.description',
-      'goodie.imageUrl',
-      'goodie.offeredByName',
-      'goodie.offeredByLink',
-      'goodie.isPublic',
-      'goodie.createdAt',
-      'goodie.updatedAt',
-      'createdBy.id',
-      'createdBy.email',
-    ]);
+    const options: any = {
+      relations: ['createdBy'],
+      order: { createdAt: 'DESC' },
+    };
 
     // Si l'utilisateur n'est pas authentifié, ne montrer que les goodies publics
     if (!isAuthenticated) {
-      queryBuilder.andWhere('goodie.isPublic = :isPublic', { isPublic: true });
+      options.where = { isPublic: true };
     }
 
-    queryBuilder.orderBy('goodie.createdAt', 'DESC');
+    const goodies = await this.goodieRepository.find(options);
 
-    return queryBuilder.getMany();
+    // Filtrer les données du créateur pour ne garder que id et email
+    return goodies.map((goodie) => {
+      if (goodie.createdBy) {
+        goodie.createdBy = {
+          id: goodie.createdBy.id,
+          email: goodie.createdBy.email,
+        } as any;
+      }
+      return goodie;
+    });
   }
 
   async findOne(id: number, isAuthenticated: boolean = false): Promise<Goodie> {
-    const queryBuilder = this.goodieRepository.createQueryBuilder('goodie');
-
-    queryBuilder.leftJoinAndSelect('goodie.createdBy', 'createdBy');
-    queryBuilder.select([
-      'goodie.id',
-      'goodie.name',
-      'goodie.link',
-      'goodie.description',
-      'goodie.imageUrl',
-      'goodie.offeredByName',
-      'goodie.offeredByLink',
-      'goodie.isPublic',
-      'goodie.createdAt',
-      'goodie.updatedAt',
-      'createdBy.id',
-      'createdBy.email',
-    ]);
-
-    queryBuilder.where('goodie.id = :id', { id });
-
+    const where: any = { id };
+    
     // Si l'utilisateur n'est pas authentifié, vérifier que le goodie est public
     if (!isAuthenticated) {
-      queryBuilder.andWhere('goodie.isPublic = :isPublic', { isPublic: true });
+      where.isPublic = true;
     }
 
-    const goodie = await queryBuilder.getOne();
+    const options: any = {
+      where,
+      relations: ['createdBy'],
+    };
+
+    const goodie = await this.goodieRepository.findOne(options);
 
     if (!goodie) {
       throw new NotFoundException(`Goodie with ID ${id} not found`);
+    }
+
+    // Filtrer les données du créateur pour ne garder que id et email
+    if (goodie.createdBy) {
+      goodie.createdBy = {
+        id: goodie.createdBy.id,
+        email: goodie.createdBy.email,
+      } as any;
     }
 
     return goodie;

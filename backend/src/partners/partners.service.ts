@@ -28,9 +28,14 @@ export class PartnersService {
   }
 
   async findAll(): Promise<Partner[]> {
-    return this.partnerRepository.find({
-      order: { createdAt: 'DESC' },
-    });
+    try {
+      return await this.partnerRepository.find({
+        order: { createdAt: 'DESC' },
+      });
+    } catch (error) {
+      console.error('Error in PartnersService.findAll():', error);
+      throw error;
+    }
   }
 
   async findOne(id: number): Promise<Partner> {
