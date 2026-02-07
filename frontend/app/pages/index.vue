@@ -7,23 +7,19 @@ definePageMeta({
 })
 
 const { appName } = useAppInfo()
+const { apiBaseUrl } = useApi()
 
 // État de l'accordéon - un seul panneau ouvert à la fois, toujours au moins un ouvert
 const openAccordion = ref<string>('transmettre')
-
-// API Base URL
-const API_BASE_URL = 'http://localhost:3001'
 
 // Articles à la une
 const featuredPosts = ref<any[]>([])
 const isLoadingFeatured = ref(false)
 
 // Helper pour obtenir l'URL de l'image
+const { getImageUrl: getImageUrlHelper } = useApi()
 const getImageUrl = (imagePath: string) => {
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath
-  }
-  return `${API_BASE_URL}${imagePath}`
+  return getImageUrlHelper(imagePath)
 }
 
 // Helper pour extraire l'ID YouTube/Vimeo
@@ -52,7 +48,7 @@ const fetchFeaturedPosts = async () => {
     const response = await $fetch<{
       data: any[]
       total: number
-    }>(`${API_BASE_URL}/blog`, {
+    }>(`${apiBaseUrl}/blog`, {
       query: {
         page: 1,
         pageSize: 2,

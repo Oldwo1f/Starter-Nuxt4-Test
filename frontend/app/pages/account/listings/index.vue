@@ -12,14 +12,10 @@ const authStore = useAuthStore()
 const toast = useToast()
 
 // Helper function to format image URL
+const { getImageUrl: getImageUrlHelper } = useApi()
 const getImageUrl = (imagePath: string | null | undefined) => {
   if (!imagePath) return null
-  // If image is an external URL (starts with http), use it directly
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath
-  }
-  // Otherwise, it's a local path, add the backend URL prefix
-  return `http://localhost:3001${imagePath}`
+  return getImageUrlHelper(imagePath)
 }
 
 // Filters

@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './useAuthStore'
 
-const API_BASE_URL = 'http://localhost:3001'
-
 export interface BlogPost {
   id: number
   title: string
@@ -42,6 +40,8 @@ export interface BlogForm {
 }
 
 export const useBlogStore = defineStore('blog', () => {
+  const config = useRuntimeConfig()
+  const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
   const authStore = useAuthStore()
 
   // États des articles

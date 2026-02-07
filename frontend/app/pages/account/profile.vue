@@ -12,6 +12,7 @@ const authStore = useAuthStore()
 const walletStore = useWalletStore()
 const marketplaceStore = useMarketplaceStore()
 const toast = useToast()
+const { getImageUrl } = useApi()
 
 // Stats
 const stats = ref({
@@ -234,7 +235,7 @@ onMounted(() => {
         <div class="flex items-center gap-4">
           <UAvatar
             v-if="user.avatarImage"
-            :src="`http://localhost:3001${user.avatarImage}`"
+            :src="getImageUrl(user.avatarImage)"
             :alt="getDisplayName"
             size="xl"
             class="ring-2 ring-primary-500/20"
@@ -293,7 +294,7 @@ onMounted(() => {
             <div class="flex items-center gap-4">
               <UAvatar
                 v-if="user.avatarImage"
-                :src="`http://localhost:3001${user.avatarImage}`"
+                :src="getImageUrl(user.avatarImage)"
                 :alt="getDisplayName"
                 size="lg"
                 class="ring-2 ring-primary-500/20"
@@ -334,7 +335,7 @@ onMounted(() => {
 
             <UFormGroup label="Avatar" name="avatarImage" class="sm:col-span-2">
               <AvatarUpload
-                :current-avatar="user?.avatarImage ? `http://localhost:3001${user.avatarImage}` : null"
+                :current-avatar="user?.avatarImage ? getImageUrl(user.avatarImage) : null"
                 :user-id="user?.id"
                 @uploaded="handleAvatarUploaded"
               />

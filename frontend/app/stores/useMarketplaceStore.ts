@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './useAuthStore'
 
-const API_BASE_URL = 'http://localhost:3001'
-
 export interface Listing {
   id: number
   title: string
@@ -45,6 +43,8 @@ export interface PaginatedResponse {
 }
 
 export const useMarketplaceStore = defineStore('marketplace', () => {
+  const config = useRuntimeConfig()
+  const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
   const authStore = useAuthStore()
 
   // State

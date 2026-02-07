@@ -6,7 +6,7 @@ definePageMeta({
 import { usePartnerStore } from '~/stores/usePartnerStore'
 
 const partnerStore = usePartnerStore()
-const API_BASE_URL = 'http://localhost:3001'
+const { apiBaseUrl } = useApi()
 
 // Charger les partenaires au montage
 onMounted(async () => {
@@ -16,7 +16,7 @@ onMounted(async () => {
 // Fonction pour obtenir l'URL complète d'une bannière
 const getBannerUrl = (url: string | null | undefined): string | null => {
   if (!url) return null
-  return `${API_BASE_URL}${url}`
+  return `${apiBaseUrl}${url}`
 }
 </script>
 

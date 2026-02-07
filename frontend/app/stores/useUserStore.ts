@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './useAuthStore'
 
-const API_BASE_URL = 'http://localhost:3001'
-
 export interface User {
   id: number
   email: string
@@ -40,6 +38,8 @@ export interface ProfileFormData {
 }
 
 export const useUserStore = defineStore('user', () => {
+  const config = useRuntimeConfig()
+  const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
   const authStore = useAuthStore()
 
   // États des utilisateurs
@@ -392,7 +392,7 @@ export const useUserStore = defineStore('user', () => {
 
   const getAvatarUrl = (user: User): string | undefined => {
     if (!user.avatarImage) return undefined
-    return `http://localhost:3001${user.avatarImage}`
+    return `${API_BASE_URL}${user.avatarImage}`
   }
 
   // Préparer les données pour UTable

@@ -19,7 +19,7 @@ const emit = defineEmits<{
 }>()
 
 const toast = useToast()
-const API_BASE_URL = 'http://localhost:3001'
+const { apiBaseUrl } = useApi()
 const authStore = useAuthStore()
 
 // États du composant
@@ -115,7 +115,7 @@ const uploadCroppedImage = async () => {
         avatarUrl: string
         message: string
         user: any
-      }>(`${API_BASE_URL}/auth/upload-avatar`, {
+      }>(`${apiBaseUrl}/auth/upload-avatar`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.accessToken}`,

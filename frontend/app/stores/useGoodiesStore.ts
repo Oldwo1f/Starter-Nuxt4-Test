@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './useAuthStore'
 
-const API_BASE_URL = 'http://localhost:3001'
-
 export interface Goodie {
   id: number
   name: string
@@ -33,6 +31,8 @@ export interface GoodieForm {
 }
 
 export const useGoodiesStore = defineStore('goodies', () => {
+  const config = useRuntimeConfig()
+  const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
   const authStore = useAuthStore()
 
   // États

@@ -119,12 +119,13 @@ const handleImageCropped = (file: File) => {
   goodieStore.form.deleteImage = false
 }
 
+const { getImageUrl } = useApi()
 const getImagePreview = (): string | null => {
   if (goodieStore.form.image) {
     return URL.createObjectURL(goodieStore.form.image)
   }
   if (goodieStore.form.existingImage) {
-    return `http://localhost:3001${goodieStore.form.existingImage}`
+    return getImageUrl(goodieStore.form.existingImage)
   }
   return null
 }
@@ -218,7 +219,7 @@ onMounted(() => {
               <div class="flex items-center gap-2">
                 <img
                   v-if="(row.original || row).imageUrl"
-                  :src="`http://localhost:3001${(row.original || row).imageUrl}`"
+                  :src="getImageUrl((row.original || row).imageUrl)"
                   :alt="(row.original || row).name"
                   class="w-12 h-12 object-cover rounded"
                 />

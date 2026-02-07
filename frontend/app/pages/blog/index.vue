@@ -3,7 +3,7 @@ definePageMeta({
   layout: 'default',
 })
 
-const API_BASE_URL = 'http://localhost:3001'
+const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
 const route = useRoute()
 
 // Pagination
@@ -19,10 +19,7 @@ const isLoading = ref(false)
 
 // Helper pour obtenir l'URL de l'image
 const getImageUrl = (imagePath: string) => {
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath
-  }
-  return `http://localhost:3001${imagePath}`
+  return getImageUrlHelper(imagePath)
 }
 
 // Helper pour extraire l'ID YouTube/Vimeo
@@ -56,7 +53,7 @@ const fetchPosts = async () => {
       totalPages: number
       hasNext: boolean
       hasPrev: boolean
-    }>(`${API_BASE_URL}/blog`, {
+    }>(`${apiBaseUrl}/blog`, {
       query: {
         page: page.value,
         pageSize: pageSize.value,

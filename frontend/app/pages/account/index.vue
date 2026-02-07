@@ -12,8 +12,7 @@ const authStore = useAuthStore()
 const walletStore = useWalletStore()
 const marketplaceStore = useMarketplaceStore()
 const toast = useToast()
-
-const API_BASE_URL = 'http://localhost:3001'
+const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
 
 // Stats
 const stats = ref({
@@ -84,10 +83,7 @@ const fetchData = async () => {
 // Helper function to format image URL
 const getImageUrl = (imagePath: string | null | undefined) => {
   if (!imagePath) return null
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath
-  }
-  return `http://localhost:3001${imagePath}`
+  return getImageUrlHelper(imagePath)
 }
 
 // Format date

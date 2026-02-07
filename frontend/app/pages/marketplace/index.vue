@@ -7,8 +7,7 @@ definePageMeta({
 })
 
 const { fromNow } = useDate()
-
-const API_BASE_URL = 'http://localhost:3001'
+const { apiBaseUrl } = useApi()
 const authStore = useAuthStore()
 
 // View mode: 'list' or 'grid'
@@ -45,10 +44,10 @@ const pagination = ref({
 // Fetch locations
 const fetchLocations = async () => {
   try {
-    const hierarchy = await $fetch<any[]>(`${API_BASE_URL}/locations/hierarchy`)
+    const hierarchy = await $fetch<any[]>(`${apiBaseUrl}/locations/hierarchy`)
     locationsHierarchy.value = hierarchy || []
     // Flatten for easier access
-    const flat = await $fetch<any[]>(`${API_BASE_URL}/locations`)
+    const flat = await $fetch<any[]>(`${apiBaseUrl}/locations`)
     locations.value = flat || []
     console.log('Locations loaded:', locations.value.length)
   } catch (error) {
@@ -61,7 +60,7 @@ const fetchLocations = async () => {
 // Fetch categories
 const fetchCategories = async () => {
   try {
-    const cats = await $fetch<any[]>(`${API_BASE_URL}/categories`)
+    const cats = await $fetch<any[]>(`${apiBaseUrl}/categories`)
     categories.value = cats || []
     console.log('Categories loaded:', categories.value.length)
   } catch (error) {
@@ -93,7 +92,7 @@ const fetchListings = async () => {
       totalPages: number
       hasNext: boolean
       hasPrev: boolean
-    }>(`${API_BASE_URL}/marketplace/listings`, {
+    }>(`${apiBaseUrl}/marketplace/listings`, {
       query: params,
     })
 
@@ -191,7 +190,7 @@ const getImageUrl = (listing: any) => {
       return imageUrl
     }
     // Otherwise, it's a local path, add the backend URL prefix
-    return `http://localhost:3001${imageUrl}`
+    return `${apiBaseUrl}${imageUrl}`
   }
   return null
 }
@@ -211,7 +210,7 @@ const getSellerAvatar = (listing: any) => {
     if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
       return avatarUrl
     }
-    return `http://localhost:3001${avatarUrl}`
+    return `${apiBaseUrl}${avatarUrl}`
   }
   return null
 }

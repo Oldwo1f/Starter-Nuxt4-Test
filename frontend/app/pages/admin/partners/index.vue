@@ -163,12 +163,13 @@ const handleBannerVerticalChange = async (event: Event) => {
   }
 }
 
+const { getImageUrl } = useApi()
 const getBannerPreview = (file: File | null | undefined, existingUrl: string | null | undefined): string | null => {
   if (file) {
     return URL.createObjectURL(file)
   }
   if (existingUrl) {
-    return `http://localhost:3001${existingUrl}`
+    return getImageUrl(existingUrl)
   }
   return null
 }

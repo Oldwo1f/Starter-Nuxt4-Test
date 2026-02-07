@@ -17,9 +17,9 @@ interface AuthState {
   isAuthenticated: boolean
 }
 
-const API_BASE_URL = 'http://localhost:3001'
-
 export const useAuthStore = defineStore('auth', () => {
+  const config = useRuntimeConfig()
+  const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
   const user = ref<User | null>(null)
   const accessToken = ref<string | null>(null)
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)

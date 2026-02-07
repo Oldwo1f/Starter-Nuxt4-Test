@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './useAuthStore'
 
-const API_BASE_URL = 'http://localhost:3001'
-
 export interface Transaction {
   id: number
   type: 'debit' | 'credit' | 'exchange'
@@ -31,6 +29,8 @@ export interface PaginatedTransactionsResponse {
 }
 
 export const useWalletStore = defineStore('wallet', () => {
+  const config = useRuntimeConfig()
+  const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
   const authStore = useAuthStore()
 
   // State

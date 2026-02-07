@@ -11,18 +11,14 @@ const props = defineProps<Props>()
 
 const goodiesStore = useGoodiesStore()
 const authStore = useAuthStore()
-
-const API_BASE_URL = 'http://localhost:3001'
+const { getImageUrl: getImageUrlHelper } = useApi()
 
 const canAccess = computed(() => goodiesStore.canAccessGoodie(props.goodie))
 
 // Obtenir l'URL de l'image
 const getImageUrl = (): string | null => {
   if (!props.goodie.imageUrl) return null
-  if (props.goodie.imageUrl.startsWith('http://') || props.goodie.imageUrl.startsWith('https://')) {
-    return props.goodie.imageUrl
-  }
-  return `${API_BASE_URL}${props.goodie.imageUrl}`
+  return getImageUrlHelper(props.goodie.imageUrl)
 }
 
 const handleClick = () => {

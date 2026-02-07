@@ -520,7 +520,7 @@ const getImagePreviewUrl = (file: File) => {
                 class="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/20 group"
               >
                 <img
-                  :src="`http://localhost:3001${image}`"
+                  :src="getImageUrl(image)"
                   alt="Image"
                   class="h-full w-full object-cover"
                 />

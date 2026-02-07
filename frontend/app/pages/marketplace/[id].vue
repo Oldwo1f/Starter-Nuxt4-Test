@@ -9,7 +9,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-const API_BASE_URL = 'http://localhost:3001'
+const { apiBaseUrl } = useApi()
 const authStore = useAuthStore()
 const walletStore = useWalletStore()
 const { fromNow } = useDate()
@@ -25,7 +25,7 @@ const fetchListing = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const data = await $fetch(`${API_BASE_URL}/marketplace/listings/${listingId.value}`)
+    const data = await $fetch(`${apiBaseUrl}/marketplace/listings/${listingId.value}`)
     listing.value = data
   } catch (err: any) {
     error.value = err.data?.message || err.message || 'Erreur lors du chargement de l\'annonce'
@@ -64,7 +64,7 @@ const imageUrls = computed(() => {
       return img
     }
     // Otherwise, it's a local path, add the backend URL prefix
-    return `http://localhost:3001${img}`
+    return `${apiBaseUrl}${img}`
   })
 })
 
@@ -210,7 +210,7 @@ onMounted(() => {
               <div class="flex items-center gap-4">
                 <UAvatar
                   v-if="listing.seller?.avatarImage"
-                  :src="`http://localhost:3001${listing.seller.avatarImage}`"
+                  :src="`${apiBaseUrl}${listing.seller.avatarImage}`"
                   :alt="listing.seller.email"
                   size="lg"
                 />

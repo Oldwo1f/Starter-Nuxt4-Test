@@ -6,7 +6,7 @@ definePageMeta({
   middleware: 'auth',
 })
 
-const API_BASE_URL = 'http://localhost:3001'
+const { apiBaseUrl } = useApi()
 const marketplaceStore = useMarketplaceStore()
 const router = useRouter()
 const toast = useToast()
@@ -63,8 +63,8 @@ const fetchOptions = async () => {
   isLoading.value = true
   try {
     const [locs, cats] = await Promise.all([
-      $fetch<any[]>(`${API_BASE_URL}/locations`),
-      $fetch<any[]>(`${API_BASE_URL}/categories`),
+      $fetch<any[]>(`${apiBaseUrl}/locations`),
+      $fetch<any[]>(`${apiBaseUrl}/categories`),
     ])
     locations.value = Array.isArray(locs) ? locs : []
     allCategories.value = Array.isArray(cats) ? cats : [] // Store all categories

@@ -7,7 +7,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-const API_BASE_URL = 'http://localhost:3001'
+const { apiBaseUrl } = useApi()
 const marketplaceStore = useMarketplaceStore()
 const router = useRouter()
 
@@ -68,8 +68,8 @@ const fetchData = async () => {
   try {
     const [listing, locs, cats] = await Promise.all([
       marketplaceStore.fetchListingById(listingId.value),
-      $fetch(`${API_BASE_URL}/locations`),
-      $fetch(`${API_BASE_URL}/categories`),
+      $fetch(`${apiBaseUrl}/locations`),
+      $fetch(`${apiBaseUrl}/categories`),
     ])
 
     if (listing.success && listing.data) {
@@ -322,7 +322,7 @@ onMounted(() => {
                 :key="index"
                 class="relative aspect-square overflow-hidden rounded-lg border border-white/20"
               >
-                <img :src="`http://localhost:3001${image}`" alt="Image" class="h-full w-full object-cover" />
+                <img :src="`${apiBaseUrl}${image}`" alt="Image" class="h-full w-full object-cover" />
                 <button
                   type="button"
                   class="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white"

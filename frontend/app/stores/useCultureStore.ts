@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './useAuthStore'
 
-const API_BASE_URL = 'http://localhost:3001'
-
 export type CultureType = 'reportage' | 'documentaire' | 'interview'
 
 export interface Culture {
@@ -29,6 +27,8 @@ export interface CultureForm {
 }
 
 export const useCultureStore = defineStore('culture', () => {
+  const config = useRuntimeConfig()
+  const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
   const authStore = useAuthStore()
 
   // États

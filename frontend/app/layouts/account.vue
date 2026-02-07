@@ -23,9 +23,10 @@ const getAvatarText = computed(() => {
 })
 
 // Obtenir l'URL de l'avatar
+const { getImageUrl } = useApi()
 const getAvatarUrl = computed(() => {
   if (!authStore.user?.avatarImage) return null
-  return `http://localhost:3001${authStore.user.avatarImage}`
+  return getImageUrl(authStore.user.avatarImage)
 })
 
 const handleLogout = () => {

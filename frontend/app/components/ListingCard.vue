@@ -8,9 +8,11 @@ const props = withDefaults(defineProps<Props>(), {
   viewMode: 'grid',
 })
 
+const { getImageUrl: getImageUrlHelper } = useApi()
+
 const getImageUrl = (listing: any) => {
   if (listing.images && listing.images.length > 0) {
-    return `http://localhost:3001${listing.images[0]}`
+    return getImageUrlHelper(listing.images[0])
   }
   return null
 }

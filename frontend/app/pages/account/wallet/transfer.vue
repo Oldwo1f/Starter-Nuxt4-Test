@@ -11,7 +11,7 @@ const walletStore = useWalletStore()
 const authStore = useAuthStore()
 const router = useRouter()
 const toast = useToast()
-const API_BASE_URL = 'http://localhost:3001'
+const { getImageUrl } = useApi()
 
 // Form
 const form = ref({
@@ -47,7 +47,7 @@ const getUserDisplayName = (user: any) => {
 // Get avatar URL
 const getAvatarUrl = (user: any) => {
   if (user.avatarImage) {
-    return `http://localhost:3001${user.avatarImage}`
+    return getImageUrl(user.avatarImage)
   }
   return null
 }

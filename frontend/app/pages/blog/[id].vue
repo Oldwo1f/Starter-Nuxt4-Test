@@ -4,7 +4,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-const API_BASE_URL = 'http://localhost:3001'
+const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
 
 const post = ref<any>(null)
 const isLoading = ref(false)
@@ -17,10 +17,7 @@ const latestPosts = ref<any[]>([])
 
 // Helper pour obtenir l'URL de l'image
 const getImageUrl = (imagePath: string) => {
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath
-  }
-  return `http://localhost:3001${imagePath}`
+  return getImageUrlHelper(imagePath)
 }
 
 // Helper pour extraire l'ID YouTube/Vimeo
@@ -48,7 +45,7 @@ const fetchLatestPosts = async () => {
     const response = await $fetch<{
       data: any[]
       total: number
-    }>(`${API_BASE_URL}/blog`, {
+    }>(`${apiBaseUrl}/blog`, {
       query: {
         page: 1,
         pageSize: 4, // Récupérer 4 pour avoir 3 après exclusion
@@ -70,7 +67,7 @@ const fetchPost = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const data = await $fetch<any>(`${API_BASE_URL}/blog/${postId.value}`)
+    const data = await $fetch<any>(`${apiBaseUrl}/blog/${postId.value}`)
     rawPost.value = data
     
     post.value = {
