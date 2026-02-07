@@ -16,7 +16,12 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
+# Vérifier Docker Compose (nouvelle version: docker compose ou ancienne: docker-compose)
+if docker compose version &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker compose"
+elif command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+else
     echo -e "${RED}❌ Docker Compose n'est pas installé${NC}"
     exit 1
 fi
@@ -39,7 +44,7 @@ fi
 source .env
 
 # Vérifier que le réseau Traefik existe
-TRAEFIK_NETWORK=${TRAEFIK_NETWORK:-n8n-traefik-network}
+TRAEFIK_NETWORK=${TRAEFIK_NETWORK:-n8n_default}
 if ! docker network ls | grep -q "$TRAEFIK_NETWORK"; then
     echo -e "${YELLOW}⚠️  Le réseau Docker '$TRAEFIK_NETWORK' n'existe pas${NC}"
     echo "Vérifiez le nom de votre réseau Traefik avec: docker network ls"
@@ -55,15 +60,15 @@ fi
 
 # Construire les images
 echo -e "${GREEN}📦 Construction des images Docker...${NC}"
-docker-compose build --no-cache
+$DOCKER_COMPOSE_CMD build --no-cache
 
 # Arrêter les conteneurs existants
 echo -e "${GREEN}🛑 Arrêt des conteneurs existants...${NC}"
-docker-compose down
+$DOCKER_COMPOSE_CMD down
 
 # Démarrer les services
 echo -e "${GREEN}🚀 Démarrage des services...${NC}"
-docker-compose up -d
+$DOCKER_COMPOSE_CMD up -d
 
 # Attendre que les services soient prêts
 echo -e "${GREEN}⏳ Attente du démarrage des services...${NC}"
@@ -71,7 +76,7 @@ sleep 10
 
 # Vérifier l'état des conteneurs
 echo -e "${GREEN}📊 État des conteneurs:${NC}"
-docker-compose ps
+$DOCKER_COMPOSE_CMD ps
 
 echo ""
 echo -e "${GREEN}✅ Déploiement terminé!${NC}"
@@ -82,7 +87,7 @@ echo "  - Backend API: https://api.nunaaheritage.aito-flow.com"
 echo "  - Swagger: https://api.nunaaheritage.aito-flow.com/api"
 echo ""
 echo "Pour voir les logs:"
-echo "  docker-compose logs -f"
+echo "  $DOCKER_COMPOSE_CMD logs -f"
 echo ""
 echo "Pour arrêter les services:"
-echo "  docker-compose down"
+echo "  $DOCKER_COMPOSE_CMD down"
