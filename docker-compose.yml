@@ -52,7 +52,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.nunaheritage-backend.rule=Host(`api.nunaaheritage.aito-flow.com`)"
       - "traefik.http.routers.nunaheritage-backend.entrypoints=websecure"
-      - "traefik.http.routers.nunaheritage-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.nunaheritage-backend.tls.certresolver=mytlschallenge"
       - "traefik.http.services.nunaheritage-backend.loadbalancer.server.port=8081"
       - "traefik.docker.network=traefik-network"
 
@@ -78,7 +78,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.nunaheritage-frontend.rule=Host(`nunaaheritage.aito-flow.com`)"
       - "traefik.http.routers.nunaheritage-frontend.entrypoints=websecure"
-      - "traefik.http.routers.nunaheritage-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.nunaheritage-frontend.tls.certresolver=mytlschallenge"
       - "traefik.http.services.nunaheritage-frontend.loadbalancer.server.port=8080"
       - "traefik.docker.network=traefik-network"
 
