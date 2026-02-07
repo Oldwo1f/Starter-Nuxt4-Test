@@ -211,7 +211,7 @@ docker exec -i nunaheritage-postgres psql -U postgres nunaheritage < backup.sql
 Les labels Traefik sont configurés dans `docker-compose.yml`. Par défaut :
 - Entrypoint HTTPS: `websecure`
 - Certificat resolver: `letsencrypt`
-- Réseau: `n8n-traefik-network` (configurable via `TRAEFIK_NETWORK`)
+- Réseau: `n8n_default` (configurable via `TRAEFIK_NETWORK`)
 
 Si votre configuration Traefik est différente, modifiez les labels dans `docker-compose.yml`.
 

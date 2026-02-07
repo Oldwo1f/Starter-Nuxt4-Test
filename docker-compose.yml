@@ -93,4 +93,4 @@ networks:
     driver: bridge
   traefik-network:
     external: true
-    name: ${TRAEFIK_NETWORK:-n8n-traefik-network}
+    name: ${TRAEFIK_NETWORK:-n8n_default}
