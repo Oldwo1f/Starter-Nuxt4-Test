@@ -4,7 +4,8 @@ import { useWalletStore } from '~/stores/useWalletStore'
 import { useDate } from '~/composables/useDate'
 
 definePageMeta({
-  layout: 'default',
+  layout: 'marketplace',
+  middleware: 'auth',
 })
 
 const route = useRoute()
@@ -39,8 +40,8 @@ const handleContactSeller = () => {
   alert('Fonctionnalité de contact à venir - Intégration Messenger')
 }
 
-// Transfer coquillages handler
-const handleTransferCoquillages = () => {
+// Transfer Pūpū handler
+const handleTransferPupu = () => {
   const router = useRouter()
   // Redirect to transfer page with pre-filled data
   router.push({
@@ -194,7 +195,7 @@ onMounted(() => {
               <div class="flex items-center gap-2 text-3xl font-bold text-primary-500">
                 <span>🐚</span>
                 <span>{{ listing.price }}</span>
-                <span class="text-lg text-white/60">coquillages</span>
+                <span class="text-lg text-white/60">Pūpū</span>
               </div>
               <span v-if="listing.priceUnit" class="text-sm text-white/60">{{ listing.priceUnit }}</span>
             </div>
@@ -239,9 +240,9 @@ onMounted(() => {
                   variant="outline"
                   block
                   icon="i-heroicons-arrow-path"
-                  @click="handleTransferCoquillages"
+                  @click="handleTransferPupu"
                 >
-                  Transférer des coquillages à ce vendeur
+                  Transférer des Pūpū à ce vendeur
                 </UButton>
               </div>
               <div v-else-if="authStore.isAuthenticated && authStore.user?.id === listing.sellerId" class="text-center">

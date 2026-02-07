@@ -9,7 +9,7 @@ export async function seedSuperAdmin(
 ): Promise<void> {
   const userRepository = dataSource.getRepository(User);
 
-  // Fixed balance: 50 coquillages
+  // Fixed balance: 50 Pūpū
   const DEFAULT_BALANCE = 50;
 
   const existing = await userRepository.findOne({ where: { email } });

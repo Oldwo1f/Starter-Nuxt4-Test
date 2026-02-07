@@ -4,6 +4,7 @@ definePageMeta({
 })
 
 import { useAuthStore } from '~/stores/useAuthStore'
+import { useFacebook } from '~/composables/useFacebook'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -11,6 +12,7 @@ const router = useRouter()
 const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
+const isFacebookLoading = ref(false)
 const error = ref('')
 
 const handleLogin = async () => {
@@ -32,8 +34,39 @@ const handleLogin = async () => {
 }
 
 const handleFacebookLogin = async () => {
-  error.value = 'La connexion Facebook n\'est pas encore disponible'
-  // TODO: Implement Facebook OAuth when backend is ready
+  error.value = ''
+  isFacebookLoading.value = true
+
+  try {
+    // Get Facebook composable (only on client side)
+    const { initFacebook, login: facebookLogin } = useFacebook()
+    
+    // Initialize Facebook SDK if needed
+    await initFacebook()
+    
+    // Login with Facebook
+    const fbResponse = await facebookLogin()
+    
+    // Use email if available, otherwise use Facebook ID (backend will generate temp email)
+    const emailToUse = fbResponse.email || `fb_${fbResponse.userID}@facebook.temp`
+
+    // Call backend
+    const result = await authStore.facebookLogin(
+      fbResponse.userID,
+      emailToUse,
+      fbResponse.accessToken
+    )
+
+    if (result.success) {
+      router.push('/')
+    } else {
+      error.value = result.error || 'Erreur lors de la connexion Facebook'
+    }
+  } catch (err: any) {
+    error.value = err.message || 'Erreur lors de la connexion Facebook'
+  } finally {
+    isFacebookLoading.value = false
+  }
 }
 </script>
 
@@ -111,7 +144,8 @@ const handleFacebookLogin = async () => {
             block
             size="lg"
             class="mt-6"
-            :disabled="true"
+            :loading="isFacebookLoading"
+            :disabled="isLoading || isFacebookLoading"
             @click="handleFacebookLogin"
           >
             <UIcon name="i-simple-icons-facebook" class="w-5 h-5 mr-2" />

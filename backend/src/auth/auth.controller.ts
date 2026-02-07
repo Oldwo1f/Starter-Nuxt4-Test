@@ -430,13 +430,18 @@ export class AuthController {
   @Post('facebook')
   @ApiOperation({
     summary: 'Facebook OAuth login',
-    description: 'Authenticate user using Facebook OAuth (Coming soon)',
+    description: 'Authenticate user using Facebook OAuth',
   })
   @ApiBody({ type: FacebookLoginDto })
-  @ApiResponse({ status: 501, description: 'Facebook OAuth not yet implemented' })
+  @ApiResponse({ status: 200, description: 'Login successful, returns JWT token' })
+  @ApiResponse({ status: 400, description: 'Invalid Facebook token or data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async facebookLogin(@Body() facebookLoginDto: FacebookLoginDto) {
-    // TODO: Implement Facebook OAuth verification
-    throw new NotImplementedException('Facebook OAuth is not yet implemented');
+    return this.authService.facebookLogin(
+      facebookLoginDto.facebookId,
+      facebookLoginDto.email,
+      facebookLoginDto.accessToken,
+    );
   }
 }
 

@@ -53,7 +53,7 @@ export class CreateListingDto {
   description: string;
 
   @ApiProperty({
-    description: 'Price in coquillages (integer only)',
+    description: 'Price in Pūpū (integer only)',
     example: 50,
   })
   @Transform(({ value }) => parseInt(value, 10))
@@ -113,7 +113,7 @@ export class UpdateListingDto {
   description?: string;
 
   @ApiProperty({
-    description: 'Price in coquillages (integer only)',
+    description: 'Price in Pūpū (integer only)',
     required: false,
   })
   @Transform(({ value }) => value !== undefined ? parseInt(value, 10) : undefined)

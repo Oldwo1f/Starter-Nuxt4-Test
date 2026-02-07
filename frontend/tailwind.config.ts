@@ -1,19 +1,6 @@
 import type { Config } from 'tailwindcss'
 
 export default <Partial<Config>>{
-  darkMode: 'class',
-  content: [
-    './app.vue',
-    './error.vue',
-    './app/**/*.{vue,js,ts}',
-    './components/**/*.{vue,js,ts}',
-    './composables/**/*.{js,ts}',
-    './layouts/**/*.vue',
-    './middleware/**/*.{js,ts}',
-    './pages/**/*.vue',
-    './plugins/**/*.{js,ts}',
-    './stores/**/*.{js,ts}',
-  ],
   theme: {
     extend: {
       colors: {

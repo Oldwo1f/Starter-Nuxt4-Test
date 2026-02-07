@@ -143,6 +143,9 @@ export class UsersService {
   }
 
   async validatePassword(user: User, password: string): Promise<boolean> {
+    if (!user.password) {
+      return false; // Facebook users don't have passwords
+    }
     return bcrypt.compare(password, user.password);
   }
 
@@ -275,6 +278,70 @@ export class UsersService {
     await this.usersRepository.update(userId, {
       isActive: true,
     });
+  }
+
+  async findByFacebookId(facebookId: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { facebookId } });
+  }
+
+  async findOrCreateByFacebook(
+    facebookId: string,
+    email: string,
+    firstName?: string,
+    lastName?: string,
+    avatarImage?: string,
+  ): Promise<User> {
+    // First, try to find by facebookId
+    let user = await this.findByFacebookId(facebookId);
+    if (user) {
+      // Update last login
+      await this.updateLastLogin(user.id);
+      // Update user info if provided
+      if (firstName || lastName || avatarImage) {
+        const updates: any = {};
+        if (firstName !== undefined) updates.firstName = firstName;
+        if (lastName !== undefined) updates.lastName = lastName;
+        if (avatarImage !== undefined) updates.avatarImage = avatarImage;
+        if (Object.keys(updates).length > 0) {
+          await this.usersRepository.update(user.id, updates);
+          user = await this.findById(user.id);
+        }
+      }
+      return user!;
+    }
+
+    // If not found by facebookId, try to find by email
+    user = await this.findByEmail(email);
+    if (user) {
+      // Link Facebook account to existing user
+      await this.usersRepository.update(user.id, {
+        facebookId,
+        facebookEmail: email,
+        // Update name and avatar if not already set
+        firstName: user.firstName || firstName || null,
+        lastName: user.lastName || lastName || null,
+        avatarImage: user.avatarImage || avatarImage || null,
+      });
+      await this.updateLastLogin(user.id);
+      return (await this.findById(user.id))!;
+    }
+
+    // Create new user
+    const newUser = this.usersRepository.create({
+      email,
+      password: null, // No password for Facebook accounts
+      facebookId,
+      facebookEmail: email,
+      firstName: firstName || null,
+      lastName: lastName || null,
+      avatarImage: avatarImage || null,
+      emailVerified: true, // Facebook verifies emails
+      isActive: true,
+      role: UserRole.USER,
+    });
+    const savedUser = await this.usersRepository.save(newUser);
+    await this.updateLastLogin(savedUser.id);
+    return savedUser;
   }
 }
 

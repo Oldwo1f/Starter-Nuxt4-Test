@@ -20,6 +20,12 @@ export class BlogPost {
   @Column('text')
   content: string;
 
+  @Column({ type: 'simple-array', nullable: true })
+  images: string[]; // URLs des images
+
+  @Column({ type: 'varchar', nullable: true })
+  videoUrl: string | null; // URL de la vidéo (YouTube, Vimeo, etc.)
+
   @ManyToOne(() => User, (user) => user.blogPosts)
   @JoinColumn({ name: 'authorId' })
   author: User;

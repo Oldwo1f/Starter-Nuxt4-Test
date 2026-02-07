@@ -34,7 +34,7 @@ export class Transaction {
   type: TransactionType;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  amount: number; // Montant en coquillages
+  amount: number; // Montant en Pūpū
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   balanceBefore: number; // Solde avant transaction

@@ -325,6 +325,14 @@ onUnmounted(() => {
     window.removeEventListener('resize', calculateTableHeight)
   }
 })
+
+// Helper pour créer l'URL de prévisualisation
+const getImagePreviewUrl = (file: File) => {
+  if (import.meta.client && window.URL) {
+    return window.URL.createObjectURL(file)
+  }
+  return ''
+}
 </script>
 
 <template>
@@ -501,6 +509,82 @@ onUnmounted(() => {
                 }"
               />
             </UEditor>
+          </UFormGroup>
+
+          <!-- Images existantes -->
+          <UFormGroup v-if="blogStore.form.existingImages && blogStore.form.existingImages.length > 0" label="Images actuelles">
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <div
+                v-for="(image, index) in blogStore.form.existingImages"
+                :key="image"
+                class="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/20 group"
+              >
+                <img
+                  :src="`http://localhost:3001${image}`"
+                  alt="Image"
+                  class="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  class="absolute right-2 top-2 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100"
+                  @click="blogStore.form.existingImages?.splice(index, 1)"
+                >
+                  <UIcon name="i-heroicons-trash" class="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </UFormGroup>
+
+          <!-- Ajouter des images -->
+          <UFormGroup label="Images (ratio 4/3)" description="Ajoutez jusqu'à 10 images">
+            <div v-if="(blogStore.form.images?.length || 0) + (blogStore.form.existingImages?.length || 0) < 10" class="space-y-4">
+              <BlogImageCropper
+                :max-images="10"
+                :current-images-count="(blogStore.form.images?.length || 0) + (blogStore.form.existingImages?.length || 0)"
+                @cropped="(file) => {
+                  if (!blogStore.form.images) blogStore.form.images = []
+                  blogStore.form.images.push(file)
+                }"
+              />
+            </div>
+            <div v-else class="rounded-lg border border-white/20 p-4 text-center text-sm text-white/60">
+              Maximum de 10 images atteint
+            </div>
+            
+            <!-- Prévisualisation des nouvelles images -->
+            <div v-if="blogStore.form.images && blogStore.form.images.length > 0" class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <div
+                v-for="(file, index) in blogStore.form.images"
+                :key="index"
+                class="relative aspect-[4/3] overflow-hidden rounded-lg border border-white/20 group"
+              >
+                <img
+                  :src="getImagePreviewUrl(file)"
+                  alt="Preview"
+                  class="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  class="absolute right-2 top-2 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100"
+                  @click="blogStore.form.images?.splice(index, 1)"
+                >
+                  <UIcon name="i-heroicons-trash" class="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </UFormGroup>
+
+          <!-- Vidéo -->
+          <UFormGroup label="URL Vidéo (optionnel)" description="URL YouTube, Vimeo, etc.">
+            <UInput
+              v-model="blogStore.form.videoUrl"
+              placeholder="https://www.youtube.com/watch?v=..."
+              icon="i-heroicons-video-camera"
+              class="w-full"
+            />
+            <p class="mt-2 text-xs text-white/60">
+              Note: Si une vidéo est fournie, elle sera affichée en priorité sur les images
+            </p>
           </UFormGroup>
         </div>
       </template>

@@ -3,7 +3,7 @@ import { useAuthStore } from '~/stores/useAuthStore'
 import { useDate } from '~/composables/useDate'
 
 definePageMeta({
-  layout: 'default',
+  layout: 'marketplace',
 })
 
 const { fromNow } = useDate()

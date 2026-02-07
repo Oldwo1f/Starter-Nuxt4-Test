@@ -15,7 +15,7 @@ export async function seedDatabase(dataSource: DataSource) {
     console.log('Note: Blog posts table will be created automatically');
   }
 
-  // Fixed balance: 50 coquillages for all users
+  // Fixed balance: 50 Pūpū for all users
   const DEFAULT_BALANCE = 50;
 
   // Helper function to get or create user
@@ -74,49 +74,105 @@ export async function seedDatabase(dataSource: DataSource) {
     savedUsers.push(user);
   }
 
-  // Create blog posts
+  // Helper function to get Unsplash image URL (800x600, ratio 4/3)
+  const getUnsplashImage = (photoId: string) => {
+    return `https://images.unsplash.com/photo-${photoId}?w=800&h=600&fit=crop`;
+  };
+
+  // Create blog posts with images and videos
+  // Using real Unsplash photo IDs with 800x600 dimensions (4/3 ratio)
   const blogPostsData = [
     {
       title: 'Bienvenue sur Nuna Heritage',
-      content: 'Ceci est le premier article de blog de notre plateforme. Nous sommes ravis de vous accueillir et de partager avec vous notre passion pour le patrimoine culturel.',
+      content: 'Ceci est le premier article de blog de notre plateforme. Nous sommes ravis de vous accueillir et de partager avec vous notre passion pour le patrimoine culturel.\n\nNotre mission est de préserver et de valoriser le patrimoine culturel de la Polynésie française. À travers cette plateforme, nous souhaitons créer une communauté engagée dans la protection de notre héritage commun.',
       authorId: savedSuperAdmin.id,
+      images: [
+        getUnsplashImage('1515886657613-9f3515b0c78f'), // Island/tropical
+        getUnsplashImage('1506905925346-21bda4d32df4'), // Ocean/island
+        getUnsplashImage('1469474968028-36686e3eaa7f'), // Tropical beach
+      ],
     },
     {
       title: 'L\'importance du patrimoine culturel',
-      content: 'Le patrimoine culturel représente l\'héritage d\'une communauté, transmis de génération en génération. Il est essentiel de le préserver pour les générations futures.',
+      content: 'Le patrimoine culturel représente l\'héritage d\'une communauté, transmis de génération en génération. Il est essentiel de le préserver pour les générations futures.\n\nLe patrimoine culturel englobe les monuments, les sites historiques, les traditions orales, les expressions artistiques, les pratiques sociales et bien plus encore. Chaque élément contribue à façonner notre identité collective.',
       authorId: savedUsers[0].id,
+      images: [
+        getUnsplashImage('1519681393784-d120267933ba'), // Heritage/monument
+        getUnsplashImage('1469474968028-36686e3eaa7f'), // Ancient architecture
+      ],
     },
     {
       title: 'Techniques de préservation',
-      content: 'La préservation du patrimoine nécessite des techniques spécifiques et une expertise approfondie. Dans cet article, nous explorons les différentes méthodes utilisées.',
+      content: 'La préservation du patrimoine nécessite des techniques spécifiques et une expertise approfondie. Dans cet article, nous explorons les différentes méthodes utilisées.\n\nLes techniques modernes de préservation combinent savoir-faire traditionnel et innovations technologiques. De la restauration des monuments à la numérisation des archives, chaque méthode a son importance.',
       authorId: savedUsers[1].id,
+      images: [
+        getUnsplashImage('1513475382585-d06e58bcb0e0'), // Museum/art
+        getUnsplashImage('1469474968028-36686e3eaa7f'), // Artifacts
+        getUnsplashImage('1515886657613-9f3515b0c78f'), // Documentation
+      ],
     },
     {
-      title: 'Histoire et traditions',
-      content: 'Les traditions sont le reflet de notre histoire. Elles nous connectent à nos ancêtres et nous aident à comprendre notre identité culturelle.',
+      title: 'Histoire et traditions polynésiennes',
+      content: 'Les traditions sont le reflet de notre histoire. Elles nous connectent à nos ancêtres et nous aident à comprendre notre identité culturelle.\n\nLa Polynésie française regorge de traditions ancestrales : la danse, la musique, l\'artisanat, la navigation traditionnelle. Chaque île possède ses propres spécificités culturelles qui méritent d\'être préservées et transmises.',
       authorId: savedUsers[0].id,
+      images: [
+        getUnsplashImage('1515886657613-9f3515b0c78f'), // Culture/tradition
+        getUnsplashImage('1506905925346-21bda4d32df4'), // Ceremony
+      ],
+      videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Exemple YouTube
     },
     {
       title: 'Patrimoine mondial de l\'UNESCO',
-      content: 'Découvrez les sites du patrimoine mondial de l\'UNESCO et leur importance dans la préservation de la culture humaine à travers le monde.',
+      content: 'Découvrez les sites du patrimoine mondial de l\'UNESCO et leur importance dans la préservation de la culture humaine à travers le monde.\n\nL\'UNESCO a classé de nombreux sites en Polynésie française au patrimoine mondial. Ces reconnaissances internationales soulignent l\'importance universelle de notre patrimoine et encouragent sa protection.',
       authorId: savedUsers[2].id,
+      images: [
+        getUnsplashImage('1519681393784-d120267933ba'), // UNESCO site
+      ],
     },
     {
-      title: 'Technologie et patrimoine',
-      content: 'Comment la technologie moderne peut-elle aider à préserver et à documenter le patrimoine culturel ? Explorons les innovations dans ce domaine.',
+      title: 'Technologie et patrimoine : une alliance moderne',
+      content: 'Comment la technologie moderne peut-elle aider à préserver et à documenter le patrimoine culturel ? Explorons les innovations dans ce domaine.\n\nLa numérisation 3D, la réalité virtuelle, les bases de données numériques : autant d\'outils qui permettent de documenter, préserver et rendre accessible notre patrimoine. Cette vidéo présente quelques projets innovants.',
       authorId: savedSuperAdmin.id,
+      videoUrl: 'https://www.youtube.com/watch?v=jNQXAC9IVRw', // Exemple YouTube
     },
     {
       title: 'Engagement communautaire',
-      content: 'L\'engagement de la communauté est crucial pour la préservation du patrimoine. Découvrez comment vous pouvez contribuer à cette noble cause.',
+      content: 'L\'engagement de la communauté est crucial pour la préservation du patrimoine. Découvrez comment vous pouvez contribuer à cette noble cause.\n\nChaque membre de la communauté peut apporter sa pierre à l\'édifice. Que ce soit par le bénévolat, le partage de connaissances ou le soutien financier, toutes les contributions comptent pour préserver notre héritage commun.',
       authorId: savedUsers[3].id,
+      images: [
+        getUnsplashImage('1469474968028-36686e3eaa7f'), // Community
+        getUnsplashImage('1515886657613-9f3515b0c78f'), // People together
+      ],
+    },
+    {
+      title: 'Les sites archéologiques de Polynésie',
+      content: 'La Polynésie française abrite de nombreux sites archéologiques témoignant de l\'histoire ancienne de ces îles. Des marae aux pétroglyphes, découvrez ces trésors cachés.\n\nCes sites archéologiques sont des témoins précieux de la civilisation polynésienne. Leur étude permet de mieux comprendre l\'organisation sociale, les croyances et les pratiques de nos ancêtres.',
+      authorId: savedUsers[1].id,
+      images: [
+        getUnsplashImage('1469474968028-36686e3eaa7f'), // Archaeology
+        getUnsplashImage('1515886657613-9f3515b0c78f'), // Ancient ruins
+        getUnsplashImage('1506905925346-21bda4d32df4'), // Stone monument
+      ],
     },
   ];
 
   for (const postData of blogPostsData) {
-    const blogPost = blogPostRepository.create(postData);
+    const blogPost = blogPostRepository.create({
+      title: postData.title,
+      content: postData.content,
+      authorId: postData.authorId,
+      images: postData.images || [],
+      videoUrl: postData.videoUrl || null,
+    });
     const savedPost = await blogPostRepository.save(blogPost);
-    console.log('✓ Blog post created:', savedPost.title);
+    const mediaInfo: string[] = [];
+    if (savedPost.images && savedPost.images.length > 0) {
+      mediaInfo.push(`${savedPost.images.length} image(s)`);
+    }
+    if (savedPost.videoUrl) {
+      mediaInfo.push('vidéo YouTube');
+    }
+    console.log(`✓ Blog post created: ${savedPost.title}${mediaInfo.length > 0 ? ` (${mediaInfo.join(', ')})` : ''}`);
   }
 
   console.log('\n✅ Database seeding completed successfully!');

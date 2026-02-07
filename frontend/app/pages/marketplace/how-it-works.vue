@@ -1,6 +1,6 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: 'default',
+  layout: 'marketplace',
 })
 </script>
 
@@ -14,17 +14,17 @@ definePageMeta({
     </div>
 
     <div class="space-y-8">
-      <!-- Section Coquillages -->
+      <!-- Section Pūpū -->
       <UCard>
         <template #header>
           <div class="flex items-center gap-3">
             <span class="text-3xl">🐚</span>
-            <h2 class="text-2xl font-bold">La monnaie Coquillage</h2>
+            <h2 class="text-2xl font-bold">La monnaie Pūpū</h2>
           </div>
         </template>
         <div class="space-y-4">
           <p class="text-white/80">
-            Le Coquillage est la monnaie virtuelle de notre marketplace. Elle permet d'échanger
+            Le Pūpū est la monnaie virtuelle de notre marketplace. Elle permet d'échanger
             des biens et services sans utiliser d'argent réel.
           </p>
           <div class="grid gap-4 sm:grid-cols-3">
@@ -40,7 +40,7 @@ definePageMeta({
             </div>
             <div class="rounded-lg bg-primary-500/20 p-4">
               <div class="mb-2 text-2xl font-bold">1 🐚</div>
-              <div class="text-sm text-white/60">coquillage</div>
+              <div class="text-sm text-white/60">Pūpū</div>
               <div class="mt-2 text-lg font-semibold text-primary-500">= 100 XPF</div>
             </div>
           </div>
@@ -60,7 +60,7 @@ definePageMeta({
             <div>
               <h3 class="mb-1 font-semibold">Inscrivez-vous</h3>
               <p class="text-white/70">
-                Créez votre compte gratuitement et recevez votre portefeuille virtuel en Coquillages.
+                Créez votre compte gratuitement et recevez votre portefeuille virtuel en Pūpū.
               </p>
             </div>
           </div>
@@ -84,7 +84,7 @@ definePageMeta({
               <h3 class="mb-1 font-semibold">Créez une annonce</h3>
               <p class="text-white/70">
                 Proposez vos biens ou services. Ajoutez des photos, une description claire
-                et fixez votre prix en Coquillages.
+                et fixez votre prix en Pūpū.
               </p>
             </div>
           </div>
@@ -96,7 +96,7 @@ definePageMeta({
               <h3 class="mb-1 font-semibold">Échangez</h3>
               <p class="text-white/70">
                 Lorsqu'un membre est intéressé, l'échange se fait en un clic.
-                Les Coquillages sont transférés automatiquement et instantanément.
+                Les Pūpū sont transférés automatiquement et instantanément.
               </p>
             </div>
           </div>

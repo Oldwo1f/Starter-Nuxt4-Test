@@ -118,7 +118,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
     },
     {
       title: 'Costume traditionnel tahitien',
-      description: 'Costume traditionnel tahitien complet (pareo, couronne de fleurs, collier de coquillages). Taille unique, parfait pour les fêtes et cérémonies.',
+      description: 'Costume traditionnel tahitien complet (pareo, couronne de fleurs, collier de Pūpū). Taille unique, parfait pour les fêtes et cérémonies.',
       price: 25,
       type: ListingType.BIEN,
       categoryName: 'Vêtements',

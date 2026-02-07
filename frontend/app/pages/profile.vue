@@ -177,7 +177,7 @@ const handleAvatarUploaded = async (avatarUrl: string) => {
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <UCard class="bg-gradient-to-r from-primary-500/20 to-primary-600/20">
           <div class="text-center">
-            <div class="mb-2 text-sm text-white/60">Solde Coquillages</div>
+            <div class="mb-2 text-sm text-white/60">Solde Pūpū</div>
             <div class="mb-2 flex items-center justify-center gap-2 text-3xl font-bold text-primary-500">
               <span>🐚</span>
               <span>{{ walletStore.balance.toFixed(2) }}</span>

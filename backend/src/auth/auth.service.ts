@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { User } from '../entities/user.entity';
 import * as crypto from 'crypto';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -160,11 +161,76 @@ export class AuthService {
     }
   }
 
-  // Facebook OAuth - prepared for future implementation
-  async facebookLogin(facebookId: string, email: string): Promise<any> {
-    // TODO: Implement Facebook OAuth verification
-    // This is a placeholder structure
-    throw new BadRequestException('Facebook OAuth not yet implemented');
+  // Facebook OAuth implementation
+  async facebookLogin(facebookId: string, email: string, accessToken: string): Promise<any> {
+    // Verify the Facebook access token
+    try {
+      const appId = process.env.FACEBOOK_APP_ID;
+      const appSecret = process.env.FACEBOOK_APP_SECRET;
+      
+      if (!appId || !appSecret) {
+        throw new BadRequestException('Facebook OAuth not configured');
+      }
+
+      // Get user info from Facebook (this also validates the token)
+      const userInfoUrl = `https://graph.facebook.com/me?fields=id,email,first_name,last_name,picture&access_token=${accessToken}`;
+      const userInfoResponse = await axios.get(userInfoUrl);
+
+      const fbUser = userInfoResponse.data;
+      
+      // Validate Facebook ID matches
+      if (fbUser.id !== facebookId) {
+        throw new BadRequestException('Facebook ID mismatch');
+      }
+
+      // Validate email matches (if provided by Facebook)
+      if (fbUser.email && fbUser.email !== email) {
+        throw new BadRequestException('Email mismatch');
+      }
+
+      // Use email from Facebook if provided, otherwise use the one from request
+      // If email is not available from Facebook, generate one based on Facebook ID
+      let userEmail = fbUser.email || email;
+      if (!userEmail) {
+        // Generate a temporary email if not provided (user will need to add it later)
+        userEmail = `fb_${facebookId}@facebook.temp`;
+      }
+
+      // Extract avatar URL from picture object
+      let avatarImage: string | undefined;
+      if (fbUser.picture?.data?.url) {
+        avatarImage = fbUser.picture.data.url;
+      }
+
+      // Find or create user
+      const user = await this.usersService.findOrCreateByFacebook(
+        facebookId,
+        userEmail,
+        fbUser.first_name,
+        fbUser.last_name,
+        avatarImage,
+      );
+
+      // Check if user is active
+      if (!user.isActive) {
+        throw new UnauthorizedException('Account is inactive');
+      }
+
+      return this.login(user);
+    } catch (error: any) {
+      if (error instanceof BadRequestException || error instanceof UnauthorizedException) {
+        throw error;
+      }
+      // Handle axios errors
+      if (error.response?.data?.error) {
+        const fbError = error.response.data.error;
+        if (fbError.code === 190 || fbError.type === 'OAuthException') {
+          throw new BadRequestException('Invalid or expired Facebook token');
+        }
+        throw new BadRequestException(`Facebook API error: ${fbError.message}`);
+      }
+      throw new BadRequestException('Failed to verify Facebook token');
+    }
   }
 }
 

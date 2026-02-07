@@ -30,8 +30,8 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
-  password: string;
+  @Column({ type: 'varchar', nullable: true })
+  password: string | null;
 
   @Column({ type: 'varchar', nullable: true })
   firstName: string | null;
@@ -80,7 +80,7 @@ export class User {
   facebookEmail: string | null;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  walletBalance: number; // Solde en coquillages
+  walletBalance: number; // Solde en Pūpū
 
   @OneToMany(() => BlogPost, (blogPost) => blogPost.author)
   blogPosts: BlogPost[];

@@ -10,11 +10,19 @@ export class BlogService {
     private blogPostRepository: Repository<BlogPost>,
   ) {}
 
-  async create(title: string, content: string, authorId: number): Promise<BlogPost> {
+  async create(
+    title: string,
+    content: string,
+    authorId: number,
+    images?: string[],
+    videoUrl?: string,
+  ): Promise<BlogPost> {
     const blogPost = this.blogPostRepository.create({
       title,
       content,
       authorId,
+      images: images || [],
+      videoUrl: videoUrl || null,
     });
     return this.blogPostRepository.save(blogPost);
   }
@@ -52,6 +60,8 @@ export class BlogService {
       'blogPost.id',
       'blogPost.title',
       'blogPost.content',
+      'blogPost.images',
+      'blogPost.videoUrl',
       'blogPost.createdAt',
       'blogPost.updatedAt',
       'author.id',
@@ -106,6 +116,14 @@ export class BlogService {
       where: { id },
       relations: ['author'],
       select: {
+        id: true,
+        title: true,
+        content: true,
+        images: true,
+        videoUrl: true,
+        createdAt: true,
+        updatedAt: true,
+        authorId: true,
         author: {
           id: true,
           email: true,
@@ -118,13 +136,25 @@ export class BlogService {
     return blogPost;
   }
 
-  async update(id: number, title?: string, content?: string): Promise<BlogPost> {
+  async update(
+    id: number,
+    title?: string,
+    content?: string,
+    images?: string[],
+    videoUrl?: string,
+  ): Promise<BlogPost> {
     const blogPost = await this.findOne(id);
     if (title !== undefined) {
       blogPost.title = title;
     }
     if (content !== undefined) {
       blogPost.content = content;
+    }
+    if (images !== undefined) {
+      blogPost.images = images;
+    }
+    if (videoUrl !== undefined) {
+      blogPost.videoUrl = videoUrl;
     }
     return this.blogPostRepository.save(blogPost);
   }

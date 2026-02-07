@@ -114,7 +114,7 @@ const handleApply = () => {
 
     <!-- Price range -->
     <div>
-      <label class="mb-2 block text-sm font-medium">Prix (coquillages)</label>
+      <label class="mb-2 block text-sm font-medium">Prix (Pūpū)</label>
       <div class="grid grid-cols-2 gap-2">
         <UInput
           v-model.number="localFilters.minPrice"

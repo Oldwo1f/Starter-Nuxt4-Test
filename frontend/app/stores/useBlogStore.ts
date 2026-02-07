@@ -7,6 +7,8 @@ export interface BlogPost {
   id: number
   title: string
   content: string
+  images?: string[]
+  videoUrl?: string | null
   authorId: number
   author?: {
     id: number
@@ -34,6 +36,9 @@ export interface SortingState {
 export interface BlogForm {
   title: string
   content: string
+  images?: File[]
+  existingImages?: string[]
+  videoUrl?: string
 }
 
 export const useBlogStore = defineStore('blog', () => {
@@ -167,6 +172,9 @@ export const useBlogStore = defineStore('blog', () => {
     form.value = {
       title: '',
       content: '',
+      images: [],
+      existingImages: [],
+      videoUrl: '',
     }
     isPostModalOpen.value = true
   }
@@ -177,6 +185,9 @@ export const useBlogStore = defineStore('blog', () => {
     form.value = {
       title: post.title,
       content: post.content,
+      images: [],
+      existingImages: post.images || [],
+      videoUrl: post.videoUrl || '',
     }
     isPostModalOpen.value = true
   }
@@ -187,6 +198,9 @@ export const useBlogStore = defineStore('blog', () => {
     form.value = {
       title: '',
       content: '',
+      images: [],
+      existingImages: [],
+      videoUrl: '',
     }
   }
 
@@ -199,18 +213,34 @@ export const useBlogStore = defineStore('blog', () => {
     }
 
     try {
+      const formData = new FormData()
+      formData.append('title', form.value.title)
+      formData.append('content', form.value.content)
+      
+      if (form.value.videoUrl) {
+        formData.append('videoUrl', form.value.videoUrl)
+      }
+
+      // Ajouter les images existantes si en mode édition (comme JSON stringifié)
+      if (isEditMode.value && form.value.existingImages && form.value.existingImages.length > 0) {
+        formData.append('images', JSON.stringify(form.value.existingImages))
+      }
+
+      // Ajouter les nouvelles images
+      if (form.value.images && form.value.images.length > 0) {
+        form.value.images.forEach((file) => {
+          formData.append('images', file)
+        })
+      }
+
       if (isEditMode.value && selectedPost.value) {
         // Mettre à jour
         await $fetch(`${API_BASE_URL}/blog/${selectedPost.value.id}`, {
           method: 'PATCH',
           headers: {
             Authorization: `Bearer ${authStore.accessToken}`,
-            'Content-Type': 'application/json',
           },
-          body: {
-            title: form.value.title,
-            content: form.value.content,
-          },
+          body: formData,
         })
         closePostModal()
         await fetchPosts()
@@ -224,12 +254,8 @@ export const useBlogStore = defineStore('blog', () => {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${authStore.accessToken}`,
-            'Content-Type': 'application/json',
           },
-          body: {
-            title: form.value.title,
-            content: form.value.content,
-          },
+          body: formData,
         })
         closePostModal()
         await fetchPosts()

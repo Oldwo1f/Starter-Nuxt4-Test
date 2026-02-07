@@ -10,6 +10,9 @@ import { LocationsModule } from './locations/locations.module';
 import { CategoriesModule } from './categories/categories.module';
 import { MarketplaceModule } from './marketplace/marketplace.module';
 import { WalletModule } from './wallet/wallet.module';
+import { GoodiesModule } from './goodies/goodies.module';
+import { PartnersModule } from './partners/partners.module';
+import { CultureModule } from './culture/culture.module';
 
 @Module({
   imports: [
@@ -22,6 +25,9 @@ import { WalletModule } from './wallet/wallet.module';
     CategoriesModule,
     MarketplaceModule,
     WalletModule,
+    GoodiesModule,
+    PartnersModule,
+    CultureModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -273,7 +273,7 @@ onMounted(() => {
 
           <!-- Price -->
           <div>
-            <label class="mb-2 block text-sm font-medium">Prix en coquillages *</label>
+            <label class="mb-2 block text-sm font-medium">Prix en Pūpū *</label>
             <div class="flex gap-2">
               <div class="relative flex-1">
                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl">🐚</span>

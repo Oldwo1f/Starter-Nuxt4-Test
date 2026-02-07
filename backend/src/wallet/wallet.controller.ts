@@ -31,7 +31,7 @@ export class TransferDto {
   toUserEmail: string;
 
   @ApiProperty({
-    description: 'Amount in coquillages',
+    description: 'Amount in Pūpū',
     example: 10,
   })
   @IsNumber()
@@ -66,7 +66,7 @@ export class WalletController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get wallet balance',
-    description: 'Get the current wallet balance in coquillages (requires authentication)',
+    description: 'Get the current wallet balance in Pūpū (requires authentication)',
   })
   @ApiResponse({
     status: 200,
@@ -114,8 +114,8 @@ export class WalletController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
-    summary: 'Transfer coquillages',
-    description: 'Transfer coquillages to another user by email. Creates both DEBIT and CREDIT transactions (requires authentication)',
+    summary: 'Transfer Pūpū',
+    description: 'Transfer Pūpū to another user by email. Creates both DEBIT and CREDIT transactions (requires authentication)',
   })
   @ApiBody({ type: TransferDto })
   @ApiResponse({ 
@@ -164,7 +164,7 @@ export class WalletController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Exchange for listing',
-    description: 'Exchange coquillages for a listing (requires authentication)',
+    description: 'Exchange Pūpū for a listing (requires authentication)',
   })
   @ApiBody({ type: ExchangeDto })
   @ApiResponse({ status: 201, description: 'Exchange completed successfully' })

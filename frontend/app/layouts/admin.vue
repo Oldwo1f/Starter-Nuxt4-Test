@@ -99,6 +99,21 @@ const adminMenuItems = [
     icon: 'i-heroicons-document-text',
     to: '/admin/blog',
   },
+  {
+    label: 'Gestion des partenaires',
+    icon: 'i-heroicons-building-office',
+    to: '/admin/partners',
+  },
+  {
+    label: 'Gestion des goodies',
+    icon: 'i-heroicons-gift',
+    to: '/admin/goodies',
+  },
+  {
+    label: 'Gestion des vidéos Culture',
+    icon: 'i-heroicons-video-camera',
+    to: '/admin/culture',
+  },
 ]
 
 const isActive = (path: string) => {

@@ -35,7 +35,7 @@ const handleSubmit = async () => {
     return
   }
 
-  if (!confirm(`Transférer ${form.value.amount} coquillages à ${form.value.toUserEmail} ?`)) {
+  if (!confirm(`Transférer ${form.value.amount} Pūpū à ${form.value.toUserEmail} ?`)) {
     return
   }
 
@@ -66,8 +66,8 @@ const handleSubmit = async () => {
       <UButton to="/wallet" variant="ghost" icon="i-heroicons-arrow-left">
         Retour
       </UButton>
-      <h1 class="mt-4 text-3xl font-bold">Transférer des coquillages</h1>
-      <p class="mt-2 text-white/60">Envoyez des coquillages à un autre membre</p>
+      <h1 class="mt-4 text-3xl font-bold">Transférer des Pūpū</h1>
+      <p class="mt-2 text-white/60">Envoyez des Pūpū à un autre membre</p>
     </div>
 
     <!-- Balance info -->
@@ -99,7 +99,7 @@ const handleSubmit = async () => {
 
         <!-- Amount -->
         <div>
-          <label class="mb-2 block text-sm font-medium">Montant (coquillages) *</label>
+          <label class="mb-2 block text-sm font-medium">Montant (Pūpū) *</label>
           <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl">🐚</span>
             <UInput

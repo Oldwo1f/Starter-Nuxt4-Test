@@ -5,9 +5,17 @@ export default defineNuxtConfig({
   modules: ['@pinia/nuxt', '@nuxt/icon', '@nuxt/ui'],
   css: ['~/assets/css/main.css'],
   imports: {
-    dirs: ['app/stores']
+    dirs: ['app/stores', 'app/composables']
   },
   pinia: {
     storesDirs: ['./app/stores']
-  }
+  },
+  ui: {
+    global: true
+  },
+  runtimeConfig: {
+    public: {
+      facebookAppId: process.env.FACEBOOK_APP_ID || '',
+    },
+  },
 })

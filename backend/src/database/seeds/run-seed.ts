@@ -6,12 +6,14 @@ import { seedDatabase } from './seed';
 import { seedLocations } from './locations.seed';
 import { seedCategories } from './categories.seed';
 import { seedListings } from './listings.seed';
+import { seedCulture } from './culture.seed';
 import { User } from '../../entities/user.entity';
 import { BlogPost } from '../../entities/blog-post.entity';
 import { Location } from '../../entities/location.entity';
 import { Category } from '../../entities/category.entity';
 import { Listing } from '../../entities/listing.entity';
 import { Transaction } from '../../entities/transaction.entity';
+import { Culture } from '../../entities/culture.entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -20,9 +22,9 @@ const dataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'nunaheritage',
-  entities: [User, BlogPost, Location, Category, Listing, Transaction],
-  synchronize: true, // Create tables if they don't exist
-});
+      entities: [User, BlogPost, Location, Category, Listing, Transaction, Culture],
+      synchronize: true, // Create tables if they don't exist
+    });
 
 async function runSeed() {
   try {
@@ -161,6 +163,10 @@ async function runSeed() {
     // Seed marketplace listings
     console.log('\n🛒 Seeding marketplace listings...');
     await seedListings(dataSource);
+    
+    // Seed culture videos
+    console.log('\n🎬 Seeding culture videos...');
+    await seedCulture(dataSource);
     
     await dataSource.destroy();
     console.log('\n✅ All seeding completed successfully!');

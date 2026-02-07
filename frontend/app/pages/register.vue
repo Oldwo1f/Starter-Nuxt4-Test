@@ -4,6 +4,7 @@ definePageMeta({
 })
 
 import { useAuthStore } from '~/stores/useAuthStore'
+import { useFacebook } from '~/composables/useFacebook'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -12,6 +13,7 @@ const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const isLoading = ref(false)
+const isFacebookLoading = ref(false)
 const error = ref('')
 const success = ref('')
 
@@ -45,6 +47,46 @@ const handleRegister = async () => {
     }, 1000)
   } else {
     error.value = result.error || 'Erreur lors de l\'inscription'
+  }
+}
+
+const handleFacebookLogin = async () => {
+  error.value = ''
+  success.value = ''
+  isFacebookLoading.value = true
+
+  try {
+    // Get Facebook composable (only on client side)
+    const { initFacebook, login: facebookLogin } = useFacebook()
+    
+    // Initialize Facebook SDK if needed
+    await initFacebook()
+    
+    // Login with Facebook
+    const fbResponse = await facebookLogin()
+    
+    // Use email if available, otherwise use Facebook ID (backend will generate temp email)
+    const emailToUse = fbResponse.email || `fb_${fbResponse.userID}@facebook.temp`
+
+    // Call backend (will create account if new, or login if exists)
+    const result = await authStore.facebookLogin(
+      fbResponse.userID,
+      emailToUse,
+      fbResponse.accessToken
+    )
+
+    if (result.success) {
+      success.value = 'Connexion réussie ! Redirection...'
+      setTimeout(() => {
+        router.push('/')
+      }, 1000)
+    } else {
+      error.value = result.error || 'Erreur lors de la connexion Facebook'
+    }
+  } catch (err: any) {
+    error.value = err.message || 'Erreur lors de la connexion Facebook'
+  } finally {
+    isFacebookLoading.value = false
   }
 }
 </script>
@@ -110,11 +152,36 @@ const handleRegister = async () => {
             block
             size="lg"
             :loading="isLoading"
-            :disabled="isLoading"
+            :disabled="isLoading || isFacebookLoading"
           >
             S'inscrire
           </UButton>
         </form>
+
+        <div class="mt-6">
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-white/10"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-2 bg-gray-900 text-white/60">Ou</span>
+            </div>
+          </div>
+
+          <UButton
+            color="neutral"
+            variant="outline"
+            block
+            size="lg"
+            class="mt-6"
+            :loading="isFacebookLoading"
+            :disabled="isLoading || isFacebookLoading"
+            @click="handleFacebookLogin"
+          >
+            <UIcon name="i-simple-icons-facebook" class="w-5 h-5 mr-2" />
+            Continuer avec Facebook
+          </UButton>
+        </div>
 
         <div class="mt-6 text-center">
           <p class="text-sm text-white/60">

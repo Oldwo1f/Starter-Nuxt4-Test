@@ -1,7 +1,7 @@
 export default defineNuxtPlugin(() => {
   return {
     provide: {
-      appName: 'Nuna Heritage'
+      appName: "Nuna'a Heritage"
     }
   }
 })

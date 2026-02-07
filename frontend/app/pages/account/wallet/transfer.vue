@@ -287,7 +287,7 @@ const handleSubmit = async () => {
   if (form.value.amount > walletStore.balance) {
     toast.add({
       title: 'Solde insuffisant',
-      description: 'Vous n\'avez pas assez de coquillages pour effectuer ce transfert',
+      description: 'Vous n\'avez pas assez de Pūpū pour effectuer ce transfert',
       color: 'red',
     })
     return
@@ -304,7 +304,7 @@ const handleSubmit = async () => {
     if (result.success) {
       toast.add({
         title: 'Transfert réussi',
-        description: `${form.value.amount} coquillages ont été transférés à ${getUserDisplayName(selectedUser.value)}`,
+        description: `${form.value.amount} Pūpū ont été transférés à ${getUserDisplayName(selectedUser.value)}`,
         color: 'green',
       })
       // Reset form
@@ -344,8 +344,8 @@ const handleSubmit = async () => {
       <UButton to="/account/wallet" variant="ghost" icon="i-heroicons-arrow-left">
         Retour
       </UButton>
-      <h1 class="text-3xl font-bold">Transférer des coquillages</h1>
-      <p class="text-white/60">Envoyez des coquillages à un autre membre</p>
+      <h1 class="text-3xl font-bold">Transférer des Pūpū</h1>
+      <p class="text-white/60">Envoyez des Pūpū à un autre membre</p>
     </div>
 
     <!-- Balance info -->
@@ -432,7 +432,7 @@ const handleSubmit = async () => {
 
         <!-- Amount -->
         <div>
-          <label class="mb-2 block text-sm font-medium">Montant (coquillages) *</label>
+          <label class="mb-2 block text-sm font-medium">Montant (Pūpū) *</label>
           <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl">🐚</span>
             <UInput

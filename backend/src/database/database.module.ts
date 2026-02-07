@@ -6,6 +6,9 @@ import { Location } from '../entities/location.entity';
 import { Category } from '../entities/category.entity';
 import { Listing } from '../entities/listing.entity';
 import { Transaction } from '../entities/transaction.entity';
+import { Partner } from '../entities/partner.entity';
+import { Goodie } from '../entities/goodie.entity';
+import { Culture } from '../entities/culture.entity';
 
 @Module({
   imports: [
@@ -16,11 +19,11 @@ import { Transaction } from '../entities/transaction.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'nunaheritage',
-      entities: [User, BlogPost, Location, Category, Listing, Transaction],
+      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
-    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction]),
+    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture]),
   ],
   exports: [TypeOrmModule],
 })

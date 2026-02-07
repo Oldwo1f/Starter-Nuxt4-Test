@@ -27,7 +27,7 @@ onMounted(() => {
   <div class="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
     <div class="mb-6">
       <h1 class="text-3xl font-bold">Mon portefeuille</h1>
-      <p class="text-white/60">Gérez vos coquillages et consultez vos transactions</p>
+      <p class="text-white/60">Gérez vos Pūpū et consultez vos transactions</p>
     </div>
 
     <!-- Balance Card -->
@@ -48,7 +48,7 @@ onMounted(() => {
           class="mt-6"
           icon="i-heroicons-arrow-path"
         >
-          Transférer des coquillages
+          Transférer des Pūpū
         </UButton>
       </div>
     </UCard>
