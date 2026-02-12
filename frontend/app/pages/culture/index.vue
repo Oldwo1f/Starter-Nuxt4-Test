@@ -171,7 +171,7 @@ onMounted(() => {
           <UCard
             v-for="video in category.videos"
             :key="video.id"
-            class="group cursor-pointer transition-all hover:scale-105 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/20"
+            class="group cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-all hover:scale-105 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/20"
             @click="openVideo(video)"
           >
             <template #header>
@@ -224,7 +224,7 @@ onMounted(() => {
     <UModal
       v-model:open="isModalOpen"
       :ui="{
-        width: 'w-full max-w-5xl',
+        wrapper: 'w-full max-w-5xl',
       }"
     >
       <template #header>
@@ -270,10 +270,10 @@ onMounted(() => {
             <UBadge
               :color="
                 selectedVideo.type === 'reportage'
-                  ? 'blue'
+                  ? 'info'
                   : selectedVideo.type === 'documentaire'
-                    ? 'purple'
-                    : 'green'
+                    ? 'primary'
+                    : 'success'
               "
               variant="subtle"
             >

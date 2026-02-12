@@ -41,7 +41,7 @@ const shouldShowLink = computed(() => {
 </script>
 
 <template>
-  <UCard class="relative cursor-pointer transition-transform hover:scale-105" @click="handleClick">
+  <UCard class="relative cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-transform hover:scale-105 hover:border-primary-500/50" @click="handleClick">
     <!-- Lock overlay for restricted goodies -->
     <div
       v-if="!canAccess"

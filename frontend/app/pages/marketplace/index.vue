@@ -424,7 +424,7 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
         <UCard
           v-for="listing in listings"
           :key="listing.id"
-          :class="['cursor-pointer transition-transform hover:scale-105', getBorderClass(listing.type)]"
+          :class="['cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-transform hover:scale-105 hover:border-primary-500/50', getBorderClass(listing.type)]"
           @click="navigateTo(`/marketplace/${listing.id}`)"
         >
           <template #header>

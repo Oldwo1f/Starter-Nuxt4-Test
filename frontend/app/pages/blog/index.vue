@@ -127,7 +127,7 @@ onMounted(() => {
       <UCard
         v-for="post in posts"
         :key="post.id"
-        class="cursor-pointer transition-transform hover:scale-105"
+        class="cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-transform hover:scale-105 hover:border-primary-500/50"
         @click="navigateTo(post.to)"
       >
         <template #header>

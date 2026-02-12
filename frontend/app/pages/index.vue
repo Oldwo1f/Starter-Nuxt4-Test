@@ -519,7 +519,7 @@ const accordionSections = [
           <UCard
             v-for="post in featuredPosts"
             :key="post.id"
-            class="group cursor-pointer overflow-hidden transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20"
+            class="group cursor-pointer overflow-hidden bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20"
             @click="navigateTo(post.to)"
           >
             <template #header>

@@ -15,6 +15,7 @@ export interface ListingFilters {
   search?: string;
   status?: ListingStatus;
   sellerId?: number;
+  showAll?: boolean; // If true, show all listings regardless of status
 }
 
 @Injectable()
@@ -162,8 +163,8 @@ export class MarketplaceService {
       queryBuilder.andWhere('listing.status = :status', {
         status: filters.status,
       });
-    } else if (!filters.sellerId) {
-      // By default, only show active listings (unless filtering by sellerId, then show all)
+    } else if (!filters.sellerId && !filters.showAll) {
+      // By default, only show active listings (unless filtering by sellerId or showAll is true, then show all)
       queryBuilder.andWhere('listing.status = :status', {
         status: ListingStatus.ACTIVE,
       });
@@ -245,11 +246,13 @@ export class MarketplaceService {
       images?: string[];
       status?: ListingStatus;
     },
+    userRole?: string,
   ): Promise<Listing> {
     const listing = await this.findOne(id);
 
-    // Check ownership
-    if (listing.sellerId !== userId) {
+    // Check ownership (admins can update any listing)
+    const isAdmin = userRole === 'admin' || userRole === 'superadmin' || userRole === 'moderator';
+    if (listing.sellerId !== userId && !isAdmin) {
       throw new ForbiddenException('You can only update your own listings');
     }
 
@@ -290,11 +293,12 @@ export class MarketplaceService {
     return this.listingRepository.save(listing);
   }
 
-  async remove(id: number, userId: number): Promise<void> {
+  async remove(id: number, userId: number, userRole?: string): Promise<void> {
     const listing = await this.findOne(id);
 
-    // Check ownership
-    if (listing.sellerId !== userId) {
+    // Check ownership (admins can delete any listing)
+    const isAdmin = userRole === 'admin' || userRole === 'superadmin' || userRole === 'moderator';
+    if (listing.sellerId !== userId && !isAdmin) {
       throw new ForbiddenException('You can only delete your own listings');
     }
 

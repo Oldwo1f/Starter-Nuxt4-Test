@@ -279,6 +279,7 @@ export class MarketplaceController {
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, enum: ListingStatus })
   @ApiQuery({ name: 'sellerId', required: false, type: Number })
+  @ApiQuery({ name: 'showAll', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'Listings retrieved successfully' })
   findAll(
     @Query('page') page?: string,
@@ -291,6 +292,7 @@ export class MarketplaceController {
     @Query('search') search?: string,
     @Query('status') status?: ListingStatus,
     @Query('sellerId') sellerId?: string,
+    @Query('showAll') showAll?: string,
   ) {
     const filters: ListingFilters = {};
     if (locationId) filters.locationId = parseInt(locationId, 10);
@@ -301,6 +303,7 @@ export class MarketplaceController {
     if (search) filters.search = search;
     if (status) filters.status = status;
     if (sellerId) filters.sellerId = parseInt(sellerId, 10);
+    if (showAll === 'true' || showAll === '1') filters.showAll = true;
 
     return this.marketplaceService.findAll(
       page ? parseInt(page, 10) : 1,
@@ -339,7 +342,7 @@ export class MarketplaceController {
     @Body() updateListingDto: UpdateListingDto,
     @Request() req,
   ) {
-    return this.marketplaceService.update(id, req.user.id, updateListingDto);
+    return this.marketplaceService.update(id, req.user.id, updateListingDto, req.user?.role);
   }
 
   @Patch('listings/:id/images')
@@ -368,8 +371,9 @@ export class MarketplaceController {
     // Get current listing
     const listing = await this.marketplaceService.findOne(id);
     
-    // Check ownership
-    if (listing.sellerId !== req.user.id) {
+    // Check ownership (admins can update any listing)
+    const isAdmin = req.user?.role === 'admin' || req.user?.role === 'superadmin' || req.user?.role === 'moderator';
+    if (listing.sellerId !== req.user.id && !isAdmin) {
       throw new ForbiddenException('You can only update your own listings');
     }
 
@@ -383,7 +387,7 @@ export class MarketplaceController {
     // Update listing with all images
     return this.marketplaceService.update(id, req.user.id, {
       images: updatedImages,
-    });
+    }, req.user?.role);
   }
 
   @Delete('listings/:id')
@@ -399,6 +403,6 @@ export class MarketplaceController {
   @ApiResponse({ status: 403, description: 'Forbidden - not owner' })
   @ApiResponse({ status: 404, description: 'Listing not found' })
   remove(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    return this.marketplaceService.remove(id, req.user.id);
+    return this.marketplaceService.remove(id, req.user.id, req.user?.role);
   }
 }

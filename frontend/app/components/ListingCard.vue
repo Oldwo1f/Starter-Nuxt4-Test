@@ -20,7 +20,7 @@ const getImageUrl = (listing: any) => {
 
 <template>
   <UCard
-    class="cursor-pointer transition-transform hover:scale-[1.02] sm:hover:scale-105"
+    class="cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-transform hover:scale-[1.02] sm:hover:scale-105 hover:border-primary-500/50"
     @click="navigateTo(`/marketplace/${listing.id}`)"
   >
     <template v-if="viewMode === 'grid'" #header>

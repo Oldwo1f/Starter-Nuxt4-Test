@@ -115,6 +115,11 @@ const adminMenuItems = [
     icon: 'i-heroicons-video-camera',
     to: '/admin/culture',
   },
+  {
+    label: 'Gestion des annonces',
+    icon: 'i-heroicons-shopping-bag',
+    to: '/admin/marketplace',
+  },
 ]
 
 const isActive = (path: string) => {

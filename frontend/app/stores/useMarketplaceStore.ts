@@ -30,6 +30,7 @@ export interface ListingFilters {
   search?: string
   status?: 'active' | 'sold' | 'archived'
   sellerId?: number
+  showAll?: boolean
 }
 
 export interface PaginatedResponse {
@@ -83,6 +84,7 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
       if (activeFilters.search) params.search = activeFilters.search
       if (activeFilters.status) params.status = activeFilters.status
       if (activeFilters.sellerId) params.sellerId = activeFilters.sellerId
+      if (activeFilters.showAll) params.showAll = 'true'
 
       const response = await $fetch<PaginatedResponse>(
         `${API_BASE_URL}/marketplace/listings`,

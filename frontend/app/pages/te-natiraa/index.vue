@@ -241,7 +241,7 @@ onUnmounted(() => {
             </h2>
           </div>
           <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            <UCard class="text-center">
+            <UCard class="text-center bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
               <div class="mb-4 flex justify-center">
                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary-500/20">
                   <UIcon name="i-heroicons-calendar" class="h-8 w-8 text-primary-400" />
@@ -255,7 +255,7 @@ onUnmounted(() => {
               </p>
             </UCard>
 
-            <UCard class="text-center">
+            <UCard class="text-center bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
               <div class="mb-4 flex justify-center">
                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary-500/20">
                   <UIcon name="i-heroicons-clock" class="h-8 w-8 text-primary-400" />
@@ -269,7 +269,7 @@ onUnmounted(() => {
               </p>
             </UCard>
 
-            <UCard class="text-center sm:col-span-2 lg:col-span-1">
+            <UCard class="text-center sm:col-span-2 lg:col-span-1 bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
               <div class="mb-4 flex justify-center">
                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary-500/20">
                   <UIcon name="i-heroicons-user-group" class="h-8 w-8 text-primary-400" />
