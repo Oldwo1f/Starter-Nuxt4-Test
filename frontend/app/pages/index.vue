@@ -376,7 +376,7 @@ const accordionSections = [
                   <UCard
                     v-for="item in section.items"
                     :key="item.label"
-                    class="group/item cursor-pointer transition-all hover:scale-105 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/20"
+                    class="group/item cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-all hover:scale-105 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/20"
                     @click="handleItemClick(item)"
                   >
                     <div class="flex items-center gap-4">

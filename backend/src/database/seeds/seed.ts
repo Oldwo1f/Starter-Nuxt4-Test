@@ -18,8 +18,20 @@ export async function seedDatabase(dataSource: DataSource) {
   // Fixed balance: 50 Pūpū for all users
   const DEFAULT_BALANCE = 50;
 
+  // Helper function to get Unsplash avatar URL (square format)
+  const getUnsplashAvatar = (photoId: string) => {
+    return `https://images.unsplash.com/photo-${photoId}?w=400&h=400&fit=crop`;
+  };
+
   // Helper function to get or create user
-  const getOrCreateUser = async (email: string, password: string, role: UserRole) => {
+  const getOrCreateUser = async (
+    email: string,
+    password: string,
+    role: UserRole,
+    firstName?: string | null,
+    lastName?: string | null,
+    avatarImage?: string | null
+  ) => {
     let user = await userRepository.findOne({ where: { email } });
     if (!user) {
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -28,13 +40,32 @@ export async function seedDatabase(dataSource: DataSource) {
         password: hashedPassword,
         role,
         walletBalance: DEFAULT_BALANCE,
+        firstName: firstName || null,
+        lastName: lastName || null,
+        avatarImage: avatarImage || null,
       });
       user = await userRepository.save(user);
       console.log(`✓ User created: ${user.email} (${user.role}) - ${user.walletBalance} 🐚`);
     } else {
-      // Update balance to 50 if user exists but doesn't have the default balance
+      // Update balance and profile info if user exists
+      let updated = false;
       if (user.walletBalance !== DEFAULT_BALANCE) {
         user.walletBalance = DEFAULT_BALANCE;
+        updated = true;
+      }
+      if (firstName && user.firstName !== firstName) {
+        user.firstName = firstName;
+        updated = true;
+      }
+      if (lastName && user.lastName !== lastName) {
+        user.lastName = lastName;
+        updated = true;
+      }
+      if (avatarImage && user.avatarImage !== avatarImage) {
+        user.avatarImage = avatarImage;
+        updated = true;
+      }
+      if (updated) {
         user = await userRepository.save(user);
         console.log(`✓ User updated: ${user.email} - ${user.walletBalance} 🐚`);
       } else {
@@ -45,32 +76,151 @@ export async function seedDatabase(dataSource: DataSource) {
   };
 
   // Create superadmin
-  const savedSuperAdmin = await getOrCreateUser('alexismomcilovic@gmail.com', 'Alexis09', UserRole.SUPERADMIN);
+  const savedSuperAdmin = await getOrCreateUser(
+    'alexismomcilovic@gmail.com',
+    'Alexis09',
+    UserRole.SUPERADMIN,
+    'Alexis',
+    'Momcilovic',
+    getUnsplashAvatar('1507003211169-0a1dd7228f2d')
+  );
 
   // Create admin
-  const savedAdmin = await getOrCreateUser('admin@example.com', 'admin123', UserRole.ADMIN);
+  const savedAdmin = await getOrCreateUser(
+    'admin@example.com',
+    'admin123',
+    UserRole.ADMIN,
+    'Marie',
+    'Dupont',
+    getUnsplashAvatar('1573496359142-b8d87734a5a2')
+  );
 
   // Create regular users with various roles
   const usersData = [
-    { email: 'user1@example.com', password: 'user123', role: UserRole.USER },
-    { email: 'user2@example.com', password: 'user123', role: UserRole.USER },
-    { email: 'user3@example.com', password: 'user123', role: UserRole.MEMBER },
-    { email: 'user4@example.com', password: 'user123', role: UserRole.MEMBER },
-    { email: 'user5@example.com', password: 'user123', role: UserRole.PREMIUM },
-    { email: 'user6@example.com', password: 'user123', role: UserRole.PREMIUM },
-    { email: 'user7@example.com', password: 'user123', role: UserRole.VIP },
-    { email: 'user8@example.com', password: 'user123', role: UserRole.VIP },
-    { email: 'user9@example.com', password: 'user123', role: UserRole.MODERATOR },
-    { email: 'user10@example.com', password: 'user123', role: UserRole.USER },
-    { email: 'user11@example.com', password: 'user123', role: UserRole.MEMBER },
-    { email: 'user12@example.com', password: 'user123', role: UserRole.PREMIUM },
-    { email: 'user13@example.com', password: 'user123', role: UserRole.USER },
-    { email: 'user14@example.com', password: 'user123', role: UserRole.VIP },
+    {
+      email: 'user1@example.com',
+      password: 'user123',
+      role: UserRole.USER,
+      firstName: 'Teva',
+      lastName: 'Tama',
+      avatarImage: getUnsplashAvatar('1500648767791-00dcc994a43e'),
+    },
+    {
+      email: 'user2@example.com',
+      password: 'user123',
+      role: UserRole.USER,
+      firstName: 'Sophie',
+      lastName: 'Martin',
+      avatarImage: getUnsplashAvatar('1438761681033-6461ffad8d80'),
+    },
+    {
+      email: 'user3@example.com',
+      password: 'user123',
+      role: UserRole.MEMBER,
+      firstName: 'Hinano',
+      lastName: 'Tehei',
+      avatarImage: getUnsplashAvatar('1531425384884-0c0c0c0c0c0c'),
+    },
+    {
+      email: 'user4@example.com',
+      password: 'user123',
+      role: UserRole.MEMBER,
+      firstName: 'Lucas',
+      lastName: 'Bernard',
+      avatarImage: getUnsplashAvatar('1539571690997-28b0d0c0c0c0'),
+    },
+    {
+      email: 'user5@example.com',
+      password: 'user123',
+      role: UserRole.PREMIUM,
+      firstName: 'Manaarii',
+      lastName: 'Temauri',
+      avatarImage: getUnsplashAvatar('1472099645785-5658abf4ff4e'),
+    },
+    {
+      email: 'user6@example.com',
+      password: 'user123',
+      role: UserRole.PREMIUM,
+      firstName: 'Emma',
+      lastName: 'Petit',
+      avatarImage: getUnsplashAvatar('1494790108377-be9c29b29330'),
+    },
+    {
+      email: 'user7@example.com',
+      password: 'user123',
+      role: UserRole.VIP,
+      firstName: 'Tahiri',
+      lastName: 'Ariitai',
+      avatarImage: getUnsplashAvatar('1502823403499-6ccfcf4fb453'),
+    },
+    {
+      email: 'user8@example.com',
+      password: 'user123',
+      role: UserRole.VIP,
+      firstName: 'Camille',
+      lastName: 'Dubois',
+      avatarImage: getUnsplashAvatar('1517841905240-472988babdf9'),
+    },
+    {
+      email: 'user9@example.com',
+      password: 'user123',
+      role: UserRole.MODERATOR,
+      firstName: 'Jean',
+      lastName: 'Moreau',
+      avatarImage: getUnsplashAvatar('1506794778202-cad84cf45f1d'),
+    },
+    {
+      email: 'user10@example.com',
+      password: 'user123',
+      role: UserRole.USER,
+      firstName: 'Vaihere',
+      lastName: 'Temarama',
+      avatarImage: getUnsplashAvatar('1534528741776-53994a69daeb'),
+    },
+    {
+      email: 'user11@example.com',
+      password: 'user123',
+      role: UserRole.MEMBER,
+      firstName: 'Thomas',
+      lastName: 'Lefebvre',
+      avatarImage: getUnsplashAvatar('1502823403499-6ccfcf4fb453'),
+    },
+    {
+      email: 'user12@example.com',
+      password: 'user123',
+      role: UserRole.PREMIUM,
+      firstName: 'Heiata',
+      lastName: 'Tauraa',
+      avatarImage: getUnsplashAvatar('1508214751196-b9a298eeb90e'),
+    },
+    {
+      email: 'user13@example.com',
+      password: 'user123',
+      role: UserRole.USER,
+      firstName: 'Julie',
+      lastName: 'Garcia',
+      avatarImage: getUnsplashAvatar('1534528741776-53994a69daeb'),
+    },
+    {
+      email: 'user14@example.com',
+      password: 'user123',
+      role: UserRole.VIP,
+      firstName: 'Tama',
+      lastName: 'Tepano',
+      avatarImage: getUnsplashAvatar('1506794778202-cad84cf45f1d'),
+    },
   ];
 
   const savedUsers: User[] = [];
   for (const userData of usersData) {
-    const user = await getOrCreateUser(userData.email, userData.password, userData.role || UserRole.USER);
+    const user = await getOrCreateUser(
+      userData.email,
+      userData.password,
+      userData.role || UserRole.USER,
+      userData.firstName,
+      userData.lastName,
+      userData.avatarImage
+    );
     savedUsers.push(user);
   }
 

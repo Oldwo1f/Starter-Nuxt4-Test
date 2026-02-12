@@ -42,6 +42,12 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
   const bienCategories = categories.filter(c => c.type === 'bien');
   const serviceCategories = categories.filter(c => c.type === 'service');
 
+  // Helper function to get low-quality user-style images (simulating Facebook user photos)
+  const getUserImage = (seed: number, width: number = 400, height: number = 400) => {
+    // Using picsum.photos with lower quality and random seeds to simulate user photos
+    return `https://picsum.photos/seed/${seed}/${width}/${height}?quality=60&blur=1`;
+  };
+
   // Sample listings data
   const bienListings = [
     {
@@ -50,7 +56,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 35,
       type: ListingType.BIEN,
       categoryName: 'Véhicules',
-      images: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop'],
+      images: [getUserImage(1001, 400, 300)],
     },
     {
       title: 'Table en bois de cocotier artisanale',
@@ -58,7 +64,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 45,
       type: ListingType.BIEN,
       categoryName: 'Meubles',
-      images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop'],
+      images: [getUserImage(1002, 350, 350)],
     },
     {
       title: 'Ukulele soprano avec étui',
@@ -66,7 +72,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 25,
       type: ListingType.BIEN,
       categoryName: 'Jouets',
-      images: ['https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop'],
+      images: [getUserImage(1003, 300, 400)],
     },
     {
       title: 'Smartphone Samsung Galaxy A54',
@@ -74,7 +80,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 60,
       type: ListingType.BIEN,
       categoryName: 'Électronique',
-      images: ['https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop'],
+      images: [getUserImage(1004, 400, 400)],
     },
     {
       title: 'Collection de livres sur la Polynésie',
@@ -82,7 +88,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 20,
       type: ListingType.BIEN,
       categoryName: 'Livres',
-      images: ['https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop'],
+      images: [getUserImage(1005, 350, 300)],
     },
     {
       title: 'Panneaux solaires portables 100W',
@@ -90,7 +96,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 55,
       type: ListingType.BIEN,
       categoryName: 'Électronique',
-      images: ['https://images.unsplash.com/photo-1509391366360-2e959bae92c0?w=400&h=400&fit=crop'],
+      images: [getUserImage(1006, 400, 300)],
     },
     {
       title: 'Pirogue polynésienne traditionnelle',
@@ -98,7 +104,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 80,
       type: ListingType.BIEN,
       categoryName: 'Véhicules',
-      images: ['https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=400&fit=crop'],
+      images: [getUserImage(1007, 400, 300)],
     },
     {
       title: 'Tapis tressé en pandanus',
@@ -106,7 +112,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 30,
       type: ListingType.BIEN,
       categoryName: 'Meubles',
-      images: ['https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&h=400&fit=crop'],
+      images: [getUserImage(1008, 350, 350)],
     },
     {
       title: 'Outils de jardinage complets',
@@ -114,7 +120,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 15,
       type: ListingType.BIEN,
       categoryName: 'Outils',
-      images: ['https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=400&fit=crop'],
+      images: [getUserImage(1009, 300, 400)],
     },
     {
       title: 'Costume traditionnel tahitien',
@@ -122,7 +128,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 25,
       type: ListingType.BIEN,
       categoryName: 'Vêtements',
-      images: ['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&h=400&fit=crop'],
+      images: [getUserImage(1010, 400, 400)],
     },
     {
       title: 'Moto scooter 125cc',
@@ -130,7 +136,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 70,
       type: ListingType.BIEN,
       categoryName: 'Véhicules',
-      images: ['https://images.unsplash.com/photo-1558980663-3681c1f2d6e3?w=400&h=400&fit=crop'],
+      images: [getUserImage(1011, 400, 300)],
     },
     {
       title: 'Appareil photo Canon EOS 2000D',
@@ -138,7 +144,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 65,
       type: ListingType.BIEN,
       categoryName: 'Électronique',
-      images: ['https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=400&h=400&fit=crop'],
+      images: [getUserImage(1012, 350, 400)],
     },
   ];
 
@@ -149,7 +155,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 12,
       type: ListingType.SERVICE,
       categoryName: 'Formation',
-      images: ['https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop'],
+      images: [getUserImage(2001, 300, 400)],
     },
     {
       title: 'Service de réparation de vélos',
@@ -157,7 +163,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 8,
       type: ListingType.SERVICE,
       categoryName: 'Réparation',
-      images: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop'],
+      images: [getUserImage(2002, 400, 300)],
     },
     {
       title: 'Cours de cuisine polynésienne',
@@ -165,7 +171,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 15,
       type: ListingType.SERVICE,
       categoryName: 'Cuisine',
-      images: ['https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400&h=400&fit=crop'],
+      images: [getUserImage(2003, 350, 350)],
     },
     {
       title: 'Service de jardinage et entretien',
@@ -173,7 +179,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 10,
       type: ListingType.SERVICE,
       categoryName: 'Jardinage',
-      images: ['https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=400&fit=crop'],
+      images: [getUserImage(2004, 400, 300)],
     },
     {
       title: 'Traduction français-tahitien',
@@ -181,7 +187,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 5,
       type: ListingType.SERVICE,
       categoryName: 'Formation',
-      images: ['https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&h=400&fit=crop'],
+      images: [getUserImage(2005, 300, 400)],
     },
     {
       title: 'Massage relaxant polynésien',
@@ -189,7 +195,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 18,
       type: ListingType.SERVICE,
       categoryName: 'Bien-être',
-      images: ['https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=400&fit=crop'],
+      images: [getUserImage(2006, 350, 400)],
     },
     {
       title: 'Service de nettoyage à domicile',
@@ -197,7 +203,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 12,
       type: ListingType.SERVICE,
       categoryName: 'Nettoyage',
-      images: ['https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=400&fit=crop'],
+      images: [getUserImage(2007, 400, 350)],
     },
     {
       title: 'Cours de danse tahitienne',
@@ -205,7 +211,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 10,
       type: ListingType.SERVICE,
       categoryName: 'Formation',
-      images: ['https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&h=400&fit=crop'],
+      images: [getUserImage(2008, 400, 400)],
     },
   ];
 
