@@ -99,6 +99,11 @@ const accountMenuItems = [
     icon: 'i-heroicons-user-circle',
     to: '/account/profile',
   },
+  {
+    label: 'Marketplace',
+    icon: 'i-heroicons-shopping-bag',
+    to: '/marketplace',
+  },
 ]
 
 const isActive = (path: string) => {
