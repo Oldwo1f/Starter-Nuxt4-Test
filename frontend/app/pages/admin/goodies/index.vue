@@ -152,7 +152,7 @@ onMounted(() => {
   <div>
     <div class="space-y-6">
       <!-- Tableau des goodies -->
-      <UCard>
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
         <template #header>
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-2">

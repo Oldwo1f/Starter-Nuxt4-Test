@@ -361,7 +361,7 @@ const handleSubmit = async () => {
     </UCard>
 
     <!-- Transfer form -->
-    <UCard>
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Recipient search -->
         <div class="user-search-container relative">

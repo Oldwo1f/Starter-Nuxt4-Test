@@ -104,7 +104,7 @@ onMounted(() => {
     </div>
 
     <!-- Filters -->
-    <UCard>
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
       <div class="space-y-4">
         <!-- Type filter -->
         <div>
@@ -151,7 +151,7 @@ onMounted(() => {
     </UCard>
 
     <!-- Transactions -->
-    <UCard>
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
       <template #header>
         <h2 class="text-xl font-semibold">
           {{ filteredTransactions.length }} transaction{{ filteredTransactions.length > 1 ? 's' : '' }}

@@ -154,7 +154,7 @@ onMounted(() => {
     </div>
 
     <!-- Filter -->
-    <UCard>
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
       <div class="flex flex-wrap gap-2">
         <UButton
           :variant="statusFilter === 'all' ? 'solid' : 'outline'"
@@ -192,7 +192,7 @@ onMounted(() => {
       <UCard
         v-for="listing in displayedListings"
         :key="listing.id"
-        class="transition-transform hover:scale-[1.01]"
+        class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-transform hover:scale-[1.01]"
       >
         <div class="flex flex-col gap-4 sm:flex-row">
           <!-- Image -->

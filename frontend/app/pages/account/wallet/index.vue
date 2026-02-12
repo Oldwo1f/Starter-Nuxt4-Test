@@ -54,7 +54,7 @@ onMounted(() => {
     </UCard>
 
     <!-- Transactions -->
-    <UCard>
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
       <template #header>
         <div class="flex items-center justify-between">
           <h2 class="text-xl font-semibold">Historique des transactions</h2>

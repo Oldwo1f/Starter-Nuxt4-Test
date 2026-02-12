@@ -230,7 +230,7 @@ onUnmounted(() => {
   <div>
     <div class="space-y-6">
           <!-- Tableau des utilisateurs -->
-      <UCard>
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
         <template #header>
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-2">
@@ -414,7 +414,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Formulaire d'informations -->
-          <UCard>
+          <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
             <template #header>
               <div class="flex items-center justify-between">
                 <span class="font-medium">Informations personnelles</span>
@@ -548,7 +548,7 @@ onUnmounted(() => {
           </UCard>
 
           <!-- Modification du rôle (si admin/superadmin) -->
-          <UCard v-if="canModifyRoles">
+          <UCard v-if="canModifyRoles" class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
             <template #header>
               <span class="font-medium">Modifier le rôle</span>
             </template>
@@ -566,7 +566,7 @@ onUnmounted(() => {
           </UCard>
 
           <!-- Bouton de suppression (si admin/superadmin) -->
-          <UCard v-if="canModifyRoles">
+          <UCard v-if="canModifyRoles" class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
             <div class="p-4">
               <UButton
                 color="error"

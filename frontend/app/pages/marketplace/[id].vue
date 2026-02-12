@@ -189,7 +189,7 @@ onMounted(() => {
           <!-- Price card -->
           <UCard>
             <template #header>
-              <h2 class="text-xl font-semibold">Prix</h2>
+              <h2 class="text-xl font-semibold">Valeur</h2>
             </template>
             <div class="flex flex-col gap-1">
               <div class="flex items-center gap-2 text-3xl font-bold text-primary-500">

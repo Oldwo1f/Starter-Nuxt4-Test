@@ -364,7 +364,7 @@ onMounted(() => {
 
         <!-- Price -->
         <div class="w-full">
-          <label class="mb-2 block text-sm font-medium">Prix en Pūpū *</label>
+          <label class="mb-2 block text-sm font-medium">Valeur en Pūpū *</label>
           
           <!-- Slider -->
           <div class="mb-4">

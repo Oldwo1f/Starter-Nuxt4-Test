@@ -499,7 +499,7 @@ onUnmounted(() => {
   <div>
     <div class="space-y-6">
       <!-- Tableau des annonces -->
-      <UCard>
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
         <template #header>
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-2">
@@ -797,7 +797,7 @@ onUnmounted(() => {
           </div>
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <UFormGroup label="Prix (Pūpū)" name="price" required>
+            <UFormGroup label="Valeur (Pūpū)" name="price" required>
               <UInput
                 v-model.number="form.price"
                 type="number"

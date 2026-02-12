@@ -42,37 +42,15 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
   const bienCategories = categories.filter(c => c.type === 'bien');
   const serviceCategories = categories.filter(c => c.type === 'service');
 
-  // Helper function to get low-quality user-style images (simulating Facebook user photos)
-  const getUserImage = (seed: number, width: number = 400, height: number = 400) => {
-    // Using picsum.photos with lower quality and random seeds to simulate user photos
-    return `https://picsum.photos/seed/${seed}/${width}/${height}?quality=60&blur=1`;
-  };
-
   // Sample listings data
   const bienListings = [
-    {
-      title: 'Vélo de montagne en excellent état',
-      description: 'Vélo de montagne Trek, taille M, très peu utilisé. Pneus neufs, freins révisés. Parfait pour les balades en montagne ou sur les sentiers.',
-      price: 35,
-      type: ListingType.BIEN,
-      categoryName: 'Véhicules',
-      images: [getUserImage(1001, 400, 300)],
-    },
-    {
-      title: 'Table en bois de cocotier artisanale',
-      description: 'Belle table basse en bois de cocotier, fabriquée localement par un artisan polynésien. Dimensions: 80x50cm, hauteur 40cm. Unique et authentique.',
-      price: 45,
-      type: ListingType.BIEN,
-      categoryName: 'Meubles',
-      images: [getUserImage(1002, 350, 350)],
-    },
     {
       title: 'Ukulele soprano avec étui',
       description: 'Ukulele soprano de qualité, parfait pour débuter ou se perfectionner. Comprend un étui de protection et un accordeur. État impeccable.',
       price: 25,
       type: ListingType.BIEN,
       categoryName: 'Jouets',
-      images: [getUserImage(1003, 300, 400)],
+      images: [],
     },
     {
       title: 'Smartphone Samsung Galaxy A54',
@@ -80,15 +58,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 60,
       type: ListingType.BIEN,
       categoryName: 'Électronique',
-      images: [getUserImage(1004, 400, 400)],
-    },
-    {
-      title: 'Collection de livres sur la Polynésie',
-      description: 'Lot de 15 livres sur l\'histoire, la culture et les traditions polynésiennes. Certains sont rares et épuisés. Parfait pour les passionnés.',
-      price: 20,
-      type: ListingType.BIEN,
-      categoryName: 'Livres',
-      images: [getUserImage(1005, 350, 300)],
+      images: [],
     },
     {
       title: 'Panneaux solaires portables 100W',
@@ -96,7 +66,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 55,
       type: ListingType.BIEN,
       categoryName: 'Électronique',
-      images: [getUserImage(1006, 400, 300)],
+      images: [],
     },
     {
       title: 'Pirogue polynésienne traditionnelle',
@@ -104,7 +74,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 80,
       type: ListingType.BIEN,
       categoryName: 'Véhicules',
-      images: [getUserImage(1007, 400, 300)],
+      images: [],
     },
     {
       title: 'Tapis tressé en pandanus',
@@ -112,15 +82,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 30,
       type: ListingType.BIEN,
       categoryName: 'Meubles',
-      images: [getUserImage(1008, 350, 350)],
-    },
-    {
-      title: 'Outils de jardinage complets',
-      description: 'Lot complet d\'outils de jardinage : bêche, râteau, sécateur, arrosoir, gants. Tout en bon état, prêt à l\'emploi pour votre potager ou jardin.',
-      price: 15,
-      type: ListingType.BIEN,
-      categoryName: 'Outils',
-      images: [getUserImage(1009, 300, 400)],
+      images: [],
     },
     {
       title: 'Costume traditionnel tahitien',
@@ -128,23 +90,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 25,
       type: ListingType.BIEN,
       categoryName: 'Vêtements',
-      images: [getUserImage(1010, 400, 400)],
-    },
-    {
-      title: 'Moto scooter 125cc',
-      description: 'Scooter 125cc, parfait pour se déplacer sur l\'île. Révision récente, pneus neufs, papiers en règle. Idéal pour les trajets quotidiens.',
-      price: 70,
-      type: ListingType.BIEN,
-      categoryName: 'Véhicules',
-      images: [getUserImage(1011, 400, 300)],
-    },
-    {
-      title: 'Appareil photo Canon EOS 2000D',
-      description: 'Appareil photo reflex Canon EOS 2000D avec objectif 18-55mm. Très peu utilisé, comme neuf. Parfait pour capturer les beautés de la Polynésie.',
-      price: 65,
-      type: ListingType.BIEN,
-      categoryName: 'Électronique',
-      images: [getUserImage(1012, 350, 400)],
+      images: [],
     },
   ];
 
@@ -155,15 +101,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 12,
       type: ListingType.SERVICE,
       categoryName: 'Formation',
-      images: [getUserImage(2001, 300, 400)],
-    },
-    {
-      title: 'Service de réparation de vélos',
-      description: 'Réparation et entretien de vélos. Révision complète, changement de pneus, réglage des freins et dérailleurs. Service rapide et professionnel.',
-      price: 8,
-      type: ListingType.SERVICE,
-      categoryName: 'Réparation',
-      images: [getUserImage(2002, 400, 300)],
+      images: [],
     },
     {
       title: 'Cours de cuisine polynésienne',
@@ -171,23 +109,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 15,
       type: ListingType.SERVICE,
       categoryName: 'Cuisine',
-      images: [getUserImage(2003, 350, 350)],
-    },
-    {
-      title: 'Service de jardinage et entretien',
-      description: 'Entretien de jardins, tonte, taille des arbustes, désherbage. Service régulier ou ponctuel. Expérience et matériel professionnel.',
-      price: 10,
-      type: ListingType.SERVICE,
-      categoryName: 'Jardinage',
-      images: [getUserImage(2004, 400, 300)],
-    },
-    {
-      title: 'Traduction français-tahitien',
-      description: 'Service de traduction français-tahitien pour documents, textes, ou conversations. Connaissance approfondie des deux langues et de la culture.',
-      price: 5,
-      type: ListingType.SERVICE,
-      categoryName: 'Formation',
-      images: [getUserImage(2005, 300, 400)],
+      images: [],
     },
     {
       title: 'Massage relaxant polynésien',
@@ -195,15 +117,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 18,
       type: ListingType.SERVICE,
       categoryName: 'Bien-être',
-      images: [getUserImage(2006, 350, 400)],
-    },
-    {
-      title: 'Service de nettoyage à domicile',
-      description: 'Nettoyage complet de votre domicile : sols, surfaces, sanitaires, poussière. Service ponctuel ou régulier. Matériel et produits fournis.',
-      price: 12,
-      type: ListingType.SERVICE,
-      categoryName: 'Nettoyage',
-      images: [getUserImage(2007, 400, 350)],
+      images: [],
     },
     {
       title: 'Cours de danse tahitienne',
@@ -211,7 +125,7 @@ export async function seedListings(dataSource: DataSource): Promise<void> {
       price: 10,
       type: ListingType.SERVICE,
       categoryName: 'Formation',
-      images: [getUserImage(2008, 400, 400)],
+      images: [],
     },
   ];
 

@@ -367,7 +367,7 @@ onMounted(() => {
 
           <!-- Price -->
           <div class="w-full">
-            <label class="mb-2 block text-sm font-medium">Prix en Pūpū *</label>
+            <label class="mb-2 block text-sm font-medium">Valeur en Pūpū *</label>
             <div class="relative flex w-full gap-2">
               <div class="relative flex-1 w-full">
                 <span class="absolute left-0 top-1/2 -translate-y-1/2 text-2xl z-10">🐚</span>

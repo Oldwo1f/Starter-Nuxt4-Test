@@ -182,7 +182,7 @@ onMounted(() => {
           </UButton>
         </div>
       </UCard>
-      <UCard>
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
         <div class="text-center">
           <div class="mb-2 text-sm text-white/60">Annonces</div>
           <div class="text-3xl font-bold">{{ stats.listingsCount }}</div>
@@ -191,7 +191,7 @@ onMounted(() => {
           </UButton>
         </div>
       </UCard>
-      <UCard>
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
         <div class="text-center">
           <div class="mb-2 text-sm text-white/60">Transactions</div>
           <div class="text-3xl font-bold">{{ stats.transactionsCount }}</div>
@@ -200,7 +200,7 @@ onMounted(() => {
           </UButton>
         </div>
       </UCard>
-      <UCard>
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
         <div class="text-center">
           <div class="mb-2 text-sm text-white/60">Rôle</div>
           <div class="text-lg font-semibold">{{ user?.role || 'Membre' }}</div>
@@ -211,7 +211,7 @@ onMounted(() => {
       </UCard>
     </div>
 
-    <UCard>
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
       <template #header>
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
