@@ -48,13 +48,6 @@ const videoCategories = computed(() => {
       type: 'reportage' as const,
     },
     {
-      id: 'documentaires',
-      title: 'Documentaires',
-      icon: 'i-heroicons-film',
-      description: 'Des documentaires approfondis sur l\'histoire et la culture polynésienne',
-      type: 'documentaire' as const,
-    },
-    {
       id: 'interviews',
       title: 'Interviews',
       icon: 'i-heroicons-microphone',
@@ -111,7 +104,7 @@ onMounted(() => {
     <div class="mb-12 text-center">
       <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Culture</h1>
       <p class="mx-auto max-w-2xl text-lg text-white/70">
-        Découvrez nos reportages, documentaires et interviews sur la culture polynésienne
+        Découvrez nos reportages et interviews sur la culture polynésienne
       </p>
     </div>
 
@@ -124,14 +117,6 @@ onMounted(() => {
         icon="i-heroicons-video-camera"
       >
         Reportages
-      </UButton>
-      <UButton
-        to="#documentaires"
-        variant="ghost"
-        color="primary"
-        icon="i-heroicons-film"
-      >
-        Documentaires
       </UButton>
       <UButton
         to="#interviews"
@@ -271,13 +256,11 @@ onMounted(() => {
               :color="
                 selectedVideo.type === 'reportage'
                   ? 'info'
-                  : selectedVideo.type === 'documentaire'
-                    ? 'primary'
-                    : 'success'
+                  : 'success'
               "
               variant="subtle"
             >
-              {{ selectedVideo.type === 'reportage' ? 'Reportage' : selectedVideo.type === 'documentaire' ? 'Documentaire' : 'Interview' }}
+              {{ selectedVideo.type === 'reportage' ? 'Reportage' : 'Interview' }}
             </UBadge>
           </div>
         </div>

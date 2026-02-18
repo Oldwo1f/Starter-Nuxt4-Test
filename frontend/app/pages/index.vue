@@ -190,18 +190,12 @@ const accordionSections = [
     id: 'inspirer',
     title: 'Inspirer',
     icon: 'i-heroicons-light-bulb',
-    description: 'Découvrez des histoires, des témoignages et des documentaires qui inspirent les générations d\'aujourd\'hui et de demain. Plongez dans la richesse de notre culture polynésienne.',
+    description: 'Découvrez des histoires, des témoignages et des reportages qui inspirent les générations d\'aujourd\'hui et de demain. Plongez dans la richesse de notre culture polynésienne.',
     items: [
       {
         label: 'Reportages',
         to: '/culture#reportages',
         icon: 'i-heroicons-video-camera',
-        external: false,
-      },
-      {
-        label: 'Documentaires',
-        to: '/culture#documentaires',
-        icon: 'i-heroicons-film',
         external: false,
       },
       {

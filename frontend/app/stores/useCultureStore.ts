@@ -46,7 +46,7 @@ export const useCultureStore = defineStore('culture', () => {
   // Form pour créer/éditer une vidéo culture (admin)
   const form = ref<CultureForm>({
     title: '',
-    type: 'reportage',
+    type: 'interview',
     youtubeUrl: '',
     director: '',
     isPublic: true,
@@ -88,7 +88,7 @@ export const useCultureStore = defineStore('culture', () => {
     isEditMode.value = false
     form.value = {
       title: '',
-      type: 'reportage',
+      type: 'interview',
       youtubeUrl: '',
       director: 'Nuna\'a Heritage - Naho',
       isPublic: true,
@@ -114,7 +114,7 @@ export const useCultureStore = defineStore('culture', () => {
     selectedCulture.value = null
     form.value = {
       title: '',
-      type: 'reportage',
+      type: 'interview',
       youtubeUrl: '',
       director: 'Nuna\'a Heritage - Naho',
       isPublic: true,
