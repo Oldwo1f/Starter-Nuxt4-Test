@@ -11,7 +11,7 @@ set -u
 
 # Vérifier si le mode non-interactif est activé
 NON_INTERACTIVE=false
-if [ "$1" = "--yes" ] || [ "$1" = "-y" ]; then
+if [ "${1:-}" = "--yes" ] || [ "${1:-}" = "-y" ]; then
     NON_INTERACTIVE=true
 fi
 
