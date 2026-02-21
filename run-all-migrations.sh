@@ -150,15 +150,13 @@ CREATE TABLE IF NOT EXISTS "course_progress" (
     "id" SERIAL PRIMARY KEY,
     "userId" INTEGER NOT NULL,
     "courseId" INTEGER NOT NULL,
-    "videoId" INTEGER,
-    "completed" BOOLEAN NOT NULL DEFAULT false,
-    "progress" INTEGER NOT NULL DEFAULT 0,
-    "lastWatchedAt" TIMESTAMP,
+    "completedVideos" INTEGER[] DEFAULT '{}',
+    "lastVideoWatchedId" INTEGER NULL,
+    "progressPercentage" DECIMAL(5,2) DEFAULT 0,
     "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "FK_course_progress_user" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE,
     CONSTRAINT "FK_course_progress_course" FOREIGN KEY ("courseId") REFERENCES "courses"("id") ON DELETE CASCADE,
-    CONSTRAINT "FK_course_progress_video" FOREIGN KEY ("videoId") REFERENCES "videos"("id") ON DELETE SET NULL,
     CONSTRAINT "UQ_course_progress_user_course" UNIQUE ("userId", "courseId")
 );
 CREATE INDEX IF NOT EXISTS "IDX_course_progress_userId" ON "course_progress"("userId");
