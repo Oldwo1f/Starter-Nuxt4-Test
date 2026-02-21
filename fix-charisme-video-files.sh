@@ -80,11 +80,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 # Créer un script de renommage dans le container
 # Cela évite tous les problèmes d'échappement
-docker exec "$CONTAINER_NAME" bash -c 'cat > /tmp/rename_all.sh << '\''SCRIPT_EOF'\''
-#!/bin/bash
+# Utiliser --user root pour avoir les permissions nécessaires
+docker exec --user root "$CONTAINER_NAME" sh -c 'cat > /tmp/rename_all.sh << '\''SCRIPT_EOF'\''
+#!/bin/sh
 BASE_PATH="/app/uploads/academy/charisme"
-RENAMED=0
-ERROR=0
 
 find "$BASE_PATH" -type f -name "*#*" | while IFS= read -r file; do
     if [ -n "$file" ]; then
@@ -106,8 +105,12 @@ SCRIPT_EOF
 chmod +x /tmp/rename_all.sh
 ' > /dev/null 2>&1 || true
 
-# Exécuter le script de renommage
-RENAME_OUTPUT=$(docker exec "$CONTAINER_NAME" /tmp/rename_all.sh 2>&1 || true)
+# Exécuter le script de renommage et capturer la sortie
+# Utiliser --user root pour avoir les permissions nécessaires
+# Utiliser un fichier temporaire pour éviter les problèmes de sous-shell
+docker exec --user root "$CONTAINER_NAME" sh -c '/tmp/rename_all.sh > /tmp/rename_output.txt 2>&1' || true
+RENAME_OUTPUT=$(docker exec "$CONTAINER_NAME" cat /tmp/rename_output.txt 2>/dev/null || echo "")
+docker exec --user root "$CONTAINER_NAME" rm -f /tmp/rename_output.txt 2>/dev/null || true
 
 RENAMED_COUNT=0
 ERROR_COUNT=0
@@ -140,7 +143,7 @@ while IFS= read -r line; do
 done <<< "$RENAME_OUTPUT"
 
 # Nettoyer le script temporaire
-docker exec "$CONTAINER_NAME" rm -f /tmp/rename_all.sh 2>/dev/null || true
+docker exec --user root "$CONTAINER_NAME" rm -f /tmp/rename_all.sh 2>/dev/null || true
 
 echo ""
 echo "✅ Renommage terminé!"
