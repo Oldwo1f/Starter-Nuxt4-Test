@@ -9,8 +9,11 @@ export default defineNuxtRouteMiddleware((to) => {
   
   const authStore = useAuthStore()
   
+  // Initialiser le store depuis localStorage si ce n'est pas déjà fait
+  // (sécurité au cas où le plugin ne s'est pas encore exécuté)
+  authStore.initialize()
+  
   // Vérifier l'authentification uniquement côté client
-  // Le plugin auth.client.ts aura déjà initialisé le store depuis localStorage
   if (!authStore.isAuthenticated) {
     return navigateTo('/login')
   }

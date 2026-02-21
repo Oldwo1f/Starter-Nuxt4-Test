@@ -149,6 +149,30 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      const response = await $fetch<{ message: string }>(
+        `${API_BASE_URL}/auth/change-password`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken.value}`,
+          },
+          body: {
+            currentPassword,
+            newPassword,
+          },
+        }
+      )
+      return { success: true, message: response.message }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.data?.message || error.message || 'Erreur lors du changement de mot de passe',
+      }
+    }
+  }
+
   const facebookLogin = async (facebookId: string, email: string, accessToken: string) => {
     try {
       const response = await $fetch<{ access_token: string; user: User }>(
@@ -265,6 +289,7 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     forgotPassword,
     resetPassword,
+    changePassword,
     facebookLogin,
     logout,
     fetchProfile,

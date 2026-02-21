@@ -90,6 +90,26 @@ export class ResetPasswordDto {
   newPassword: string;
 }
 
+export class ChangePasswordDto {
+  @ApiProperty({
+    description: 'Current password',
+    example: 'currentpassword123',
+    minLength: 6,
+  })
+  @IsString()
+  @MinLength(6)
+  currentPassword: string;
+
+  @ApiProperty({
+    description: 'New password',
+    example: 'newpassword123',
+    minLength: 6,
+  })
+  @IsString()
+  @MinLength(6)
+  newPassword: string;
+}
+
 export class FacebookLoginDto {
   @ApiProperty({
     description: 'Facebook user ID',
@@ -236,6 +256,41 @@ export class AuthController {
     );
     return {
       message: 'Password has been successfully reset.',
+    };
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Change password',
+    description: 'Change password for the authenticated user (requires current password)',
+  })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password successfully changed',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Password has been successfully changed.',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid current password' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async changePassword(@CurrentUser() user: any, @Body() changePasswordDto: ChangePasswordDto) {
+    await this.authService.changePassword(
+      user.id,
+      changePasswordDto.currentPassword,
+      changePasswordDto.newPassword,
+    );
+    return {
+      message: 'Password has been successfully changed.',
     };
   }
 

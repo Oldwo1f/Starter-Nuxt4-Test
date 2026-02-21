@@ -124,6 +124,27 @@ export class AuthService {
     await this.usersService.updatePassword(user.id, newPassword);
   }
 
+  async changePassword(userId: number, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Check if user has a password (Facebook users might not have one)
+    if (!user.password) {
+      throw new BadRequestException('Password change not available for this account type');
+    }
+
+    // Validate current password
+    const isCurrentPasswordValid = await this.usersService.validatePassword(user, currentPassword);
+    if (!isCurrentPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    // Update to new password
+    await this.usersService.updatePassword(userId, newPassword);
+  }
+
   async requestEmailVerification(email: string): Promise<void> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {

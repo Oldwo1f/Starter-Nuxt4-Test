@@ -156,6 +156,94 @@ const handleAvatarUploaded = async (avatarUrl: string) => {
   await authStore.fetchProfile()
 }
 
+// Password change state
+const isChangingPassword = ref(false)
+const passwordForm = ref({
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+const isSavingPassword = ref(false)
+
+const startChangingPassword = () => {
+  passwordForm.value = {
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  }
+  isChangingPassword.value = true
+}
+
+const cancelChangingPassword = () => {
+  passwordForm.value = {
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  }
+  isChangingPassword.value = false
+}
+
+const savePassword = async () => {
+  // Validation
+  if (!passwordForm.value.currentPassword || !passwordForm.value.newPassword || !passwordForm.value.confirmPassword) {
+    toast.add({
+      title: 'Erreur',
+      description: 'Veuillez remplir tous les champs.',
+      color: 'red',
+    })
+    return
+  }
+
+  if (passwordForm.value.newPassword.length < 6) {
+    toast.add({
+      title: 'Erreur',
+      description: 'Le nouveau mot de passe doit contenir au moins 6 caractères.',
+      color: 'red',
+    })
+    return
+  }
+
+  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+    toast.add({
+      title: 'Erreur',
+      description: 'Les nouveaux mots de passe ne correspondent pas.',
+      color: 'red',
+    })
+    return
+  }
+
+  isSavingPassword.value = true
+  try {
+    const result = await authStore.changePassword(
+      passwordForm.value.currentPassword,
+      passwordForm.value.newPassword
+    )
+
+    if (result.success) {
+      toast.add({
+        title: 'Mot de passe modifié',
+        description: 'Votre mot de passe a été modifié avec succès.',
+        color: 'green',
+      })
+      cancelChangingPassword()
+    } else {
+      toast.add({
+        title: 'Erreur',
+        description: result.error || 'Une erreur est survenue lors du changement de mot de passe.',
+        color: 'red',
+      })
+    }
+  } catch (error: any) {
+    toast.add({
+      title: 'Erreur',
+      description: error.message || 'Une erreur est survenue lors du changement de mot de passe.',
+      color: 'red',
+    })
+  } finally {
+    isSavingPassword.value = false
+  }
+}
+
 onMounted(() => {
   fetchData()
 })
@@ -365,6 +453,94 @@ onMounted(() => {
 
       <div v-else class="text-center py-8">
         <p class="text-white/60">Chargement des informations...</p>
+      </div>
+    </UCard>
+
+    <!-- Password Change Section -->
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <UIcon name="i-heroicons-key" />
+            <span class="font-medium">Sécurité</span>
+          </div>
+          <UButton
+            v-if="!isChangingPassword"
+            @click="startChangingPassword"
+            color="primary"
+            variant="outline"
+            size="sm"
+          >
+            <UIcon name="i-heroicons-lock-closed" class="mr-2" />
+            Changer le mot de passe
+          </UButton>
+        </div>
+      </template>
+
+      <div v-if="!isChangingPassword" class="space-y-2">
+        <p class="text-sm text-white/60">
+          Pour votre sécurité, utilisez un mot de passe fort et unique.
+        </p>
+        <p class="text-xs text-white/50">
+          Le mot de passe doit contenir au moins 6 caractères.
+        </p>
+      </div>
+
+      <div v-else class="space-y-4">
+        <UFormGroup label="Mot de passe actuel" name="currentPassword" required>
+          <UInput
+            v-model="passwordForm.currentPassword"
+            type="password"
+            placeholder="Entrez votre mot de passe actuel"
+            icon="i-heroicons-lock-closed"
+            size="lg"
+            :disabled="isSavingPassword"
+          />
+        </UFormGroup>
+
+        <UFormGroup label="Nouveau mot de passe" name="newPassword" required>
+          <UInput
+            v-model="passwordForm.newPassword"
+            type="password"
+            placeholder="Entrez votre nouveau mot de passe"
+            icon="i-heroicons-lock-closed"
+            size="lg"
+            :disabled="isSavingPassword"
+          />
+          <template #hint>
+            <span class="text-xs text-white/50">Minimum 6 caractères</span>
+          </template>
+        </UFormGroup>
+
+        <UFormGroup label="Confirmer le nouveau mot de passe" name="confirmPassword" required>
+          <UInput
+            v-model="passwordForm.confirmPassword"
+            type="password"
+            placeholder="Confirmez votre nouveau mot de passe"
+            icon="i-heroicons-lock-closed"
+            size="lg"
+            :disabled="isSavingPassword"
+          />
+        </UFormGroup>
+
+        <div class="flex items-center gap-3 pt-4 border-t border-white/10">
+          <UButton
+            @click="savePassword"
+            color="primary"
+            :loading="isSavingPassword"
+            :disabled="isSavingPassword"
+          >
+            Enregistrer
+          </UButton>
+          <UButton
+            @click="cancelChangingPassword"
+            color="gray"
+            variant="outline"
+            :disabled="isSavingPassword"
+          >
+            Annuler
+          </UButton>
+        </div>
       </div>
     </UCard>
   </div>
