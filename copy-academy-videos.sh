@@ -15,7 +15,8 @@ NC='\033[0m' # No Color
 
 # Configuration
 PROJECT_DIR="/var/www/nunaheritage"
-TMP_DIR="${PROJECT_DIR}/tmp/academy"
+# Le dossier tmp est à la racine système, pas dans le projet
+TMP_DIR="/tmp/academy"
 BACKEND_DIR="${PROJECT_DIR}/backend"
 CONTAINER_NAME="nunaheritage-backend"
 CONTAINER_UPLOADS_PATH="/app/uploads/academy"
