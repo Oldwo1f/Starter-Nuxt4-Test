@@ -7,7 +7,7 @@
 #   ./fix-charisme-video-files.sh          # Mode interactif (demande confirmation)
 #   ./fix-charisme-video-files.sh --yes    # Mode non-interactif (pas de confirmation)
 
-set -e
+set -u
 
 # Vérifier si le mode non-interactif est activé
 NON_INTERACTIVE=false
@@ -78,55 +78,69 @@ echo ""
 echo "🔧 Renommage des fichiers..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-RENAMED_COUNT=0
-ERROR_COUNT=0
+# Créer un script de renommage dans le container
+# Cela évite tous les problèmes d'échappement
+docker exec "$CONTAINER_NAME" bash -c 'cat > /tmp/rename_all.sh << '\''SCRIPT_EOF'\''
+#!/bin/bash
+BASE_PATH="/app/uploads/academy/charisme"
+RENAMED=0
+ERROR=0
 
-# Renommer chaque fichier (sans pipe pour garder les variables dans le même shell)
-# Utiliser bash -c avec des guillemets simples pour échapper correctement les chemins
-while IFS= read -r file; do
+find "$BASE_PATH" -type f -name "*#*" | while IFS= read -r file; do
     if [ -n "$file" ]; then
-        # Obtenir le répertoire et le nom de fichier
         dir=$(dirname "$file")
         filename=$(basename "$file")
-        
-        # Créer le nouveau nom sans #
-        new_filename=$(echo "$filename" | tr -d '#')
+        new_filename=$(echo "$filename" | tr -d "#")
         new_path="$dir/$new_filename"
         
-        # Utiliser bash -c avec des variables pour éviter les problèmes d'échappement
-        # Passer les chemins via stdin pour éviter les problèmes avec les espaces
-        RESULT=$(echo -e "$file\n$new_path" | docker exec -i "$CONTAINER_NAME" bash -c '
-            IFS= read -r OLD_FILE
-            IFS= read -r NEW_FILE
-            if [ -f "$NEW_FILE" ]; then
-                echo "EXISTS"
-                exit 1
-            fi
-            if mv "$OLD_FILE" "$NEW_FILE" 2>/dev/null; then
-                echo "SUCCESS"
-                exit 0
-            else
-                echo "ERROR"
-                exit 1
-            fi
-        ' 2>&1)
-        EXIT_CODE=$?
-        
-        if [ $EXIT_CODE -eq 0 ] && echo "$RESULT" | grep -q "SUCCESS"; then
-            echo "  ✅ $filename → $new_filename"
-            RENAMED_COUNT=$((RENAMED_COUNT + 1))
-        elif echo "$RESULT" | grep -q "EXISTS"; then
-            echo "  ⚠️  $filename → $new_filename (déjà existe, ignoré)"
-            ERROR_COUNT=$((ERROR_COUNT + 1))
+        if [ -f "$new_path" ]; then
+            echo "EXISTS:$file"
+        elif mv "$file" "$new_path" 2>/dev/null; then
+            echo "SUCCESS:$file"
         else
-            echo "  ❌ Erreur lors du renommage de: $filename"
-            if [ -n "$RESULT" ] && [ "$RESULT" != "ERROR" ]; then
-                echo "     Détail: $RESULT"
-            fi
-            ERROR_COUNT=$((ERROR_COUNT + 1))
+            echo "ERROR:$file"
         fi
     fi
-done <<< "$FILES_WITH_HASH"
+done
+SCRIPT_EOF
+chmod +x /tmp/rename_all.sh
+' > /dev/null 2>&1 || true
+
+# Exécuter le script de renommage
+RENAME_OUTPUT=$(docker exec "$CONTAINER_NAME" /tmp/rename_all.sh 2>&1 || true)
+
+RENAMED_COUNT=0
+ERROR_COUNT=0
+EXISTS_COUNT=0
+
+# Traiter les résultats
+while IFS= read -r line; do
+    if [ -z "$line" ]; then
+        continue
+    fi
+    
+    if echo "$line" | grep -q "^SUCCESS:"; then
+        file=$(echo "$line" | sed 's/^SUCCESS://')
+        filename=$(basename "$file")
+        new_filename=$(echo "$filename" | tr -d '#')
+        echo "  ✅ $filename → $new_filename"
+        RENAMED_COUNT=$((RENAMED_COUNT + 1))
+    elif echo "$line" | grep -q "^EXISTS:"; then
+        file=$(echo "$line" | sed 's/^EXISTS://')
+        filename=$(basename "$file")
+        new_filename=$(echo "$filename" | tr -d '#')
+        echo "  ⚠️  $filename → $new_filename (déjà existe, ignoré)"
+        EXISTS_COUNT=$((EXISTS_COUNT + 1))
+    elif echo "$line" | grep -q "^ERROR:"; then
+        file=$(echo "$line" | sed 's/^ERROR://')
+        filename=$(basename "$file")
+        echo "  ❌ Erreur lors du renommage de: $filename"
+        ERROR_COUNT=$((ERROR_COUNT + 1))
+    fi
+done <<< "$RENAME_OUTPUT"
+
+# Nettoyer le script temporaire
+docker exec "$CONTAINER_NAME" rm -f /tmp/rename_all.sh 2>/dev/null || true
 
 echo ""
 echo "✅ Renommage terminé!"
