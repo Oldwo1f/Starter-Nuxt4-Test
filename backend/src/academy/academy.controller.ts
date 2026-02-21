@@ -523,4 +523,88 @@ export class AcademyController {
       createReadStream(filePath).pipe(res);
     }
   }
+
+  // Serve academy video files with proper URL decoding for special characters
+  @Get('videos/file/*')
+  @ApiOperation({
+    summary: 'Serve academy video file',
+    description: 'Serve a video file from academy directory with proper URL decoding for special characters like # and spaces',
+  })
+  @ApiResponse({ status: 200, description: 'Video file' })
+  @ApiResponse({ status: 404, description: 'Video not found' })
+  async serveAcademyVideo(
+    @Request() req: Request,
+    @Res() res: Response,
+  ) {
+    // Get the path after /academy/videos/file/
+    const fullPath = req.url.replace('/academy/videos/file', '');
+    // Decode the URL to handle %20, %23, etc.
+    const decodedPath = decodeURIComponent(fullPath);
+    // Remove leading slash if present
+    const cleanPath = decodedPath.startsWith('/') ? decodedPath.slice(1) : decodedPath;
+    
+    // Build the full file path
+    const filePath = join(process.cwd(), UPLOAD_DEST, 'academy', cleanPath);
+    
+    // Security: ensure the path is within the academy directory
+    const academyBasePath = join(process.cwd(), UPLOAD_DEST, 'academy');
+    if (!filePath.startsWith(academyBasePath)) {
+      throw new BadRequestException('Invalid file path');
+    }
+    
+    if (!existsSync(filePath)) {
+      throw new BadRequestException(`Video file not found: ${cleanPath}`);
+    }
+
+    const stat = statSync(filePath);
+    const fileSize = stat.size;
+    const range = req.headers['range'] as string | undefined;
+
+    // Get MIME type
+    const ext = filePath.toLowerCase().split('.').pop();
+    const mimeTypes: Record<string, string> = {
+      mp4: 'video/mp4',
+      webm: 'video/webm',
+      ogg: 'video/ogg',
+      ogv: 'video/ogg',
+      mov: 'video/quicktime',
+      avi: 'video/x-msvideo',
+      mkv: 'video/x-matroska',
+    };
+    const contentType = mimeTypes[ext || ''] || 'video/mp4';
+
+    // Set CORS headers
+    const corsOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';
+    res.setHeader('Access-Control-Allow-Origin', corsOrigin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    if (range) {
+      // Parse Range header
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunksize = end - start + 1;
+      const file = createReadStream(filePath, { start, end });
+
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunksize,
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=31536000',
+      });
+
+      file.pipe(res);
+    } else {
+      // Send entire file
+      res.writeHead(200, {
+        'Content-Length': fileSize,
+        'Content-Type': contentType,
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=31536000',
+      });
+
+      createReadStream(filePath).pipe(res);
+    }
+  }
 }

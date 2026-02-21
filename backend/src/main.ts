@@ -23,6 +23,94 @@ async function bootstrap() {
   
   // Serve static files from uploads directory with proper headers for video streaming
   const uploadPath = process.env.UPLOAD_DEST || 'uploads';
+  
+  // Custom middleware for academy videos to handle special characters (#, spaces, etc.)
+  app.use('/uploads/academy', (req, res, next) => {
+    const { Request, Response } = require('express');
+    const { createReadStream, statSync, existsSync } = require('fs');
+    const { join } = require('path');
+    const { decodeURIComponent } = require('url');
+    
+    // Get the path after /uploads/academy
+    const relativePath = req.path.replace(/^\/uploads\/academy/, '');
+    // Decode the URL to handle %20, %23, etc.
+    let decodedPath: string;
+    try {
+      decodedPath = decodeURIComponent(relativePath);
+    } catch (e) {
+      decodedPath = relativePath;
+    }
+    
+    // Build the full file path
+    const filePath = join(process.cwd(), uploadPath, 'academy', decodedPath);
+    
+    // Security: ensure the path is within the academy directory
+    const academyBasePath = join(process.cwd(), uploadPath, 'academy');
+    if (!filePath.startsWith(academyBasePath)) {
+      return res.status(400).json({ message: 'Invalid file path' });
+    }
+    
+    if (!existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+    
+    const stat = statSync(filePath);
+    if (!stat.isFile()) {
+      return res.status(404).json({ message: 'Not a file' });
+    }
+    
+    const fileSize = stat.size;
+    const range = req.headers['range'] as string | undefined;
+    
+    // Get MIME type
+    const ext = filePath.toLowerCase().split('.').pop();
+    const mimeTypes: Record<string, string> = {
+      mp4: 'video/mp4',
+      webm: 'video/webm',
+      ogg: 'video/ogg',
+      ogv: 'video/ogg',
+      mov: 'video/quicktime',
+      avi: 'video/x-msvideo',
+      mkv: 'video/x-matroska',
+    };
+    const contentType = mimeTypes[ext || ''] || 'video/mp4';
+    
+    // Set CORS headers
+    const corsOrigin = process.env.FRONTEND_URL || 'http://localhost:3000';
+    res.setHeader('Access-Control-Allow-Origin', corsOrigin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
+    if (range) {
+      // Parse Range header
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunksize = end - start + 1;
+      const file = createReadStream(filePath, { start, end });
+      
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunksize,
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=31536000',
+      });
+      
+      file.pipe(res);
+    } else {
+      // Send entire file
+      res.writeHead(200, {
+        'Content-Length': fileSize,
+        'Content-Type': contentType,
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=31536000',
+      });
+      
+      createReadStream(filePath).pipe(res);
+    }
+  });
+  
+  // Serve other static files normally
   app.useStaticAssets(join(process.cwd(), uploadPath), {
     prefix: '/uploads',
     setHeaders: (res, path, stat) => {
