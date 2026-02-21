@@ -24,13 +24,25 @@ export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(null)
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
 
-  // Initialize from localStorage on store creation
-  if (process.client) {
-    const storedToken = localStorage.getItem('auth_token')
-    const storedUser = localStorage.getItem('auth_user')
-    if (storedToken && storedUser) {
-      accessToken.value = storedToken
-      user.value = JSON.parse(storedUser)
+  // Initialize from localStorage (called by plugin on client side)
+  const initialize = () => {
+    if (!process.client) return
+    
+    try {
+      const storedToken = localStorage.getItem('auth_token')
+      const storedUser = localStorage.getItem('auth_user')
+      
+      if (storedToken && storedUser) {
+        accessToken.value = storedToken
+        user.value = JSON.parse(storedUser)
+      }
+    } catch (error) {
+      // En cas d'erreur de parsing, nettoyer les données corrompues
+      console.error('Erreur lors de l\'initialisation de l\'authentification depuis localStorage:', error)
+      if (process.client) {
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_user')
+      }
     }
   }
 
@@ -248,6 +260,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     accessToken,
     isAuthenticated,
+    initialize,
     login,
     register,
     forgotPassword,
