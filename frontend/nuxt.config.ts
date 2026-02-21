@@ -19,10 +19,15 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        // SVG favicon en premier pour les navigateurs modernes
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        // Fallback ICO pour les anciens navigateurs
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        // PNG pour les navigateurs qui préfèrent PNG
         { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon-96x96.png' },
+        // Apple Touch Icon pour iOS
         { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
+        // Web App Manifest pour PWA
         { rel: 'manifest', href: '/site.webmanifest' }
       ]
     }

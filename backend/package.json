@@ -19,7 +19,16 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-seed.ts",
-    "seed:superadmin": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-seed-superadmin.ts"
+    "seed:superadmin": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-seed-superadmin.ts",
+    "seed:academy-courses": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-seed-academy-courses.ts",
+    "seed:gestion-emotions": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-seed-gestion-emotions.ts",
+    "seed:charisme": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-seed-charisme.ts",
+    "seed:tressage-coquillage": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-seed-tressage-coquillage.ts",
+    "seed:update-tressage-description": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-update-tressage-description.ts",
+    "seed:update-durations": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-update-durations.ts",
+    "seed:update-descriptions": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-update-descriptions.ts",
+    "seed:update-paths": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-update-paths.ts",
+    "migrate:video-url": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-video-url.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

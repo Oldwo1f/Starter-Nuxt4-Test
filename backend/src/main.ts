@@ -18,13 +18,43 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
+    exposedHeaders: ['Content-Range', 'Accept-Ranges', 'Content-Length'],
   });
   
-  // Serve static files from uploads directory
+  // Serve static files from uploads directory with proper headers for video streaming
   const uploadPath = process.env.UPLOAD_DEST || 'uploads';
   app.useStaticAssets(join(process.cwd(), uploadPath), {
     prefix: '/uploads',
+    setHeaders: (res, path, stat) => {
+      // Set proper headers for video files to enable streaming
+      if (path.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)) {
+        res.setHeader('Content-Type', getVideoMimeType(path));
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Cache-Control', 'public, max-age=31536000');
+        res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:3000');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        // Set Content-Length for proper Range request support
+        if (stat) {
+          res.setHeader('Content-Length', stat.size);
+        }
+      }
+    },
   });
+
+  // Helper function to get MIME type for video files
+  function getVideoMimeType(filePath: string): string {
+    const ext = filePath.toLowerCase().split('.').pop();
+    const mimeTypes: Record<string, string> = {
+      mp4: 'video/mp4',
+      webm: 'video/webm',
+      ogg: 'video/ogg',
+      ogv: 'video/ogg',
+      mov: 'video/quicktime',
+      avi: 'video/x-msvideo',
+      mkv: 'video/x-matroska',
+    };
+    return mimeTypes[ext || ''] || 'video/mp4';
+  }
   
   // Enable validation
   app.useGlobalPipes(

@@ -13,6 +13,7 @@ import { WalletModule } from './wallet/wallet.module';
 import { GoodiesModule } from './goodies/goodies.module';
 import { PartnersModule } from './partners/partners.module';
 import { CultureModule } from './culture/culture.module';
+import { AcademyModule } from './academy/academy.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CultureModule } from './culture/culture.module';
     GoodiesModule,
     PartnersModule,
     CultureModule,
+    AcademyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

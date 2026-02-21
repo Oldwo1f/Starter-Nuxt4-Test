@@ -120,6 +120,11 @@ const adminMenuItems = [
     icon: 'i-heroicons-shopping-bag',
     to: '/admin/marketplace',
   },
+  {
+    label: 'Gestion de l\'Academy',
+    icon: 'i-heroicons-academic-cap',
+    to: '/admin/academy',
+  },
 ]
 
 const isActive = (path: string) => {

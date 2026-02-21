@@ -12,6 +12,8 @@ const props = defineProps<Props>()
 const goodiesStore = useGoodiesStore()
 const authStore = useAuthStore()
 const { getImageUrl: getImageUrlHelper } = useApi()
+const config = useRuntimeConfig()
+const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
 
 const canAccess = computed(() => goodiesStore.canAccessGoodie(props.goodie))
 
@@ -27,16 +29,31 @@ const handleClick = () => {
     return
   }
 
-  // Si le goodie a un lien, l'ouvrir
-  if (props.goodie.link) {
+  // Priorité au fichier uploadé (fileUrl) sur le lien
+  if (props.goodie.fileUrl) {
+    // Construire l'URL complète du fichier
+    const fileUrl = props.goodie.fileUrl.startsWith('http')
+      ? props.goodie.fileUrl
+      : `${API_BASE_URL}${props.goodie.fileUrl}`
+    
+    // Télécharger le fichier en créant un lien temporaire
+    const link = document.createElement('a')
+    link.href = fileUrl
+    link.download = props.goodie.fileUrl.split('/').pop() || 'download'
+    link.target = '_blank'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } else if (props.goodie.link) {
+    // Si pas de fichier, utiliser le lien
     window.open(props.goodie.link, '_blank')
   }
 }
 
-// Vérifier si le lien doit être visible
+// Vérifier si le lien/fichier doit être visible
 const shouldShowLink = computed(() => {
-  // Afficher le lien seulement si le goodie est public OU si l'utilisateur a accès
-  return props.goodie.link && (props.goodie.isPublic || canAccess.value)
+  // Afficher le lien/fichier seulement si le goodie est public OU si l'utilisateur a accès
+  return (props.goodie.fileUrl || props.goodie.link) && (props.goodie.isPublic || canAccess.value)
 })
 </script>
 
@@ -109,15 +126,15 @@ const shouldShowLink = computed(() => {
           size="sm"
           color="primary"
           variant="outline"
-          icon="i-heroicons-arrow-top-right-on-square"
+          :icon="goodie.fileUrl ? 'i-heroicons-arrow-down-tray' : 'i-heroicons-arrow-top-right-on-square'"
           @click.stop="handleClick"
         >
-          Voir
+          {{ goodie.fileUrl ? 'Télécharger' : 'Voir' }}
         </UButton>
         
         <!-- Bouton grisé avec cadenas si le goodie est privé et l'utilisateur n'a pas accès -->
         <UButton
-          v-else-if="goodie.link && !goodie.isPublic && !canAccess"
+          v-else-if="(goodie.fileUrl || goodie.link) && !goodie.isPublic && !canAccess"
           disabled
           size="sm"
           color="neutral"
@@ -125,7 +142,7 @@ const shouldShowLink = computed(() => {
           icon="i-heroicons-lock-closed"
           class="opacity-50 cursor-not-allowed"
         >
-          Voir
+          {{ goodie.fileUrl ? 'Télécharger' : 'Voir' }}
         </UButton>
       </div>
     </div>

@@ -142,6 +142,64 @@ const removeImage = () => {
   }
 }
 
+// Gérer la sélection d'un fichier
+const handleFileSelected = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    goodieStore.form.file = target.files[0]
+    goodieStore.form.existingFile = null
+    goodieStore.form.deleteFile = false
+  }
+}
+
+// Obtenir le preview du fichier
+const getFilePreview = (): string | null => {
+  if (goodieStore.form.file) {
+    return goodieStore.form.file.name
+  }
+  if (goodieStore.form.existingFile) {
+    return goodieStore.form.existingFile
+  }
+  return null
+}
+
+// Obtenir le nom du fichier
+const getFileName = (): string => {
+  if (goodieStore.form.file) {
+    return goodieStore.form.file.name
+  }
+  if (goodieStore.form.existingFile) {
+    // Extraire le nom du fichier depuis l'URL
+    const parts = goodieStore.form.existingFile.split('/')
+    return parts[parts.length - 1] || 'Fichier'
+  }
+  return ''
+}
+
+// Obtenir la taille du fichier
+const getFileSize = (): string => {
+  if (goodieStore.form.file) {
+    const size = goodieStore.form.file.size
+    if (size < 1024) return `${size} B`
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(2)} KB`
+    return `${(size / (1024 * 1024)).toFixed(2)} MB`
+  }
+  return ''
+}
+
+// Supprimer le fichier
+const removeFile = () => {
+  goodieStore.form.file = undefined
+  // Si on est en mode édition et qu'il y a un fichier existant, marquer pour suppression
+  if (goodieStore.isEditMode && goodieStore.form.existingFile) {
+    goodieStore.form.deleteFile = true
+    goodieStore.form.existingFile = null
+  } else {
+    goodieStore.form.existingFile = null
+    goodieStore.form.deleteFile = false
+  }
+}
+
 // Charger les goodies au montage
 onMounted(() => {
   handleFetchGoodies()
@@ -304,6 +362,44 @@ onMounted(() => {
               size="xl"
               class="w-full"
             />
+            <template #description>
+              <span class="text-xs text-white/60">Utilisé uniquement si aucun fichier n'est uploadé</span>
+            </template>
+          </UFormGroup>
+
+          <!-- Fichier uploadé (zip, pdf, etc.) -->
+          <UFormGroup label="Fichier (zip, pdf, etc.)" name="file">
+            <div class="space-y-4">
+              <!-- Afficher le fichier existant -->
+              <div v-if="getFilePreview()" class="flex items-center gap-3 p-3 rounded-lg border border-white/10 bg-white/5">
+                <UIcon name="i-heroicons-document" class="w-6 h-6 text-primary-400" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium truncate">{{ getFileName() }}</p>
+                  <p class="text-xs text-white/60">{{ getFileSize() }}</p>
+                </div>
+                <UButton
+                  color="error"
+                  variant="solid"
+                  icon="i-heroicons-trash"
+                  size="xs"
+                  @click="removeFile"
+                />
+              </div>
+
+              <!-- Input pour uploader un nouveau fichier -->
+              <div v-if="!getFilePreview()" class="space-y-2">
+                <UInput
+                  type="file"
+                  accept=".zip,.pdf,application/zip,application/x-zip-compressed,application/pdf,application/x-pdf"
+                  @change="handleFileSelected"
+                  class="w-full"
+                />
+                <p class="text-xs text-white/60">Formats acceptés : ZIP, PDF (max 50MB)</p>
+              </div>
+            </div>
+            <template #description>
+              <span class="text-xs text-white/60">Si un fichier est uploadé, il prendra la priorité sur le lien</span>
+            </template>
           </UFormGroup>
 
           <UFormGroup label="Description" name="description">

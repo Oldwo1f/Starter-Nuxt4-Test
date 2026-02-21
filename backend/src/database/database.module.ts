@@ -9,6 +9,10 @@ import { Transaction } from '../entities/transaction.entity';
 import { Partner } from '../entities/partner.entity';
 import { Goodie } from '../entities/goodie.entity';
 import { Culture } from '../entities/culture.entity';
+import { Course } from '../entities/course.entity';
+import { AcademyModule } from '../entities/module.entity';
+import { Video } from '../entities/video.entity';
+import { CourseProgress } from '../entities/course-progress.entity';
 
 @Module({
   imports: [
@@ -19,11 +23,11 @@ import { Culture } from '../entities/culture.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'nunaheritage',
-      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture],
+      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
-    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture]),
+    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress]),
   ],
   exports: [TypeOrmModule],
 })

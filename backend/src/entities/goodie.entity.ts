@@ -20,6 +20,9 @@ export class Goodie {
   @Column({ type: 'varchar', nullable: true })
   link: string | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  fileUrl: string | null; // Fichier uploadé (zip, pdf, etc.) - priorité sur link
+
   @Column('text', { nullable: true })
   description: string | null;
 

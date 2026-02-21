@@ -66,4 +66,12 @@ export class UpdateGoodieDto {
   @IsBoolean()
   @IsOptional()
   deleteBannerVertical?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Delete uploaded file',
+    example: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  deleteFile?: boolean;
 }

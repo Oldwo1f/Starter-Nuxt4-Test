@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import videoUrl from '~/assets/images/nuna-a-heritage-video-presentation.mp4'
 import logoUrl from '~/assets/images/logo-nuna-heritage.png'
+import tenatiraaImage1 from '~/assets/images/tenatiraa/tenatiraa.jpeg'
+import tenatiraaImage2 from '~/assets/images/tenatiraa/tenatiraa1.jpeg'
 
 definePageMeta({
   layout: 'default',
@@ -142,9 +144,9 @@ const accordionSections = [
     items: [
       {
         label: 'Académie',
-        to: 'https://nunaaheritage.schoolmaker.co/products',
+        to: '/academy',
         icon: 'i-heroicons-academic-cap',
-        external: true,
+        external: false,
       },
       {
         label: 'Blog',
@@ -449,39 +451,21 @@ const accordionSections = [
             </div>
           </div>
 
-          <!-- Images placeholder -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-600/20 shadow-2xl">
-              <div class="absolute inset-0 flex items-center justify-center">
-                <UIcon name="i-heroicons-photo" class="h-16 w-16 text-primary-300/40" />
-              </div>
-              <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                <p class="text-xs text-white/80">Photo à venir</p>
-              </div>
+          <!-- Images horizontales -->
+          <div class="grid grid-cols-1 gap-6">
+            <div class="relative aspect-[1600/747] overflow-hidden rounded-2xl shadow-2xl">
+              <img
+                :src="tenatiraaImage1"
+                alt="Te Natira'a - Moment de rassemblement"
+                class="h-full w-full object-cover transition-transform hover:scale-105"
+              />
             </div>
-            <div class="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600/20 to-primary-500/20 shadow-2xl mt-8">
-              <div class="absolute inset-0 flex items-center justify-center">
-                <UIcon name="i-heroicons-photo" class="h-16 w-16 text-primary-300/40" />
-              </div>
-              <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                <p class="text-xs text-white/80">Photo à venir</p>
-              </div>
-            </div>
-            <div class="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-700/20 shadow-2xl -mt-4">
-              <div class="absolute inset-0 flex items-center justify-center">
-                <UIcon name="i-heroicons-photo" class="h-16 w-16 text-primary-300/40" />
-              </div>
-              <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                <p class="text-xs text-white/80">Photo à venir</p>
-              </div>
-            </div>
-            <div class="relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600/20 to-primary-500/20 shadow-2xl mt-4">
-              <div class="absolute inset-0 flex items-center justify-center">
-                <UIcon name="i-heroicons-photo" class="h-16 w-16 text-primary-300/40" />
-              </div>
-              <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                <p class="text-xs text-white/80">Photo à venir</p>
-              </div>
+            <div class="relative aspect-[1600/747] overflow-hidden rounded-2xl shadow-2xl">
+              <img
+                :src="tenatiraaImage2"
+                alt="Te Natira'a - Moment de rassemblement"
+                class="h-full w-full object-cover transition-transform hover:scale-105"
+              />
             </div>
           </div>
         </div>

@@ -32,6 +32,22 @@ export class UploadService {
     if (!existsSync(goodiesPath)) {
       mkdirSync(goodiesPath, { recursive: true });
     }
+    const academyPath = join(this.uploadPath, 'academy');
+    if (!existsSync(academyPath)) {
+      mkdirSync(academyPath, { recursive: true });
+    }
+    const academyVideosPath = join(this.uploadPath, 'academy', 'videos');
+    if (!existsSync(academyVideosPath)) {
+      mkdirSync(academyVideosPath, { recursive: true });
+    }
+    const academyInstructorsPath = join(this.uploadPath, 'academy', 'instructors');
+    if (!existsSync(academyInstructorsPath)) {
+      mkdirSync(academyInstructorsPath, { recursive: true });
+    }
+    const academyThumbnailsPath = join(this.uploadPath, 'academy', 'thumbnails');
+    if (!existsSync(academyThumbnailsPath)) {
+      mkdirSync(academyThumbnailsPath, { recursive: true });
+    }
   }
 
   validateFile(file: Express.Multer.File): void {
@@ -309,6 +325,271 @@ export class UploadService {
       const goodieId = parseInt(match[1], 10);
       const filename = match[2];
       await this.deleteGoodieImage(goodieId, filename);
+    }
+  }
+
+  // Goodie file methods (for zip, pdf, etc.)
+  getGoodieFilePath(goodieId: number, filename: string): string {
+    return join(this.uploadPath, 'goodies', goodieId.toString(), filename);
+  }
+
+  getGoodieFileUrl(goodieId: number, filename: string): string {
+    return `/uploads/goodies/${goodieId}/${filename}`;
+  }
+
+  validateGoodieFile(file: Express.Multer.File): void {
+    if (!file) {
+      throw new BadRequestException('Aucun fichier fourni');
+    }
+
+    // Types MIME autorisés pour les fichiers de goodies (zip, pdf, etc.)
+    const allowedMimeTypes = [
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/pdf',
+      'application/x-pdf',
+    ];
+
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        `Type de fichier non autorisé. Types autorisés: ${allowedMimeTypes.join(', ')}`,
+      );
+    }
+
+    // Taille maximale : 50MB par défaut pour les fichiers de goodies
+    const maxFileSize = parseInt(process.env.MAX_GOODIE_FILE_SIZE || '52428800', 10); // 50MB
+    if (file.size > maxFileSize) {
+      throw new BadRequestException(
+        `Fichier trop volumineux. Taille maximale: ${maxFileSize / 1024 / 1024}MB`,
+      );
+    }
+  }
+
+  async saveGoodieFile(
+    goodieId: number,
+    file: Express.Multer.File,
+  ): Promise<string> {
+    // Valider le fichier
+    this.validateGoodieFile(file);
+
+    // Créer le dossier pour le goodie s'il n'existe pas
+    const goodieDir = join(this.uploadPath, 'goodies', goodieId.toString());
+    if (!existsSync(goodieDir)) {
+      mkdirSync(goodieDir, { recursive: true });
+    }
+
+    // Générer un nom de fichier unique
+    const filename = this.generateFileName(file.originalname);
+    const filePath = this.getGoodieFilePath(goodieId, filename);
+
+    // Sauvegarder le fichier
+    writeFileSync(filePath, file.buffer);
+
+    return this.getGoodieFileUrl(goodieId, filename);
+  }
+
+  async deleteGoodieFile(goodieId: number, filename: string): Promise<void> {
+    const filePath = this.getGoodieFilePath(goodieId, filename);
+    if (existsSync(filePath)) {
+      unlinkSync(filePath);
+    }
+  }
+
+  async deleteOldGoodieFile(fileUrl: string | null): Promise<void> {
+    if (!fileUrl) return;
+
+    // Extraire goodieId et filename de l'URL
+    // Format attendu: /uploads/goodies/{goodieId}/{filename}
+    const match = fileUrl.match(/\/uploads\/goodies\/(\d+)\/(.+)$/);
+    if (match) {
+      const goodieId = parseInt(match[1], 10);
+      const filename = match[2];
+      await this.deleteGoodieFile(goodieId, filename);
+    }
+  }
+
+  // Academy video methods
+  validateVideoFile(file: Express.Multer.File): void {
+    if (!file) {
+      throw new BadRequestException('Aucun fichier fourni');
+    }
+
+    // Allowed video MIME types
+    const allowedVideoTypes = [
+      'video/mp4',
+      'video/webm',
+      'video/ogg',
+      'video/quicktime',
+    ];
+
+    if (!allowedVideoTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        `Type de fichier vidéo non autorisé. Types autorisés: ${allowedVideoTypes.join(', ')}`,
+      );
+    }
+
+    // Max video size (bytes). 0 or unset = unlimited at app-level (still limited by infra/disk).
+    const maxVideoSize = parseInt(process.env.MAX_VIDEO_FILE_SIZE || '0', 10);
+    if (maxVideoSize > 0 && file.size > maxVideoSize) {
+      throw new BadRequestException(
+        `Fichier vidéo trop volumineux. Taille maximale: ${maxVideoSize / 1024 / 1024}MB`,
+      );
+    }
+  }
+
+  getVideoPath(filename: string): string {
+    return join(this.uploadPath, 'academy', 'videos', filename);
+  }
+
+  getVideoUrl(filename: string): string {
+    return `/uploads/academy/videos/${filename}`;
+  }
+
+  async saveVideo(file: Express.Multer.File): Promise<string> {
+    // Validate video file
+    this.validateVideoFile(file);
+
+    // Generate unique filename
+    const filename = this.generateFileName(file.originalname);
+    const filePath = this.getVideoPath(filename);
+
+    // Save the file
+    writeFileSync(filePath, file.buffer);
+
+    return this.getVideoUrl(filename);
+  }
+
+  async deleteVideo(videoUrl: string | null): Promise<void> {
+    if (!videoUrl) return;
+
+    // Extract filename from URL
+    // Expected format: /uploads/academy/videos/{filename}
+    const match = videoUrl.match(/\/uploads\/academy\/videos\/(.+)$/);
+    if (match) {
+      const filename = match[1];
+      const filePath = this.getVideoPath(filename);
+      if (existsSync(filePath)) {
+        unlinkSync(filePath);
+      }
+    }
+  }
+
+  // Academy instructor avatar methods
+  getInstructorAvatarPath(courseId: number, filename: string): string {
+    return join(this.uploadPath, 'academy', 'instructors', courseId.toString(), filename);
+  }
+
+  getInstructorAvatarUrl(courseId: number, filename: string): string {
+    return `/uploads/academy/instructors/${courseId}/${filename}`;
+  }
+
+  async saveInstructorAvatar(
+    courseId: number,
+    file: Express.Multer.File,
+  ): Promise<string> {
+    // Validate file
+    this.validateFile(file);
+
+    // Validate dimensions: 300x300px
+    await this.validateImageDimensions(file, 300, 300);
+
+    // Create directory for course if it doesn't exist
+    const courseDir = join(this.uploadPath, 'academy', 'instructors', courseId.toString());
+    if (!existsSync(courseDir)) {
+      mkdirSync(courseDir, { recursive: true });
+    }
+
+    // Generate unique filename
+    const filename = this.generateFileName(file.originalname);
+    const filePath = this.getInstructorAvatarPath(courseId, filename);
+
+    // Save the file
+    writeFileSync(filePath, file.buffer);
+
+    return this.getInstructorAvatarUrl(courseId, filename);
+  }
+
+  async deleteInstructorAvatar(courseId: number, filename: string): Promise<void> {
+    const filePath = this.getInstructorAvatarPath(courseId, filename);
+    if (existsSync(filePath)) {
+      unlinkSync(filePath);
+    }
+  }
+
+  async deleteOldInstructorAvatar(avatarUrl: string | null): Promise<void> {
+    if (!avatarUrl) return;
+
+    // Extract courseId and filename from URL
+    // Expected format: /uploads/academy/instructors/{courseId}/{filename}
+    const match = avatarUrl.match(/\/uploads\/academy\/instructors\/(\d+)\/(.+)$/);
+    if (match) {
+      const courseId = parseInt(match[1], 10);
+      const filename = match[2];
+      await this.deleteInstructorAvatar(courseId, filename);
+    }
+  }
+
+  // Academy course thumbnail methods
+  getCourseThumbnailPath(courseId: number, filename: string): string {
+    return join(this.uploadPath, 'academy', 'thumbnails', courseId.toString(), filename);
+  }
+
+  getCourseThumbnailUrl(courseId: number, filename: string): string {
+    return `/uploads/academy/thumbnails/${courseId}/${filename}`;
+  }
+
+  async saveCourseThumbnail(
+    courseId: number,
+    file: Express.Multer.File,
+  ): Promise<string> {
+    // Validate file
+    this.validateFile(file);
+
+    // Validate dimensions: 4/3 ratio
+    const { width, height } = await this.getImageDimensions(file);
+    const ratio = width / height;
+    const targetRatio = 4 / 3;
+    const tolerance = 0.1; // 10% tolerance
+    
+    if (Math.abs(ratio - targetRatio) > tolerance) {
+      throw new BadRequestException(
+        `L'image doit avoir un ratio 4/3. Ratio actuel: ${width}x${height} (${ratio.toFixed(2)})`,
+      );
+    }
+
+    // Create directory for course if it doesn't exist
+    const courseDir = join(this.uploadPath, 'academy', 'thumbnails', courseId.toString());
+    if (!existsSync(courseDir)) {
+      mkdirSync(courseDir, { recursive: true });
+    }
+
+    // Generate unique filename
+    const filename = this.generateFileName(file.originalname);
+    const filePath = this.getCourseThumbnailPath(courseId, filename);
+
+    // Save the file
+    writeFileSync(filePath, file.buffer);
+
+    return this.getCourseThumbnailUrl(courseId, filename);
+  }
+
+  async deleteCourseThumbnail(courseId: number, filename: string): Promise<void> {
+    const filePath = this.getCourseThumbnailPath(courseId, filename);
+    if (existsSync(filePath)) {
+      unlinkSync(filePath);
+    }
+  }
+
+  async deleteOldCourseThumbnail(thumbnailUrl: string | null): Promise<void> {
+    if (!thumbnailUrl) return;
+
+    // Extract courseId and filename from URL
+    // Expected format: /uploads/academy/thumbnails/{courseId}/{filename}
+    const match = thumbnailUrl.match(/\/uploads\/academy\/thumbnails\/(\d+)\/(.+)$/);
+    if (match) {
+      const courseId = parseInt(match[1], 10);
+      const filename = match[2];
+      await this.deleteCourseThumbnail(courseId, filename);
     }
   }
 }

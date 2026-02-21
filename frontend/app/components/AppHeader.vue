@@ -78,10 +78,9 @@ const heritageMenuItems = computed(() => [
   },
   {
     label: 'Academy',
-    to: 'https://nunaaheritage.schoolmaker.co/products',
+    to: '/academy',
     icon: 'i-heroicons-academic-cap',
-    external: true,
-    target: '_blank',
+    active: route.path.startsWith('/academy'),
   },
 ])
 

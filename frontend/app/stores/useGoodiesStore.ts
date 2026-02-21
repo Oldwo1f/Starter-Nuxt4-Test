@@ -5,6 +5,7 @@ export interface Goodie {
   id: number
   name: string
   link: string | null
+  fileUrl: string | null
   description: string | null
   imageUrl: string | null
   offeredByName: string | null
@@ -28,6 +29,9 @@ export interface GoodieForm {
   image?: File
   existingImage?: string | null
   deleteImage?: boolean
+  file?: File
+  existingFile?: string | null
+  deleteFile?: boolean
 }
 
 export const useGoodiesStore = defineStore('goodies', () => {
@@ -56,6 +60,7 @@ export const useGoodiesStore = defineStore('goodies', () => {
     offeredByLink: '',
     isPublic: true,
     deleteImage: false,
+    deleteFile: false,
   })
 
   const fetchGoodies = async () => {
@@ -100,6 +105,7 @@ export const useGoodiesStore = defineStore('goodies', () => {
       offeredByLink: '',
       isPublic: true,
       deleteImage: false,
+      deleteFile: false,
     }
     isModalOpen.value = true
   }
@@ -116,6 +122,8 @@ export const useGoodiesStore = defineStore('goodies', () => {
       isPublic: goodie.isPublic,
       existingImage: goodie.imageUrl,
       deleteImage: false,
+      existingFile: goodie.fileUrl,
+      deleteFile: false,
     }
     isModalOpen.value = true
   }
@@ -131,6 +139,7 @@ export const useGoodiesStore = defineStore('goodies', () => {
       offeredByLink: '',
       isPublic: true,
       deleteImage: false,
+      deleteFile: false,
     }
   }
 
@@ -164,9 +173,19 @@ export const useGoodiesStore = defineStore('goodies', () => {
         formData.append('image', form.value.image)
       }
 
+      // Ajouter le fichier
+      if (form.value.file) {
+        formData.append('file', form.value.file)
+      }
+
       // Ajouter le flag de suppression pour l'image (en mode édition uniquement)
       if (isEditMode.value && form.value.deleteImage) {
         formData.append('deleteImage', 'true')
+      }
+
+      // Ajouter le flag de suppression pour le fichier (en mode édition uniquement)
+      if (isEditMode.value && form.value.deleteFile) {
+        formData.append('deleteFile', 'true')
       }
 
       if (isEditMode.value && selectedGoodie.value) {

@@ -17,6 +17,7 @@ export class GoodiesService {
     link?: string,
     description?: string,
     imageUrl?: string,
+    fileUrl?: string,
     offeredByName?: string,
     offeredByLink?: string,
     isPublic: boolean = true,
@@ -27,6 +28,7 @@ export class GoodiesService {
       link: link || null,
       description: description || null,
       imageUrl: imageUrl || null,
+      fileUrl: fileUrl || null,
       offeredByName: offeredByName || null,
       offeredByLink: offeredByLink || null,
       isPublic,
@@ -118,6 +120,7 @@ export class GoodiesService {
     link?: string,
     description?: string,
     imageUrl?: string | null,
+    fileUrl?: string | null,
     offeredByName?: string,
     offeredByLink?: string,
     isPublic?: boolean,
@@ -143,6 +146,13 @@ export class GoodiesService {
       }
       goodie.imageUrl = imageUrl || null;
     }
+    if (fileUrl !== undefined) {
+      // Supprimer l'ancien fichier si il existe
+      if (goodie.fileUrl && goodie.fileUrl !== fileUrl) {
+        await this.uploadService.deleteOldGoodieFile(goodie.fileUrl);
+      }
+      goodie.fileUrl = fileUrl || null;
+    }
     if (offeredByName !== undefined) {
       goodie.offeredByName = offeredByName || null;
     }
@@ -162,6 +172,11 @@ export class GoodiesService {
     // Supprimer l'image
     if (goodie.imageUrl) {
       await this.uploadService.deleteOldGoodieImage(goodie.imageUrl);
+    }
+
+    // Supprimer le fichier
+    if (goodie.fileUrl) {
+      await this.uploadService.deleteOldGoodieFile(goodie.fileUrl);
     }
 
     await this.goodieRepository.remove(goodie);

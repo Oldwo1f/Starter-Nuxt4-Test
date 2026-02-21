@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import tenatiraaH1 from '~/assets/images/tenatiraa/tenatiraa.jpeg'
+import tenatiraaH2 from '~/assets/images/tenatiraa/tenatiraa1.jpeg'
+import tenatiraaH3 from '~/assets/images/tenatiraa/tenatiraa2.jpeg'
+import tenatiraaV1 from '~/assets/images/tenatiraa/v1.jpeg'
+import tenatiraaV2 from '~/assets/images/tenatiraa/v2.jpeg'
+import tenatiraaV3 from '~/assets/images/tenatiraa/v3.jpeg'
+
 definePageMeta({
   layout: 'default',
 })
@@ -167,65 +174,57 @@ onUnmounted(() => {
           </p>
         </div>
 
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <!-- Placeholder 1 -->
-          <div class="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-600/20 shadow-2xl transition-transform hover:scale-105">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <UIcon name="i-heroicons-photo" class="h-20 w-20 text-primary-300/40 transition-transform group-hover:scale-110" />
+        <div class="space-y-4 sm:space-y-6">
+          <!-- 2 photos horizontales, l'une en dessous de l'autre -->
+          <div class="grid grid-cols-1 gap-4">
+            <div class="group relative aspect-[1600/747] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
+              <img
+                :src="tenatiraaH1"
+                alt="Te Natira'a - Moment de rassemblement"
+                class="h-full w-full object-cover"
+              />
             </div>
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-4">
-              <p class="text-sm font-medium text-white">Photo à venir</p>
-            </div>
-          </div>
-
-          <!-- Placeholder 2 -->
-          <div class="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600/20 to-primary-500/20 shadow-2xl transition-transform hover:scale-105">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <UIcon name="i-heroicons-photo" class="h-20 w-20 text-primary-300/40 transition-transform group-hover:scale-110" />
-            </div>
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-4">
-              <p class="text-sm font-medium text-white">Photo à venir</p>
+            <div class="group relative aspect-[1600/747] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
+              <img
+                :src="tenatiraaH2"
+                alt="Te Natira'a - Moment de rassemblement"
+                class="h-full w-full object-cover"
+              />
             </div>
           </div>
 
-          <!-- Placeholder 3 -->
-          <div class="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-700/20 shadow-2xl transition-transform hover:scale-105">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <UIcon name="i-heroicons-photo" class="h-20 w-20 text-primary-300/40 transition-transform group-hover:scale-110" />
+          <!-- 3 photos verticales sur la même ligne (desktop) -->
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="group relative aspect-[747/1600] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
+              <img
+                :src="tenatiraaV1"
+                alt="Te Natira'a - Moment de rassemblement"
+                class="h-full w-full object-cover"
+              />
             </div>
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-4">
-              <p class="text-sm font-medium text-white">Photo à venir</p>
+            <div class="group relative aspect-[747/1600] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
+              <img
+                :src="tenatiraaV2"
+                alt="Te Natira'a - Moment de rassemblement"
+                class="h-full w-full object-cover"
+              />
             </div>
-          </div>
-
-          <!-- Placeholder 4 -->
-          <div class="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600/20 to-primary-500/20 shadow-2xl transition-transform hover:scale-105">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <UIcon name="i-heroicons-photo" class="h-20 w-20 text-primary-300/40 transition-transform group-hover:scale-110" />
-            </div>
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-4">
-              <p class="text-sm font-medium text-white">Photo à venir</p>
-            </div>
-          </div>
-
-          <!-- Placeholder 5 -->
-          <div class="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-600/20 shadow-2xl transition-transform hover:scale-105">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <UIcon name="i-heroicons-photo" class="h-20 w-20 text-primary-300/40 transition-transform group-hover:scale-110" />
-            </div>
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-4">
-              <p class="text-sm font-medium text-white">Photo à venir</p>
+            <div class="group relative aspect-[747/1600] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
+              <img
+                :src="tenatiraaV3"
+                alt="Te Natira'a - Moment de rassemblement"
+                class="h-full w-full object-cover"
+              />
             </div>
           </div>
 
-          <!-- Placeholder 6 -->
-          <div class="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600/20 to-primary-500/20 shadow-2xl transition-transform hover:scale-105">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <UIcon name="i-heroicons-photo" class="h-20 w-20 text-primary-300/40 transition-transform group-hover:scale-110" />
-            </div>
-            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-4">
-              <p class="text-sm font-medium text-white">Photo à venir</p>
-            </div>
+          <!-- Dernière photo horizontale -->
+          <div class="group relative aspect-[1600/747] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
+            <img
+              :src="tenatiraaH3"
+              alt="Te Natira'a - Moment de rassemblement"
+              class="h-full w-full object-cover"
+            />
           </div>
         </div>
       </div>
