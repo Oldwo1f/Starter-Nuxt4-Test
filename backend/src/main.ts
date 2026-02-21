@@ -25,14 +25,17 @@ async function bootstrap() {
   const uploadPath = process.env.UPLOAD_DEST || 'uploads';
   
   // Custom middleware for academy videos to handle special characters (#, spaces, etc.)
+  // This must be registered BEFORE useStaticAssets to intercept requests
   app.use('/uploads/academy', (req, res, next) => {
-    const { Request, Response } = require('express');
     const { createReadStream, statSync, existsSync } = require('fs');
     const { join } = require('path');
     const { decodeURIComponent } = require('url');
     
     // Get the path after /uploads/academy
-    const relativePath = req.path.replace(/^\/uploads\/academy/, '');
+    // Use req.url instead of req.path to get the full URL including query string
+    const urlPath = req.url.split('?')[0]; // Remove query string if present
+    const relativePath = urlPath.replace(/^\/uploads\/academy/, '');
+    
     // Decode the URL to handle %20, %23, etc.
     let decodedPath: string;
     try {
@@ -41,17 +44,23 @@ async function bootstrap() {
       decodedPath = relativePath;
     }
     
+    // Remove leading slash if present
+    const cleanPath = decodedPath.startsWith('/') ? decodedPath.slice(1) : decodedPath;
+    
     // Build the full file path
-    const filePath = join(process.cwd(), uploadPath, 'academy', decodedPath);
+    const filePath = join(process.cwd(), uploadPath, 'academy', cleanPath);
     
     // Security: ensure the path is within the academy directory
     const academyBasePath = join(process.cwd(), uploadPath, 'academy');
-    if (!filePath.startsWith(academyBasePath)) {
+    const normalizedFilePath = filePath.replace(/\\/g, '/');
+    const normalizedBasePath = academyBasePath.replace(/\\/g, '/');
+    
+    if (!normalizedFilePath.startsWith(normalizedBasePath)) {
       return res.status(400).json({ message: 'Invalid file path' });
     }
     
     if (!existsSync(filePath)) {
-      return res.status(404).json({ message: 'File not found' });
+      return res.status(404).json({ message: `File not found: ${cleanPath}` });
     }
     
     const stat = statSync(filePath);
