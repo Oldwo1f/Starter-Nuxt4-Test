@@ -82,6 +82,7 @@ RENAMED_COUNT=0
 ERROR_COUNT=0
 
 # Renommer chaque fichier (sans pipe pour garder les variables dans le même shell)
+# Utiliser bash -c avec des guillemets simples pour échapper correctement les chemins
 while IFS= read -r file; do
     if [ -n "$file" ]; then
         # Obtenir le répertoire et le nom de fichier
@@ -92,19 +93,37 @@ while IFS= read -r file; do
         new_filename=$(echo "$filename" | tr -d '#')
         new_path="$dir/$new_filename"
         
-        # Vérifier si le fichier de destination existe déjà
-        if docker exec "$CONTAINER_NAME" test -f "$new_path" 2>/dev/null; then
+        # Utiliser bash -c avec des variables pour éviter les problèmes d'échappement
+        # Passer les chemins via stdin pour éviter les problèmes avec les espaces
+        RESULT=$(echo -e "$file\n$new_path" | docker exec -i "$CONTAINER_NAME" bash -c '
+            IFS= read -r OLD_FILE
+            IFS= read -r NEW_FILE
+            if [ -f "$NEW_FILE" ]; then
+                echo "EXISTS"
+                exit 1
+            fi
+            if mv "$OLD_FILE" "$NEW_FILE" 2>/dev/null; then
+                echo "SUCCESS"
+                exit 0
+            else
+                echo "ERROR"
+                exit 1
+            fi
+        ' 2>&1)
+        EXIT_CODE=$?
+        
+        if [ $EXIT_CODE -eq 0 ] && echo "$RESULT" | grep -q "SUCCESS"; then
+            echo "  ✅ $filename → $new_filename"
+            RENAMED_COUNT=$((RENAMED_COUNT + 1))
+        elif echo "$RESULT" | grep -q "EXISTS"; then
             echo "  ⚠️  $filename → $new_filename (déjà existe, ignoré)"
             ERROR_COUNT=$((ERROR_COUNT + 1))
         else
-            # Renommer le fichier
-            if docker exec "$CONTAINER_NAME" mv "$file" "$new_path" 2>/dev/null; then
-                echo "  ✅ $filename → $new_filename"
-                RENAMED_COUNT=$((RENAMED_COUNT + 1))
-            else
-                echo "  ❌ Erreur lors du renommage de: $filename"
-                ERROR_COUNT=$((ERROR_COUNT + 1))
+            echo "  ❌ Erreur lors du renommage de: $filename"
+            if [ -n "$RESULT" ] && [ "$RESULT" != "ERROR" ]; then
+                echo "     Détail: $RESULT"
             fi
+            ERROR_COUNT=$((ERROR_COUNT + 1))
         fi
     fi
 done <<< "$FILES_WITH_HASH"
