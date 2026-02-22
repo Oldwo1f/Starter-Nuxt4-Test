@@ -55,9 +55,15 @@ if docker exec nunaheritage-backend which ffprobe > /dev/null 2>&1 || \
     echo -e "${GREEN}✓ ffprobe/ffmpeg disponible dans le conteneur${NC}"
 else
     echo -e "${YELLOW}⚠ ffprobe/ffmpeg non disponible dans le conteneur${NC}"
-    echo "   Les durées des fichiers locaux ne pourront pas être extraites"
-    echo "   Pour installer: docker exec -it nunaheritage-backend apk add ffmpeg"
-    echo ""
+    echo "   Tentative d'installation..."
+    if docker exec -u root nunaheritage-backend apk add --no-cache ffmpeg > /dev/null 2>&1; then
+        echo -e "${GREEN}✓ ffmpeg installé avec succès${NC}"
+    else
+        echo -e "${YELLOW}⚠ Échec de l'installation automatique${NC}"
+        echo "   Installez manuellement avec: docker exec -u root -it nunaheritage-backend apk add --no-cache ffmpeg"
+        echo "   Ou modifiez le Dockerfile pour inclure ffmpeg de manière permanente"
+        echo ""
+    fi
 fi
 
 echo -e "${GREEN}ℹ Les vidéos YouTube seront ignorées (mise à jour manuelle)${NC}"

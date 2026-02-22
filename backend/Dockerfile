@@ -22,8 +22,8 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init for proper signal handling and ffmpeg for video duration extraction
+RUN apk add --no-cache dumb-init ffmpeg
 
 # Install all dependencies (including dev dependencies for seeds)
 COPY package*.json ./

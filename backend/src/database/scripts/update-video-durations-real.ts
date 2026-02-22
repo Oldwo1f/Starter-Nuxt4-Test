@@ -55,16 +55,26 @@ function getLocalVideoDuration(videoPath: string): number | null {
 function getFullVideoPath(relativePath: string | null): string | null {
   if (!relativePath) return null;
 
-  // Enlever le / initial si présent
-  const cleanPath = relativePath.startsWith('/') ? relativePath.substring(1) : relativePath;
+  // Les chemins en DB peuvent être:
+  // - /uploads/academy/... (avec / initial)
+  // - uploads/academy/... (sans / initial)
+  
+  // Normaliser le chemin : enlever le / initial si présent
+  let cleanPath = relativePath.startsWith('/') ? relativePath.substring(1) : relativePath;
+  
+  // Si le chemin commence déjà par "uploads/", on l'utilise tel quel
+  // Sinon, on ajoute "uploads/" devant
+  if (!cleanPath.startsWith('uploads/')) {
+    cleanPath = `uploads/${cleanPath}`;
+  }
 
   // Chemins possibles (dans l'ordre de priorité)
   const possibleBasePaths = [
-    '/app/uploads', // Dans le container Docker
-    path.join(process.cwd(), 'uploads'),
-    path.join(process.cwd(), '..', 'uploads'),
-    '/var/www/nunaheritage/backend/uploads',
-    '/var/www/nunaheritage/uploads',
+    '/app', // Dans le container Docker (chemin de base)
+    process.cwd(), // Répertoire de travail actuel
+    path.join(process.cwd(), '..'), // Un niveau au-dessus
+    '/var/www/nunaheritage/backend',
+    '/var/www/nunaheritage',
   ];
 
   for (const basePath of possibleBasePaths) {
@@ -72,6 +82,11 @@ function getFullVideoPath(relativePath: string | null): string | null {
     if (existsSync(fullPath)) {
       return fullPath;
     }
+  }
+
+  // Essayer aussi avec le chemin tel quel (au cas où c'est déjà un chemin absolu)
+  if (relativePath.startsWith('/') && existsSync(relativePath)) {
+    return relativePath;
   }
 
   return null;
@@ -122,9 +137,10 @@ async function updateVideoDurations() {
 
         // Si c'est un fichier local
         if (video.videoFile) {
+          console.log(`  📁 Recherche du fichier: ${video.videoFile}`);
           const fullPath = getFullVideoPath(video.videoFile);
           if (fullPath && existsSync(fullPath)) {
-            console.log(`  📁 Fichier local trouvé: ${fullPath}`);
+            console.log(`  ✓ Fichier trouvé: ${fullPath}`);
             newDuration = getLocalVideoDuration(fullPath);
             if (newDuration) {
               const minutes = Math.floor(newDuration / 60);
@@ -134,7 +150,8 @@ async function updateVideoDurations() {
               console.log(`  ⚠ Impossible d'extraire la durée (ffprobe/ffmpeg non disponible?)`);
             }
           } else {
-            console.log(`  ⚠ Fichier local introuvable: ${video.videoFile}`);
+            console.log(`  ⚠ Fichier introuvable: ${video.videoFile}`);
+            console.log(`     Chemin recherché: ${fullPath || 'non déterminé'}`);
           }
         }
 
