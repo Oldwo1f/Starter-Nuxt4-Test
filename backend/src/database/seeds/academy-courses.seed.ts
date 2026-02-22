@@ -592,10 +592,12 @@ async function createCourse(
   });
 
   if (existingCourse) {
-    console.log(`⚠ La formation "${structure.course.title}" existe déjà.`);
+    console.log(`⚠ La formation "${structure.course.title}" existe déjà (ID: ${existingCourse.id}).`);
     console.log('   Pour la recréer, supprimez-la d\'abord depuis l\'interface admin ou la base de données.');
     return;
   }
+
+  console.log(`   ✓ La formation "${structure.course.title}" n'existe pas encore, création en cours...`);
 
   // Créer la formation
   const courseData: any = {
@@ -662,17 +664,23 @@ async function createCourse(
           console.log(`    🎬 ${videoData.title} - durée non disponible`);
         }
 
-        const video = videoRepository.create({
-          moduleId: savedModule.id,
-          title: videoData.title,
-          description: videoData.description || null,
-          videoUrl: videoData.videoUrl,
-          videoFile: null,
-          duration: duration,
-          order: videoData.order,
-        });
+        try {
+          const video = videoRepository.create({
+            moduleId: savedModule.id,
+            title: videoData.title,
+            description: videoData.description || null,
+            videoUrl: videoData.videoUrl,
+            videoFile: null,
+            duration: duration,
+            order: videoData.order,
+          });
 
-        await videoRepository.save(video);
+          await videoRepository.save(video);
+          console.log(`    ✓ Vidéo créée: ${videoData.title}`);
+        } catch (error) {
+          console.error(`    ❌ Erreur lors de la création de la vidéo "${videoData.title}":`, error);
+          throw error;
+        }
       } else if (videoData.filename) {
         // Gérer les vidéos locales
         let videoFilePath: string;
@@ -755,7 +763,12 @@ export async function seedAcademyCourses(dataSource: DataSource): Promise<void> 
   await createCourse(dataSource, initiationIAStructure, baseVideoPath);
 
   // Créer la formation La fabrication du tapa
-  await createCourse(dataSource, fabricationTapaStructure, baseVideoPath);
+  try {
+    await createCourse(dataSource, fabricationTapaStructure, baseVideoPath);
+  } catch (error) {
+    console.error(`❌ Erreur lors de la création de la formation "La fabrication du tapa":`, error);
+    throw error;
+  }
 
   console.log('\n✅ Toutes les formations ont été créées avec succès!');
 }
