@@ -506,6 +506,41 @@ const initiationIAStructure = {
 };
 
 /**
+ * Structure de la formation La fabrication du tapa
+ */
+const fabricationTapaStructure = {
+  course: {
+    title: 'La fabrication du tapa',
+    description: 'Formation complète sur la fabrication traditionnelle du tapa polynésien. Découvrez les techniques ancestrales pour choisir l\'écorce appropriée et maîtriser le processus de fabrication de ce tissu traditionnel.\n\nCette formation comprend deux modules essentiels : le choix de l\'écorce et le processus de fabrication.',
+    isPublished: true,
+    order: 4,
+  },
+  modules: [
+    {
+      title: 'Module 1 : Les bases de la fabrication',
+      description: 'Apprenez les fondamentaux de la fabrication du tapa : le choix de l\'écorce et le processus de fabrication traditionnel.',
+      order: 0,
+      videos: [
+        {
+          videoUrl: 'https://www.youtube.com/watch?v=6pixQ-QukM0',
+          title: 'La fabrication du tapa: #1 quel écorce choisir',
+          description: 'Découvrez comment choisir la bonne écorce pour la fabrication du tapa selon les techniques traditionnelles polynésiennes',
+          duration: 429,
+          order: 0,
+        },
+        {
+          videoUrl: 'https://www.youtube.com/watch?v=2dEJOQpruOE',
+          title: 'La fabrication du tapa: #2 le processus',
+          description: 'Maîtrisez le processus complet de fabrication du tapa, étape par étape, selon les méthodes ancestrales',
+          duration: 1059,
+          order: 1,
+        },
+      ],
+    },
+  ],
+};
+
+/**
  * Type pour la structure d'une formation
  */
 type CourseStructure = {
@@ -718,6 +753,9 @@ export async function seedAcademyCourses(dataSource: DataSource): Promise<void> 
 
   // Créer la formation Initiation à l'intelligence artificielle
   await createCourse(dataSource, initiationIAStructure, baseVideoPath);
+
+  // Créer la formation La fabrication du tapa
+  await createCourse(dataSource, fabricationTapaStructure, baseVideoPath);
 
   console.log('\n✅ Toutes les formations ont été créées avec succès!');
 }
