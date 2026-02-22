@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { Video } from '../../entities/video.entity';
 import { AcademyModule } from '../../entities/module.entity';
+import { Course } from '../../entities/course.entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -11,11 +12,11 @@ const dataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'nunaheritage',
-  entities: [Video, AcademyModule],
+  entities: [Video, AcademyModule, Course],
   synchronize: false,
 });
 
-// Durées récupérées depuis la DB locale le 21/02/2026 15:03:32
+// Durées récupérées depuis la DB locale le 21/02/2026 15:07:29
 const videoDurations: Array<{ videoId: number; duration: number | null }> = [
   {
     "videoId": 9,
