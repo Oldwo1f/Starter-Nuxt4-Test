@@ -104,6 +104,7 @@ async function generateUpdateScript() {
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { Video } from '../../entities/video.entity';
+import { AcademyModule } from '../../entities/module.entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -112,7 +113,7 @@ const dataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'nunaheritage',
-  entities: [Video],
+  entities: [Video, AcademyModule],
   synchronize: false,
 });
 

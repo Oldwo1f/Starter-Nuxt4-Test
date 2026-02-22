@@ -2,6 +2,7 @@ import 'dotenv/config';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { Video } from '../../entities/video.entity';
+import { AcademyModule } from '../../entities/module.entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -10,11 +11,11 @@ const dataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'nunaheritage',
-  entities: [Video],
+  entities: [Video, AcademyModule],
   synchronize: false,
 });
 
-// Durées récupérées depuis la DB locale le 21/02/2026 14:59:57
+// Durées récupérées depuis la DB locale le 21/02/2026 15:03:32
 const videoDurations: Array<{ videoId: number; duration: number | null }> = [
   {
     "videoId": 9,
