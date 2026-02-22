@@ -101,22 +101,7 @@ async function generateUpdateScript() {
 
     // Générer le script de mise à jour
     const updateScript = `import 'dotenv/config';
-import 'reflect-metadata';
-import { DataSource } from 'typeorm';
-import { Video } from '../../entities/video.entity';
-import { AcademyModule } from '../../entities/module.entity';
-import { Course } from '../../entities/course.entity';
-
-const dataSource = new DataSource({
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
-  database: process.env.DB_NAME || 'nunaheritage',
-  entities: [Video, AcademyModule, Course],
-  synchronize: false,
-});
+import { Client } from 'pg';
 
 // Durées récupérées depuis la DB locale le ${new Date().toLocaleString('fr-FR')}
 const videoDurations: Array<{ videoId: number; duration: number | null }> = ${JSON.stringify(
@@ -126,13 +111,19 @@ const videoDurations: Array<{ videoId: number; duration: number | null }> = ${JS
     )};
 
 async function updateDurations() {
+  const client = new Client({
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    user: process.env.DB_USERNAME || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
+    database: process.env.DB_NAME || 'nunaheritage',
+  });
+
   try {
     console.log('🔄 Mise à jour des durées des vidéos...\\n');
     
-    await dataSource.initialize();
+    await client.connect();
     console.log('✓ Connexion à la base de données établie\\n');
-
-    const videoRepository = dataSource.getRepository(Video);
 
     let updated = 0;
     let skipped = 0;
@@ -140,26 +131,35 @@ async function updateDurations() {
 
     for (const { videoId, duration } of videoDurations) {
       try {
-        const video = await videoRepository.findOne({ where: { id: videoId } });
-        
-        if (!video) {
+        if (duration === null) {
+          console.log(\`⏭ Vidéo ID \${videoId} - Pas de durée à mettre à jour\`);
+          skipped++;
+          continue;
+        }
+
+        // Vérifier que la vidéo existe et récupérer son titre
+        const checkResult = await client.query(
+          'SELECT id, title FROM videos WHERE id = $1',
+          [videoId]
+        );
+
+        if (checkResult.rows.length === 0) {
           console.log(\`⚠ Vidéo ID \${videoId} non trouvée\`);
           errors++;
           continue;
         }
 
-        if (duration === null) {
-          console.log(\`⏭ Vidéo ID \${videoId} (\${video.title}) - Pas de durée à mettre à jour\`);
-          skipped++;
-          continue;
-        }
+        const videoTitle = checkResult.rows[0].title;
 
-        video.duration = duration;
-        await videoRepository.save(video);
+        // Mettre à jour la durée avec une requête SQL directe
+        await client.query(
+          'UPDATE videos SET duration = $1, "updatedAt" = NOW() WHERE id = $2',
+          [duration, videoId]
+        );
 
         const minutes = Math.floor(duration / 60);
         const seconds = duration % 60;
-        console.log(\`✅ Vidéo ID \${videoId} (\${video.title}) - \${minutes}m\${seconds}s\`);
+        console.log(\`✅ Vidéo ID \${videoId} (\${videoTitle}) - \${minutes}m\${seconds}s\`);
         updated++;
       } catch (error) {
         console.error(\`❌ Erreur pour vidéo ID \${videoId}:\`, error);
@@ -173,12 +173,12 @@ async function updateDurations() {
     console.log(\`   ⏭ Vidéos ignorées (pas de durée): \${skipped}\`);
     console.log(\`   ⚠ Erreurs: \${errors}\`);
 
-    await dataSource.destroy();
+    await client.end();
     console.log('\\n✅ Mise à jour terminée avec succès!');
     process.exit(0);
   } catch (error) {
     console.error('❌ Erreur lors de la mise à jour:', error);
-    await dataSource.destroy();
+    await client.end();
     process.exit(1);
   }
 }

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { Client } from 'pg';
 
-// Durées récupérées depuis la DB locale le 21/02/2026 15:10:07
+// Durées récupérées depuis la DB locale le 21/02/2026 15:07:29
 const videoDurations: Array<{ videoId: number; duration: number | null }> = [
   {
     "videoId": 9,
@@ -37,219 +37,219 @@ const videoDurations: Array<{ videoId: number; duration: number | null }> = [
   },
   {
     "videoId": 17,
-    "duration": 656
+    "duration": 456
   },
   {
     "videoId": 18,
-    "duration": 529
-  },
-  {
-    "videoId": 19,
-    "duration": 295
-  },
-  {
-    "videoId": 20,
-    "duration": 803
-  },
-  {
-    "videoId": 21,
-    "duration": 434
-  },
-  {
-    "videoId": 22,
-    "duration": 670
-  },
-  {
-    "videoId": 23,
-    "duration": 637
-  },
-  {
-    "videoId": 24,
-    "duration": 726
-  },
-  {
-    "videoId": 25,
-    "duration": 719
-  },
-  {
-    "videoId": 26,
-    "duration": 441
-  },
-  {
-    "videoId": 27,
-    "duration": 567
-  },
-  {
-    "videoId": 28,
-    "duration": 308
-  },
-  {
-    "videoId": 29,
-    "duration": 327
-  },
-  {
-    "videoId": 30,
-    "duration": 332
-  },
-  {
-    "videoId": 31,
-    "duration": 214
-  },
-  {
-    "videoId": 32,
-    "duration": 263
-  },
-  {
-    "videoId": 33,
-    "duration": 627
-  },
-  {
-    "videoId": 34,
-    "duration": 586
-  },
-  {
-    "videoId": 35,
-    "duration": 324
-  },
-  {
-    "videoId": 36,
-    "duration": 462
-  },
-  {
-    "videoId": 37,
-    "duration": 178
-  },
-  {
-    "videoId": 48,
-    "duration": 182
-  },
-  {
-    "videoId": 49,
-    "duration": 610
-  },
-  {
-    "videoId": 50,
-    "duration": 270
-  },
-  {
-    "videoId": 51,
-    "duration": 238
-  },
-  {
-    "videoId": 52,
-    "duration": 828
-  },
-  {
-    "videoId": 53,
-    "duration": 410
-  },
-  {
-    "videoId": 54,
-    "duration": 519
-  },
-  {
-    "videoId": 55,
-    "duration": 241
-  },
-  {
-    "videoId": 56,
-    "duration": 251
-  },
-  {
-    "videoId": 57,
-    "duration": 202
-  },
-  {
-    "videoId": 58,
-    "duration": 349
-  },
-  {
-    "videoId": 59,
-    "duration": 261
-  },
-  {
-    "videoId": 60,
-    "duration": 175
-  },
-  {
-    "videoId": 61,
-    "duration": 323
-  },
-  {
-    "videoId": 62,
-    "duration": 382
-  },
-  {
-    "videoId": 63,
-    "duration": 341
-  },
-  {
-    "videoId": 64,
-    "duration": 632
-  },
-  {
-    "videoId": 65,
-    "duration": 483
-  },
-  {
-    "videoId": 66,
     "duration": 360
   },
   {
-    "videoId": 67,
-    "duration": 481
+    "videoId": 19,
+    "duration": 300
   },
   {
-    "videoId": 68,
-    "duration": 148
+    "videoId": 20,
+    "duration": 420
   },
   {
-    "videoId": 69,
-    "duration": 291
+    "videoId": 21,
+    "duration": 480
   },
   {
-    "videoId": 70,
-    "duration": 407
+    "videoId": 22,
+    "duration": 540
   },
   {
-    "videoId": 71,
-    "duration": 97
+    "videoId": 23,
+    "duration": 600
   },
   {
-    "videoId": 72,
-    "duration": 115
+    "videoId": 24,
+    "duration": 660
   },
   {
-    "videoId": 73,
-    "duration": 254
+    "videoId": 25,
+    "duration": 720
   },
   {
-    "videoId": 74,
-    "duration": 100
+    "videoId": 26,
+    "duration": 780
   },
   {
-    "videoId": 75,
-    "duration": 326
+    "videoId": 27,
+    "duration": 840
   },
   {
-    "videoId": 76,
-    "duration": 124
+    "videoId": 28,
+    "duration": 900
   },
   {
-    "videoId": 77,
-    "duration": 297
+    "videoId": 29,
+    "duration": 960
+  },
+  {
+    "videoId": 30,
+    "duration": 1020
+  },
+  {
+    "videoId": 31,
+    "duration": 1080
+  },
+  {
+    "videoId": 32,
+    "duration": 1140
+  },
+  {
+    "videoId": 33,
+    "duration": 1200
+  },
+  {
+    "videoId": 34,
+    "duration": 1260
+  },
+  {
+    "videoId": 35,
+    "duration": 1320
+  },
+  {
+    "videoId": 36,
+    "duration": 1380
+  },
+  {
+    "videoId": 37,
+    "duration": 1440
   },
   {
     "videoId": 38,
-    "duration": 423
+    "duration": 1500
   },
   {
     "videoId": 39,
-    "duration": 798
+    "duration": 1560
   },
   {
     "videoId": 40,
-    "duration": 803
+    "duration": 1620
+  },
+  {
+    "videoId": 41,
+    "duration": 1680
+  },
+  {
+    "videoId": 42,
+    "duration": 1740
+  },
+  {
+    "videoId": 43,
+    "duration": 1800
+  },
+  {
+    "videoId": 44,
+    "duration": 1860
+  },
+  {
+    "videoId": 45,
+    "duration": 1920
+  },
+  {
+    "videoId": 46,
+    "duration": 1980
+  },
+  {
+    "videoId": 47,
+    "duration": 2040
+  },
+  {
+    "videoId": 48,
+    "duration": 2100
+  },
+  {
+    "videoId": 49,
+    "duration": 2160
+  },
+  {
+    "videoId": 50,
+    "duration": 2220
+  },
+  {
+    "videoId": 51,
+    "duration": 2280
+  },
+  {
+    "videoId": 52,
+    "duration": 2340
+  },
+  {
+    "videoId": 53,
+    "duration": 2400
+  },
+  {
+    "videoId": 54,
+    "duration": 2460
+  },
+  {
+    "videoId": 55,
+    "duration": 2520
+  },
+  {
+    "videoId": 56,
+    "duration": 2580
+  },
+  {
+    "videoId": 57,
+    "duration": 2640
+  },
+  {
+    "videoId": 58,
+    "duration": 2700
+  },
+  {
+    "videoId": 59,
+    "duration": 2760
+  },
+  {
+    "videoId": 60,
+    "duration": 2820
+  },
+  {
+    "videoId": 61,
+    "duration": 2880
+  },
+  {
+    "videoId": 62,
+    "duration": 2940
+  },
+  {
+    "videoId": 63,
+    "duration": 3000
+  },
+  {
+    "videoId": 64,
+    "duration": 3060
+  },
+  {
+    "videoId": 65,
+    "duration": 3120
+  },
+  {
+    "videoId": 66,
+    "duration": 3180
+  },
+  {
+    "videoId": 67,
+    "duration": 3240
+  },
+  {
+    "videoId": 68,
+    "duration": 3300
+  },
+  {
+    "videoId": 69,
+    "duration": 3360
+  },
+  {
+    "videoId": 70,
+    "duration": 3420
   }
 ];
 
