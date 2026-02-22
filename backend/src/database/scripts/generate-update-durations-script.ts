@@ -224,6 +224,28 @@ fi
 echo -e "\${GREEN}🔄 Mise à jour des durées...\${NC}"
 echo ""
 
+# Vérifier que le fichier existe localement
+SCRIPT_PATH="backend/src/database/scripts/update-durations-from-local.ts"
+if [ ! -f "\$SCRIPT_PATH" ]; then
+    echo -e "\${YELLOW}❌ Le fichier \$SCRIPT_PATH n'existe pas localement\${NC}"
+    exit 1
+fi
+
+# Créer le répertoire dans le conteneur si nécessaire
+docker exec nunaheritage-backend mkdir -p /app/src/database/scripts
+
+# Copier le script dans le conteneur
+echo -e "\${GREEN}📋 Copie du script dans le conteneur...\${NC}"
+docker cp "\$SCRIPT_PATH" nunaheritage-backend:/app/src/database/scripts/update-durations-from-local.ts
+
+if [ \$? -ne 0 ]; then
+    echo -e "\${YELLOW}❌ Erreur lors de la copie du script\${NC}"
+    exit 1
+fi
+
+echo -e "\${GREEN}✅ Script copié\${NC}"
+echo ""
+
 # Exécuter le script dans le conteneur
 docker exec -it nunaheritage-backend sh -c "
   cd /app && \\
