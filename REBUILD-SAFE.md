@@ -62,9 +62,12 @@ Pour vérifier que vos volumes existent et sont intacts:
 
 - [ ] ✅ Vérifier que les volumes existent: `./verify-volumes.sh`
 - [ ] 💾 Créer une sauvegarde: `./backup-database.sh` (recommandé)
+- [ ] 🔍 Vérifier l'état des migrations: `./check-migrations-status.sh`
 - [ ] 🔧 Utiliser `docker-compose down` **SANS** le flag `-v`
 - [ ] 🚀 Reconstruire: `docker-compose build --no-cache`
 - [ ] ▶️ Redémarrer: `docker-compose up -d`
+- [ ] 🔍 Vérifier les migrations après rebuild: `./check-migrations-status.sh`
+- [ ] 🔄 Appliquer les migrations si nécessaire: `./apply-migrations-safe.sh`
 - [ ] ✅ Vérifier que les données sont toujours présentes
 
 ## 🔄 Processus de Rebuild Complet
@@ -76,7 +79,10 @@ Pour vérifier que vos volumes existent et sont intacts:
 # 2. Vérifier les volumes
 ./verify-volumes.sh
 
-# 3. Rebuild sécurisé (utilise le script ou les commandes manuelles)
+# 3. Vérifier l'état des migrations AVANT le rebuild
+./check-migrations-status.sh
+
+# 4. Rebuild sécurisé (utilise le script ou les commandes manuelles)
 ./rebuild-safe.sh
 
 # OU manuellement:
@@ -84,10 +90,24 @@ docker-compose down          # ⚠️ SANS -v
 docker-compose build --no-cache
 docker-compose up -d
 
-# 4. Vérifier que tout fonctionne
+# 5. Vérifier les migrations APRÈS le rebuild
+./check-migrations-status.sh
+
+# 6. Appliquer les migrations si nécessaire
+./apply-migrations-safe.sh
+
+# 7. Vérifier que tout fonctionne
 docker-compose ps
 docker-compose logs -f
 ```
+
+## 🔄 Migrations de Base de Données
+
+⚠️ **IMPORTANT**: Après un rebuild, vérifiez toujours que les migrations sont appliquées!
+
+Les migrations sont **séparées des données**. Même si vos données persistent (volumes Docker), les migrations doivent être vérifiées et appliquées si nécessaire.
+
+Voir le guide complet: `MIGRATIONS-GUIDE.md`
 
 ## 🆘 Restauration d'une Sauvegarde
 
@@ -115,3 +135,5 @@ docker exec -i -e PGPASSWORD="$DB_PASSWORD" nunaheritage-postgres \
 - ❌ `docker-compose down -v` → **DANGEREUX** (supprime les volumes)
 - 💾 Toujours faire une sauvegarde avant un gros changement
 - 🔍 Vérifier les volumes avec `./verify-volumes.sh`
+- 🔄 **Vérifier les migrations** avant et après le rebuild avec `./check-migrations-status.sh`
+- 🔄 **Appliquer les migrations** si nécessaire avec `./apply-migrations-safe.sh`

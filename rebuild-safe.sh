@@ -68,6 +68,29 @@ $DOCKER_COMPOSE_CMD ps
 echo ""
 echo -e "${GREEN}✅ Rebuild terminé!${NC}"
 echo ""
+
+# Vérifier et appliquer les migrations si nécessaire
+echo -e "${BLUE}🔄 Vérification des migrations de la base de données...${NC}"
+if [ -f "./check-migrations-status.sh" ]; then
+    if ! ./check-migrations-status.sh; then
+        echo ""
+        echo -e "${YELLOW}⚠️  Certaines migrations sont manquantes${NC}"
+        read -p "Voulez-vous les appliquer maintenant? (O/n): " -n 1 -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+            if [ -f "./apply-migrations-safe.sh" ]; then
+                ./apply-migrations-safe.sh
+            else
+                echo -e "${YELLOW}⚠️  Script d'application des migrations non trouvé${NC}"
+                echo "Exécutez manuellement: ./run-all-migrations.sh"
+            fi
+        fi
+    else
+        echo -e "${GREEN}✅ Toutes les migrations sont à jour!${NC}"
+    fi
+    echo ""
+fi
+
 echo -e "${BLUE}💡 Vérification des volumes:${NC}"
 if [ -f "./verify-volumes.sh" ]; then
     ./verify-volumes.sh
