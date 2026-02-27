@@ -154,6 +154,16 @@ else
 fi
 echo ""
 
+# Migration 7: referralCode dans users
+echo -e "${YELLOW}7. Migration: referralCode dans users${NC}"
+TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+if check_column "users" "referralCode"; then
+    PASSED_CHECKS=$((PASSED_CHECKS + 1))
+else
+    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+fi
+echo ""
+
 # Résumé
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}📊 Résumé:${NC}"

@@ -82,6 +82,21 @@ else
 fi
 echo ""
 
+# Migration 4: referralCode dans users
+echo -e "${YELLOW}4. Migration: referralCode dans users${NC}"
+if [ -f "backend/migrations/add_referral_code_to_users.sql" ]; then
+    docker exec -e PGPASSWORD="$DB_PASSWORD" -i "$CONTAINER_NAME" \
+        psql -U "$DB_USERNAME" -d "$DB_NAME" < backend/migrations/add_referral_code_to_users.sql
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✅ Migration referralCode dans users terminée${NC}"
+    else
+        echo -e "${RED}❌ Erreur lors de la migration referralCode dans users${NC}"
+    fi
+else
+    echo -e "${RED}❌ Fichier backend/migrations/add_referral_code_to_users.sql non trouvé${NC}"
+fi
+echo ""
+
 # Vérification finale
 echo -e "${BLUE}✅ Vérification finale...${NC}"
 if [ -f "./check-migrations-status.sh" ]; then
