@@ -9,6 +9,7 @@ interface User {
   role: string
   emailVerified: boolean
   isActive: boolean
+  paidAccessExpiresAt?: string | null
 }
 
 interface AuthState {
@@ -86,16 +87,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string, referralCode?: string) => {
     try {
+      const body: any = {
+        email,
+        password,
+      }
+      if (referralCode) {
+        body.referralCode = referralCode
+      }
       const response = await $fetch<{ access_token: string; user: User }>(
         `${API_BASE_URL}/auth/register`,
         {
           method: 'POST',
-          body: {
-            email,
-            password,
-          },
+          body,
         }
       )
       setAuth(response.access_token, response.user)

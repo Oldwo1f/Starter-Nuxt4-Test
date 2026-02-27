@@ -10,7 +10,7 @@ definePageMeta({
   layout: 'default',
 })
 
-// Compte à rebours pour Te Natira'a - 11 juin 2026 à 8h00
+// Compte à rebours pour Te Natira'a - 11 avril 2026 à 8h00
 const countdown = ref({
   days: 0,
   hours: 0,
@@ -18,7 +18,7 @@ const countdown = ref({
   seconds: 0,
 })
 
-const targetDate = new Date('2026-06-11T08:00:00').getTime()
+const targetDate = new Date('2026-04-11T08:00:00').getTime()
 
 const updateCountdown = () => {
   const now = new Date().getTime()
@@ -91,7 +91,7 @@ onUnmounted(() => {
               Prochain événement
             </h2>
             <p class="text-lg text-primary-300">
-              11 juin 2026 à 8h00
+              Samedi 11 avril à 8h00
             </p>
           </div>
           <div class="grid grid-cols-4 gap-4 sm:gap-6">
@@ -240,7 +240,7 @@ onUnmounted(() => {
             </h2>
           </div>
           <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            <UCard class="text-center bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+            <UCard class="text-center bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
               <div class="mb-4 flex justify-center">
                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary-500/20">
                   <UIcon name="i-heroicons-calendar" class="h-8 w-8 text-primary-400" />
@@ -250,11 +250,25 @@ onUnmounted(() => {
                 Date
               </h3>
               <p class="text-white/80">
-                11 juin 2026
+                Samedi 11 avril
               </p>
             </UCard>
 
-            <UCard class="text-center bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+            <UCard class="text-center bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+              <div class="mb-4 flex justify-center">
+                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary-500/20">
+                  <UIcon name="i-heroicons-map-pin" class="h-8 w-8 text-primary-400" />
+                </div>
+              </div>
+              <h3 class="mb-2 text-xl font-bold text-white">
+                Lieu
+              </h3>
+              <p class="text-white/80">
+                Vallée de Tipaerui
+              </p>
+            </UCard>
+
+            <UCard class="text-center bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
               <div class="mb-4 flex justify-center">
                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary-500/20">
                   <UIcon name="i-heroicons-clock" class="h-8 w-8 text-primary-400" />
@@ -267,20 +281,58 @@ onUnmounted(() => {
                 8h00
               </p>
             </UCard>
+          </div>
 
-            <UCard class="text-center sm:col-span-2 lg:col-span-1 bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
-              <div class="mb-4 flex justify-center">
-                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary-500/20">
-                  <UIcon name="i-heroicons-user-group" class="h-8 w-8 text-primary-400" />
+          <!-- Section Tarifs -->
+          <div class="mt-12">
+            <h3 class="mb-8 text-center text-3xl font-bold text-white sm:text-4xl">
+              Tarifs
+            </h3>
+            <div class="grid gap-6 sm:grid-cols-2">
+              <!-- Tarifs Membres -->
+              <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+                <div class="mb-4 flex items-center justify-center gap-3">
+                  <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary-500/20">
+                    <UIcon name="i-heroicons-user" class="h-6 w-6 text-primary-400" />
+                  </div>
+                  <h4 class="text-2xl font-bold text-white">
+                    Membres
+                  </h4>
                 </div>
-              </div>
-              <h3 class="mb-2 text-xl font-bold text-white">
-                Participants
-              </h3>
-              <p class="text-white/80">
-                Membres et invités de Nuna'a Heritage
-              </p>
-            </UCard>
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between rounded-lg bg-primary-500/10 px-4 py-3">
+                    <span class="text-white/80">Pré-vente</span>
+                    <span class="text-xl font-bold text-primary-300">1000 XPF</span>
+                  </div>
+                  <div class="flex items-center justify-between rounded-lg bg-primary-500/10 px-4 py-3">
+                    <span class="text-white/80">Plein tarif</span>
+                    <span class="text-xl font-bold text-primary-300">1500 XPF</span>
+                  </div>
+                </div>
+              </UCard>
+
+              <!-- Tarifs Public -->
+              <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+                <div class="mb-4 flex items-center justify-center gap-3">
+                  <div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary-500/20">
+                    <UIcon name="i-heroicons-user-group" class="h-6 w-6 text-primary-400" />
+                  </div>
+                  <h4 class="text-2xl font-bold text-white">
+                    Public
+                  </h4>
+                </div>
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between rounded-lg bg-primary-500/10 px-4 py-3">
+                    <span class="text-white/80">Pré-vente</span>
+                    <span class="text-xl font-bold text-primary-300">1500 XPF</span>
+                  </div>
+                  <div class="flex items-center justify-between rounded-lg bg-primary-500/10 px-4 py-3">
+                    <span class="text-white/80">Plein tarif</span>
+                    <span class="text-xl font-bold text-primary-300">2000 XPF</span>
+                  </div>
+                </div>
+              </UCard>
+            </div>
           </div>
         </div>
       </div>

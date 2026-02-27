@@ -43,6 +43,34 @@ const columns = [
   },
 ]
 
+// Gestionnaire pour le double-clic sur les lignes du tableau
+const handleTableDoubleClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  const row = target.closest('tr')
+  
+  if (!row) return
+  
+  // Ignorer si on clique sur un bouton ou un lien
+  if (target.closest('button') || target.closest('a')) {
+    return
+  }
+  
+  // Trouver l'index de la ligne dans le tableau
+  const tbody = row.closest('tbody')
+  if (!tbody) return
+  
+  const rows = Array.from(tbody.querySelectorAll('tr'))
+  const rowIndex = rows.indexOf(row)
+  
+  // Récupérer le partenaire correspondant
+  if (rowIndex >= 0 && rowIndex < partnerStore.partners.length) {
+    const partner = partnerStore.partners[rowIndex]
+    if (partner) {
+      partnerStore.openEditModal(partner)
+    }
+  }
+}
+
 // Wrapper pour fetchPartners avec gestion des toasts
 const handleFetchPartners = async () => {
   await partnerStore.fetchPartners()
@@ -208,7 +236,7 @@ onMounted(() => {
   <div>
     <div class="space-y-6">
       <!-- Tableau des partenaires -->
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-2">
@@ -233,12 +261,20 @@ onMounted(() => {
           </div>
         </template>
 
-        <div class="overflow-auto">
+        <div 
+          class="overflow-auto"
+          @dblclick="handleTableDoubleClick"
+        >
           <UTable
             v-if="!partnerStore.isLoading && partnerStore.partners.length > 0"
             :data="partnerStore.partners"
             :columns="columns"
             :loading="partnerStore.isLoading"
+            :ui="{
+              tr: {
+                base: 'cursor-pointer hover:bg-white/5 transition-colors',
+              },
+            }"
           >
             <template #link-cell="{ row }">
               <!-- Debug: {{ JSON.stringify(row) }} -->
@@ -354,7 +390,7 @@ onMounted(() => {
                 <img
                   :src="getBannerPreview(partnerStore.form.bannerHorizontal, partnerStore.form.existingBannerHorizontal)!"
                   alt="Bannière horizontale"
-                  class="w-full h-auto rounded-lg border border-white/10"
+                  class="w-full h-auto rounded-lg border-0"
                 />
                 <UButton
                   color="error"
@@ -380,7 +416,7 @@ onMounted(() => {
                 <img
                   :src="getBannerPreview(partnerStore.form.bannerVertical, partnerStore.form.existingBannerVertical)!"
                   alt="Bannière verticale"
-                  class="w-full h-auto rounded-lg border border-white/10"
+                  class="w-full h-auto rounded-lg border-0"
                 />
                 <UButton
                   color="error"

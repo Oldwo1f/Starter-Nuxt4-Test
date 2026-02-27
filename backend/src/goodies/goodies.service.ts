@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Goodie } from '../entities/goodie.entity';
 import { UploadService } from '../upload/upload.service';
+import { UserRole } from '../entities/user.entity';
 
 @Injectable()
 export class GoodiesService {
@@ -12,6 +13,51 @@ export class GoodiesService {
     private uploadService: UploadService,
   ) {}
 
+  /**
+   * Vérifie si un rôle utilisateur a accès à un niveau donné
+   * Hiérarchie: public < member < premium < vip
+   */
+  private hasAccessToLevel(userRole: UserRole | null, requiredLevel: 'public' | 'member' | 'premium' | 'vip'): boolean {
+    // Public est accessible à tous
+    if (requiredLevel === 'public') {
+      return true;
+    }
+
+    // Si l'utilisateur n'est pas connecté, seul public est accessible
+    if (!userRole) {
+      return false;
+    }
+
+    // Les staff (admin, superadmin, moderator) ont accès à tout
+    if ([UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR].includes(userRole)) {
+      return true;
+    }
+
+    // Hiérarchie des niveaux d'accès
+    const levelHierarchy: Record<'public' | 'member' | 'premium' | 'vip', number> = {
+      public: 0,
+      member: 1,
+      premium: 2,
+      vip: 3,
+    };
+
+    // Mapping des rôles utilisateur vers leurs niveaux
+    const roleToLevel: Record<UserRole, number> = {
+      [UserRole.USER]: 0, // user = public
+      [UserRole.MEMBER]: 1,
+      [UserRole.PREMIUM]: 2,
+      [UserRole.VIP]: 3,
+      [UserRole.ADMIN]: 999, // admin a accès à tout
+      [UserRole.SUPERADMIN]: 999,
+      [UserRole.MODERATOR]: 999,
+    };
+
+    const userLevel = roleToLevel[userRole] || 0;
+    const requiredLevelValue = levelHierarchy[requiredLevel];
+
+    return userLevel >= requiredLevelValue;
+  }
+
   async create(
     name: string,
     link?: string,
@@ -20,7 +66,7 @@ export class GoodiesService {
     fileUrl?: string,
     offeredByName?: string,
     offeredByLink?: string,
-    isPublic: boolean = true,
+    accessLevel: 'public' | 'member' | 'premium' | 'vip' = 'public',
     createdById?: number,
   ): Promise<Goodie> {
     const goodie = this.goodieRepository.create({
@@ -31,23 +77,21 @@ export class GoodiesService {
       fileUrl: fileUrl || null,
       offeredByName: offeredByName || null,
       offeredByLink: offeredByLink || null,
-      isPublic,
+      accessLevel,
       createdById: createdById || null,
     });
     return this.goodieRepository.save(goodie);
   }
 
-  async findAll(isAuthenticated: boolean = false): Promise<Goodie[]> {
+  async findAll(userRole: UserRole | null = null): Promise<Goodie[]> {
     try {
       const queryBuilder = this.goodieRepository.createQueryBuilder('goodie');
       
       // Joindre le créateur de manière optionnelle
       queryBuilder.leftJoinAndSelect('goodie.createdBy', 'createdBy');
       
-      // Si l'utilisateur n'est pas authentifié, ne montrer que les goodies publics
-      if (!isAuthenticated) {
-        queryBuilder.where('goodie.isPublic = :isPublic', { isPublic: true });
-      }
+      // Retourner TOUS les goodies (même ceux non accessibles)
+      // Le filtrage se fera côté frontend pour afficher tous les goodies avec cadenas si nécessaire
       
       queryBuilder.orderBy('goodie.createdAt', 'DESC');
       
@@ -74,22 +118,22 @@ export class GoodiesService {
     }
   }
 
-  async findOne(id: number, isAuthenticated: boolean = false): Promise<Goodie> {
+  async findOne(id: number, userRole: UserRole | null = null): Promise<Goodie> {
     try {
       const queryBuilder = this.goodieRepository.createQueryBuilder('goodie');
       
       queryBuilder.leftJoinAndSelect('goodie.createdBy', 'createdBy');
       queryBuilder.where('goodie.id = :id', { id });
-      
-      // Si l'utilisateur n'est pas authentifié, vérifier que le goodie est public
-      if (!isAuthenticated) {
-        queryBuilder.andWhere('goodie.isPublic = :isPublic', { isPublic: true });
-      }
 
       const goodie = await queryBuilder.getOne();
 
       if (!goodie) {
         throw new NotFoundException(`Goodie with ID ${id} not found`);
+      }
+
+      // Vérifier l'accès au goodie
+      if (!this.hasAccessToLevel(userRole, goodie.accessLevel)) {
+        throw new ForbiddenException(`You don't have access to this goodie. Required level: ${goodie.accessLevel}`);
       }
 
       // Filtrer les données du créateur pour ne garder que id et email
@@ -108,7 +152,7 @@ export class GoodiesService {
         stack: error.stack,
         name: error.name,
         id,
-        isAuthenticated,
+        userRole,
       });
       throw error;
     }
@@ -123,7 +167,7 @@ export class GoodiesService {
     fileUrl?: string | null,
     offeredByName?: string,
     offeredByLink?: string,
-    isPublic?: boolean,
+    accessLevel?: 'public' | 'member' | 'premium' | 'vip',
   ): Promise<Goodie> {
     const goodie = await this.goodieRepository.findOne({ where: { id } });
     if (!goodie) {
@@ -159,15 +203,15 @@ export class GoodiesService {
     if (offeredByLink !== undefined) {
       goodie.offeredByLink = offeredByLink || null;
     }
-    if (isPublic !== undefined) {
-      goodie.isPublic = isPublic;
+    if (accessLevel !== undefined) {
+      goodie.accessLevel = accessLevel;
     }
 
     return this.goodieRepository.save(goodie);
   }
 
   async remove(id: number): Promise<void> {
-    const goodie = await this.findOne(id, true); // Admin peut toujours voir
+    const goodie = await this.findOne(id, UserRole.ADMIN); // Admin peut toujours voir
 
     // Supprimer l'image
     if (goodie.imageUrl) {

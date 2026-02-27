@@ -127,7 +127,7 @@ onMounted(() => {
           </div>
         </UCard>
 
-        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <div class="text-center">
             <div class="mb-2 text-sm text-white/60">Annonces actives</div>
             <div class="text-3xl font-bold">{{ stats.activeListings }}</div>
@@ -140,7 +140,7 @@ onMounted(() => {
           </div>
         </UCard>
 
-        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <div class="text-center">
             <div class="mb-2 text-sm text-white/60">Transactions</div>
             <div class="text-3xl font-bold">{{ stats.totalTransactions }}</div>
@@ -150,7 +150,7 @@ onMounted(() => {
           </div>
         </UCard>
 
-        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <div class="text-center">
             <div class="mb-2 text-sm text-white/60">Vues totales</div>
             <div class="text-3xl font-bold">{{ stats.totalViews }}</div>
@@ -160,7 +160,7 @@ onMounted(() => {
       </div>
 
       <!-- Quick Actions -->
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <h2 class="text-xl font-semibold">Actions rapides</h2>
         </template>
@@ -179,7 +179,7 @@ onMounted(() => {
 
       <div class="grid gap-6 lg:grid-cols-2">
         <!-- Recent Listings -->
-        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <template #header>
             <div class="flex items-center justify-between">
               <h2 class="text-xl font-semibold">Annonces récentes</h2>
@@ -196,7 +196,7 @@ onMounted(() => {
             <div
               v-for="listing in recentListings"
               :key="listing.id"
-              class="flex gap-3 rounded-lg border border-white/10 p-3 transition-colors hover:bg-white/5"
+              class="flex gap-3 rounded-lg border-0 p-3 transition-colors hover:bg-white/5"
             >
               <div class="h-16 w-16 shrink-0 overflow-hidden rounded-lg">
                 <img
@@ -240,7 +240,7 @@ onMounted(() => {
         </UCard>
 
         <!-- Recent Transactions -->
-        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <template #header>
             <div class="flex items-center justify-between">
               <h2 class="text-xl font-semibold">Transactions récentes</h2>
@@ -257,7 +257,7 @@ onMounted(() => {
             <div
               v-for="transaction in recentTransactions"
               :key="transaction.id"
-              class="flex items-center justify-between rounded-lg border border-white/10 p-3"
+              class="flex items-center justify-between rounded-lg border-0 p-3"
             >
               <div class="flex-1 min-w-0">
                 <div class="font-semibold">

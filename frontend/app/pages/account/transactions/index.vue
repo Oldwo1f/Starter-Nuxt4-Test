@@ -104,7 +104,7 @@ onMounted(() => {
     </div>
 
     <!-- Filters -->
-    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <div class="space-y-4">
         <!-- Type filter -->
         <div>
@@ -151,7 +151,7 @@ onMounted(() => {
     </UCard>
 
     <!-- Transactions -->
-    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <template #header>
         <h2 class="text-xl font-semibold">
           {{ filteredTransactions.length }} transaction{{ filteredTransactions.length > 1 ? 's' : '' }}
@@ -166,7 +166,7 @@ onMounted(() => {
         <div
           v-for="transaction in filteredTransactions"
           :key="transaction.id"
-          class="flex items-center justify-between rounded-lg border border-white/10 p-4 transition-colors hover:bg-white/5"
+          class="flex items-center justify-between rounded-lg border-0 p-4 transition-colors hover:bg-white/5"
         >
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-3">

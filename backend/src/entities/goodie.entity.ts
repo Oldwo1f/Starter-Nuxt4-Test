@@ -35,8 +35,8 @@ export class Goodie {
   @Column({ type: 'varchar', nullable: true })
   offeredByLink: string | null; // Lien de la personne qui offre
 
-  @Column({ type: 'boolean', default: true })
-  isPublic: boolean; // Accessible à tous ou réservé aux connectés
+  @Column({ type: 'varchar', default: 'public' })
+  accessLevel: 'public' | 'member' | 'premium' | 'vip'; // Niveau d'accès requis
 
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'createdById' })

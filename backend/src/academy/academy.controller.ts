@@ -66,12 +66,13 @@ export class AcademyController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get all courses',
-    description: 'Retrieve all courses (published only for non-admin users)',
+    description: 'Retrieve all courses. Courses are filtered based on user access level (public, member, premium, vip).',
   })
   @ApiResponse({ status: 200, description: 'List of courses retrieved successfully' })
   async findAll(@Request() req) {
+    const userRole = req.user?.role || null;
     const userId = req.user?.id;
-    return this.academyService.findAllCourses(userId);
+    return this.academyService.findAllCourses(userRole, userId);
   }
 
   @Get(':id')
@@ -79,14 +80,15 @@ export class AcademyController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Get course by ID',
-    description: 'Retrieve a specific course with all modules and videos',
+    description: 'Retrieve a specific course with all modules and videos. Access is controlled by user role.',
   })
   @ApiParam({ name: 'id', description: 'Course ID', type: 'number' })
   @ApiResponse({ status: 200, description: 'Course retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Course not found' })
   async findOne(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    const userRole = req.user?.role || null;
     const userId = req.user?.id;
-    return this.academyService.findOneCourse(id, userId);
+    return this.academyService.findOneCourse(id, userRole, userId);
   }
 
   @Get(':id/progress')
@@ -153,6 +155,7 @@ export class AcademyController {
       createCourseDto.description,
       createCourseDto.thumbnailImage,
       createCourseDto.isPublished ?? false,
+      createCourseDto.accessLevel || 'public',
       createCourseDto.order ?? 0,
       createCourseDto.instructorAvatar,
       createCourseDto.instructorFirstName,
@@ -186,6 +189,7 @@ export class AcademyController {
       updateCourseDto.description,
       updateCourseDto.thumbnailImage,
       updateCourseDto.isPublished,
+      updateCourseDto.accessLevel,
       updateCourseDto.order,
       updateCourseDto.instructorAvatar,
       updateCourseDto.instructorFirstName,

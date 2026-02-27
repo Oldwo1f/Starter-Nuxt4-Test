@@ -249,7 +249,7 @@ onMounted(() => {
               class="flex-1"
               @click="form.type = 'bien'"
             >
-              Bien
+              Produit
             </UButton>
             <UButton
               :variant="form.type === 'service' ? 'solid' : 'outline'"
@@ -280,7 +280,7 @@ onMounted(() => {
           <label class="mb-2 block text-sm font-medium">Description *</label>
           <UTextarea
             v-model="form.description"
-            placeholder="Décrivez votre bien ou service en détail..."
+            placeholder="Décrivez votre produit ou service en détail..."
             :rows="6"
             size="lg"
             class="w-full"

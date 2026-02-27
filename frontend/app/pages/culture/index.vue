@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useCultureStore } from '~/stores/useCultureStore'
 import type { Culture } from '~/stores/useCultureStore'
+import tahitiVodVerticale from '~/assets/images/tahiti-vod-verticale.jpg'
+import tahitiVodHorizontale from '~/assets/images/tahiti-vod-horizontale.jpg'
 
 definePageMeta({
   layout: 'default',
@@ -156,7 +158,7 @@ onMounted(() => {
           <UCard
             v-for="video in category.videos"
             :key="video.id"
-            class="group cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-all hover:scale-105 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/20"
+            class="group cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-all hover:scale-105 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/20"
             @click="openVideo(video)"
           >
             <template #header>
@@ -266,5 +268,49 @@ onMounted(() => {
         </div>
       </template>
     </UModal>
+
+    <!-- Bandeau Tahiti VOD -->
+    <div class="mt-16 w-full">
+      <!-- Version mobile (verticale) -->
+      <div class="relative block overflow-hidden rounded-lg md:hidden">
+        <img
+          :src="tahitiVodVerticale"
+          alt="Tahiti VOD"
+          class="h-full w-full object-cover"
+        />
+        <div class="absolute inset-0 flex flex-col items-center justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
+          <UButton
+            href="https://www.tahitivod.pf/discover?locale=fr"
+            target="_blank"
+            rel="noopener noreferrer"
+            color="primary"
+            size="lg"
+            class="w-full"
+          >
+            Accéder à TAHITI-VOD
+          </UButton>
+        </div>
+      </div>
+
+      <!-- Version desktop (horizontale) -->
+      <div class="relative hidden overflow-hidden rounded-lg md:block">
+        <img
+          :src="tahitiVodHorizontale"
+          alt="Tahiti VOD"
+          class="h-full w-full object-cover"
+        />
+        <div class="absolute inset-0 flex items-center justify-end bg-gradient-to-l from-black/80 via-black/40 to-transparent pr-8">
+          <UButton
+            href="https://www.tahitivod.pf/discover?locale=fr"
+            target="_blank"
+            rel="noopener noreferrer"
+            color="primary"
+            size="lg"
+          >
+            Accéder à TAHITI-VOD
+          </UButton>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

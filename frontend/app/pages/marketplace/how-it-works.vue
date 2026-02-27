@@ -17,7 +17,7 @@ definePageMeta({
      
 
       <!-- Section Règles -->
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <h2 class="text-2xl font-bold">Règles</h2>
         </template>
@@ -60,7 +60,7 @@ definePageMeta({
             <div class="flex gap-3">
               <UIcon name="i-heroicons-check-circle" class="h-5 w-5 shrink-0 text-primary-500 mt-0.5" />
               <p class="text-white/80">
-                On peut payer un bien ou un service tout ou en partie avec des Pūpū 🐚.
+                On peut payer un produit ou un service tout ou en partie avec des Pūpū 🐚.
               </p>
             </div>
             <div class="flex gap-3">
@@ -74,7 +74,7 @@ definePageMeta({
       </UCard>
 
        <!-- Section Pūpū -->
-       <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+       <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <div class="flex items-center gap-3">
             <span class="text-3xl">🐚</span>
@@ -84,7 +84,7 @@ definePageMeta({
         <div class="space-y-4">
           <p class="text-white/80">
             Le Pūpū est la monnaie virtuelle de notre marketplace. Elle permet d'échanger
-            des biens et services sans utiliser d'argent réel.
+            des produits et services sans utiliser d'argent réel.
           </p>
           <div class="grid gap-4 sm:grid-cols-3">
             <div class="rounded-lg bg-primary-500/20 p-4">
@@ -107,7 +107,7 @@ definePageMeta({
       </UCard>
 
       <!-- Section Processus -->
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <h2 class="text-2xl font-bold">Le processus d'échange</h2>
         </template>
@@ -119,7 +119,7 @@ definePageMeta({
             <div>
               <h3 class="mb-1 font-semibold text-white">Parcourez ou poster une annonce</h3>
               <p class="text-white/70">
-                Explorez les annonces disponibles ou créez votre propre annonce pour proposer vos biens ou services.
+                Explorez les annonces disponibles ou créez votre propre annonce pour proposer vos produits ou services.
               </p>
             </div>
           </div>
@@ -160,7 +160,7 @@ definePageMeta({
       </UCard>
 
       <!-- Section Avantages -->
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <h2 class="text-2xl font-bold">Les avantages</h2>
         </template>
@@ -212,7 +212,7 @@ definePageMeta({
           color="primary"
           icon="i-heroicons-shopping-bag"
         >
-          Découvrir la marketplace
+          Découvrir la place de Troc
         </UButton>
       </div>
     </div>

@@ -37,6 +37,23 @@ const formatProgress = (progress?: { progressPercentage: number }) => {
   if (!progress) return 0
   return Math.round(progress.progressPercentage)
 }
+
+// Check if user can access a course
+const canAccess = (course: Course) => {
+  return academyStore.canAccessCourse(course)
+}
+
+// Get access message for a course
+const getAccessMessage = (course: Course) => {
+  return academyStore.getAccessMessage(course)
+}
+
+// Handle course click
+const handleCourseClick = (course: Course) => {
+  if (canAccess(course)) {
+    router.push(`/academy/${course.id}`)
+  }
+}
 </script>
 
 <template>
@@ -56,8 +73,9 @@ const formatProgress = (progress?: { progressPercentage: number }) => {
       <UCard
         v-for="course in academyStore.courses"
         :key="course.id"
-        class="cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-transform hover:scale-105 hover:border-primary-500/50"
-        @click="router.push(`/academy/${course.id}`)"
+        class="relative bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-transform hover:scale-105"
+        :class="{ 'cursor-pointer hover:border-primary-500/50': canAccess(course) }"
+        @click="handleCourseClick(course)"
       >
         <template #header>
           <!-- Thumbnail -->
@@ -83,7 +101,41 @@ const formatProgress = (progress?: { progressPercentage: number }) => {
         </template>
         
         <div class="space-y-2">
-          <h3 class="font-semibold line-clamp-2">{{ course.title }}</h3>
+          <div class="flex items-start justify-between gap-2">
+            <h3 class="flex-1 font-semibold line-clamp-2">{{ course.title }}</h3>
+            <UBadge 
+              v-if="course.accessLevel === 'public'"
+              color="neutral"
+              variant="outline"
+              size="xs"
+            >
+              Public
+            </UBadge>
+            <UBadge 
+              v-else-if="course.accessLevel === 'member'"
+              color="success"
+              variant="subtle"
+              size="xs"
+            >
+              Membre
+            </UBadge>
+            <UBadge 
+              v-else-if="course.accessLevel === 'premium'"
+              color="warning"
+              variant="subtle"
+              size="xs"
+            >
+              Premium
+            </UBadge>
+            <UBadge 
+              v-else-if="course.accessLevel === 'vip'"
+              class="bg-purple-500/20 text-purple-400 ring-1 ring-inset ring-purple-500/50"
+              variant="subtle"
+              size="xs"
+            >
+              VIP
+            </UBadge>
+          </div>
           <p v-if="course.description" class="line-clamp-3 text-sm text-white/70">
             {{ course.description }}
           </p>
@@ -103,9 +155,25 @@ const formatProgress = (progress?: { progressPercentage: number }) => {
           </div>
           
           <!-- Module count -->
-          <div class="flex items-center gap-2 text-xs text-white/60">
-            <UIcon name="i-heroicons-folder" class="h-4 w-4" />
-            <span>{{ course.modules?.length || 0 }} module{{ (course.modules?.length || 0) > 1 ? 's' : '' }}</span>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-xs text-white/60">
+              <UIcon name="i-heroicons-folder" class="h-4 w-4" />
+              <span>{{ course.modules?.length || 0 }} module{{ (course.modules?.length || 0) > 1 ? 's' : '' }}</span>
+            </div>
+            
+            <!-- Bouton avec cadenas si le cours est restreint et l'utilisateur n'a pas accès -->
+            <UButton
+              v-if="!canAccess(course)"
+              disabled
+              size="sm"
+              color="neutral"
+              variant="outline"
+              icon="i-heroicons-lock-closed"
+              class="opacity-50 cursor-not-allowed"
+              @click.stop
+            >
+              {{ getAccessMessage(course) }}
+            </UButton>
           </div>
         </div>
       </UCard>

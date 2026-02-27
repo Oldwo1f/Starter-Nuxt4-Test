@@ -68,8 +68,8 @@ export class GoodiesController {
     @Request() req,
     @UploadedFiles() files?: { image?: Express.Multer.File[]; file?: Express.Multer.File[] },
   ) {
-    // Convertir isPublic depuis FormData (string) en booléen
-    const isPublic = createGoodieDto.isPublic === 'true' || createGoodieDto.isPublic === true || createGoodieDto.isPublic === undefined;
+    // Convertir accessLevel depuis FormData (string) ou utiliser la valeur par défaut
+    const accessLevel = (createGoodieDto.accessLevel as 'public' | 'member' | 'premium' | 'vip') || 'public';
 
     // Créer le goodie d'abord pour obtenir l'ID
     const goodie = await this.goodiesService.create(
@@ -80,7 +80,7 @@ export class GoodiesController {
       undefined, // fileUrl sera défini après upload
       createGoodieDto.offeredByName,
       createGoodieDto.offeredByLink,
-      isPublic,
+      accessLevel,
       req.user?.id,
     );
 
@@ -118,25 +118,27 @@ export class GoodiesController {
   @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
     summary: 'Get all goodies',
-    description: 'Retrieve all goodies. Public goodies are visible to all, private ones only to authenticated users.',
+    description: 'Retrieve all goodies. Goodies are filtered based on user access level (public, member, premium, vip).',
   })
   @ApiResponse({ status: 200, description: 'List of goodies retrieved successfully' })
   async findAll(@Request() req) {
-    const isAuthenticated = !!req.user;
-    return this.goodiesService.findAll(isAuthenticated);
+    const userRole = req.user?.role || null;
+    return this.goodiesService.findAll(userRole);
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
     summary: 'Get a goodie by ID',
-    description: 'Retrieve a specific goodie by its ID',
+    description: 'Retrieve a specific goodie by its ID. Access is controlled by user role.',
   })
   @ApiParam({ name: 'id', description: 'Goodie ID', type: 'number' })
   @ApiResponse({ status: 200, description: 'Goodie retrieved successfully' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient access level' })
   @ApiResponse({ status: 404, description: 'Goodie not found' })
   async findOne(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    const isAuthenticated = !!req.user;
-    return this.goodiesService.findOne(id, isAuthenticated);
+    const userRole = req.user?.role || null;
+    return this.goodiesService.findOne(id, userRole);
   }
 
   @Patch(':id')
@@ -181,9 +183,9 @@ export class GoodiesController {
     const deleteImage = updateGoodieDto.deleteImage === 'true' || updateGoodieDto.deleteImage === true;
     const deleteFile = updateGoodieDto.deleteFile === 'true' || updateGoodieDto.deleteFile === true;
     
-    // Convertir isPublic depuis FormData (string) en booléen
-    const isPublic = updateGoodieDto.isPublic !== undefined 
-      ? (updateGoodieDto.isPublic === 'true' || updateGoodieDto.isPublic === true)
+    // Convertir accessLevel depuis FormData (string) ou undefined
+    const accessLevel = updateGoodieDto.accessLevel 
+      ? (updateGoodieDto.accessLevel as 'public' | 'member' | 'premium' | 'vip')
       : undefined;
 
     // Gérer la suppression de l'image si demandée
@@ -223,7 +225,7 @@ export class GoodiesController {
       finalFileUrl,
       updateGoodieDto.offeredByName,
       updateGoodieDto.offeredByLink,
-      isPublic,
+      accessLevel,
     );
   }
 

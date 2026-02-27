@@ -204,7 +204,7 @@ onMounted(() => {
           <!-- Seller info -->
           <UCard>
             <template #header>
-              <h2 class="text-xl font-semibold">Vendeur</h2>
+              <h2 class="text-xl font-semibold">Troqueur</h2>
             </template>
             <div class="space-y-4">
               <div class="flex items-center gap-4">
@@ -234,7 +234,7 @@ onMounted(() => {
                   icon="i-heroicons-chat-bubble-left-right"
                   @click="handleContactSeller"
                 >
-                  Contacter le vendeur
+                  Contacter le troqueur
                 </UButton>
                 <UButton
                   variant="outline"
@@ -242,7 +242,7 @@ onMounted(() => {
                   icon="i-heroicons-arrow-path"
                   @click="handleTransferPupu"
                 >
-                  Transférer des Pūpū à ce vendeur
+                  Transférer des Pūpū à ce troqueur
                 </UButton>
               </div>
               <div v-else-if="authStore.isAuthenticated && authStore.user?.id === listing.sellerId" class="text-center">

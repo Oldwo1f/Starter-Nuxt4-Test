@@ -61,6 +61,15 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   lastName?: string;
+
+  @ApiProperty({
+    description: 'Referral code (optional)',
+    example: 'ABC12345',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
 }
 
 export class ForgotPasswordDto {
@@ -198,6 +207,7 @@ export class AuthController {
       registerDto.password,
       registerDto.firstName,
       registerDto.lastName,
+      registerDto.referralCode,
     );
   }
 
@@ -478,6 +488,7 @@ export class AuthController {
         role: updatedUser.role,
         emailVerified: updatedUser.emailVerified,
         isActive: updatedUser.isActive,
+        paidAccessExpiresAt: updatedUser.paidAccessExpiresAt,
       },
     };
   }

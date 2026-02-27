@@ -361,7 +361,7 @@ const handleSubmit = async () => {
     </UCard>
 
     <!-- Transfer form -->
-    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Recipient search -->
         <div class="user-search-container relative">
@@ -392,7 +392,7 @@ const handleSubmit = async () => {
           <!-- Search results dropdown -->
           <div
             v-if="showSearchResults && searchResults.length > 0"
-            class="absolute z-50 mt-2 w-full rounded-lg border border-white/10 bg-gray-900 shadow-lg max-h-80 overflow-y-auto"
+            class="absolute z-50 mt-2 w-full rounded-lg border-0 bg-gray-900 shadow-lg max-h-80 overflow-y-auto"
           >
             <div class="p-2 space-y-1">
               <div
@@ -424,7 +424,7 @@ const handleSubmit = async () => {
           <!-- No results -->
           <div
             v-if="showSearchResults && searchResults.length === 0 && !isSearching && searchTerm.length >= 2"
-            class="absolute z-50 mt-2 w-full rounded-lg border border-white/10 bg-gray-900 p-4 text-center text-sm text-white/60"
+            class="absolute z-50 mt-2 w-full rounded-lg border-0 bg-gray-900 p-4 text-center text-sm text-white/60"
           >
             Aucun utilisateur trouvé
           </div>

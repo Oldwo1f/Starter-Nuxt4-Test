@@ -6,6 +6,7 @@ import {
   UseGuards,
   Request,
   Query,
+  Param,
   ParseIntPipe,
 } from '@nestjs/common';
 import {
@@ -16,10 +17,14 @@ import {
   ApiBearerAuth,
   ApiProperty,
   ApiQuery,
+  ApiParam,
 } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, IsNumber, Min, IsEmail } from 'class-validator';
 import { WalletService } from './wallet.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../entities/user.entity';
 
 export class TransferDto {
   @ApiProperty({
@@ -54,6 +59,24 @@ export class ExchangeDto {
   })
   @IsNumber()
   listingId: number;
+}
+
+export class AdminCreditDto {
+  @ApiProperty({
+    description: 'Amount in Pūpū to credit',
+    example: 50,
+  })
+  @IsNumber()
+  @Min(0.01)
+  amount: number;
+
+  @ApiProperty({
+    description: 'Transaction description',
+    example: 'Crédit manuel - Compensation',
+  })
+  @IsString()
+  @IsNotEmpty()
+  description: string;
 }
 
 @ApiTags('wallet')
@@ -173,5 +196,33 @@ export class WalletController {
   @ApiResponse({ status: 404, description: 'Listing not found' })
   async exchange(@Body() exchangeDto: ExchangeDto, @Request() req) {
     return this.walletService.exchange(req.user.id, exchangeDto.listingId);
+  }
+
+  @Post('admin/credit/:userId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Credit user (Admin only)',
+    description: 'Credit Pūpū to a user as Nuna\'a Heritage. Admin only.',
+  })
+  @ApiParam({ name: 'userId', type: 'number', description: 'User ID to credit' })
+  @ApiBody({ type: AdminCreditDto })
+  @ApiResponse({ status: 201, description: 'User credited successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request (invalid amount, missing description, etc.)' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async adminCreditUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body() creditDto: AdminCreditDto,
+    @Request() req,
+  ) {
+    return this.walletService.adminCreditUser(
+      req.user.id,
+      userId,
+      creditDto.amount,
+      creditDto.description,
+    );
   }
 }

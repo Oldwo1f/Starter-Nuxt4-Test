@@ -18,6 +18,13 @@ const getBannerUrl = (url: string | null | undefined): string | null => {
   if (!url) return null
   return `${apiBaseUrl}${url}`
 }
+
+// Partenaires triés par ordre alphabétique
+const sortedPartners = computed(() => {
+  return [...partnerStore.partners].sort((a, b) => {
+    return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })
+  })
+})
 </script>
 
 <template>
@@ -36,7 +43,7 @@ const getBannerUrl = (url: string | null | undefined): string | null => {
 
     <div v-else-if="partnerStore.partners.length > 0" class="space-y-8">
       <UCard
-        v-for="partner in partnerStore.partners"
+        v-for="partner in sortedPartners"
         :key="partner.id"
         class="overflow-hidden w-full"
       >

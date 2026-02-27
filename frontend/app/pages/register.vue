@@ -8,14 +8,24 @@ import { useFacebook } from '~/composables/useFacebook'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const referralCode = ref('')
 const isLoading = ref(false)
 const isFacebookLoading = ref(false)
 const error = ref('')
 const success = ref('')
+
+// Récupérer le code de parrainage depuis l'URL
+onMounted(() => {
+  const refParam = route.query.ref as string
+  if (refParam) {
+    referralCode.value = refParam.toUpperCase()
+  }
+})
 
 const handleRegister = async () => {
   error.value = ''
@@ -37,7 +47,11 @@ const handleRegister = async () => {
   }
 
   isLoading.value = true
-  const result = await authStore.register(email.value, password.value)
+  const result = await authStore.register(
+    email.value,
+    password.value,
+    referralCode.value || undefined
+  )
   isLoading.value = false
 
   if (result.success) {
@@ -144,6 +158,22 @@ const handleFacebookLogin = async () => {
               :disabled="isLoading"
               size="lg"
             />
+          </UFormGroup>
+
+          <UFormGroup label="Code de parrainage (optionnel)" name="referralCode">
+            <UInput
+              v-model="referralCode"
+              type="text"
+              placeholder="ABC12345"
+              icon="i-heroicons-gift"
+              :disabled="isLoading"
+              size="lg"
+              class="font-mono uppercase"
+              @input="referralCode = referralCode.toUpperCase()"
+            />
+            <template #hint>
+              <span class="text-xs text-white/50">Si vous avez un code de parrainage, entrez-le ici</span>
+            </template>
           </UFormGroup>
 
           <UButton

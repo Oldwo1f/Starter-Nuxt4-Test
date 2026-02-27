@@ -10,7 +10,7 @@ export interface Goodie {
   imageUrl: string | null
   offeredByName: string | null
   offeredByLink: string | null
-  isPublic: boolean
+  accessLevel: 'public' | 'member' | 'premium' | 'vip'
   createdAt: string
   updatedAt: string
   createdBy?: {
@@ -25,7 +25,7 @@ export interface GoodieForm {
   description: string
   offeredByName: string
   offeredByLink: string
-  isPublic: boolean
+  accessLevel: 'public' | 'member' | 'premium' | 'vip'
   image?: File
   existingImage?: string | null
   deleteImage?: boolean
@@ -58,7 +58,7 @@ export const useGoodiesStore = defineStore('goodies', () => {
     description: '',
     offeredByName: '',
     offeredByLink: '',
-    isPublic: true,
+    accessLevel: 'public',
     deleteImage: false,
     deleteFile: false,
   })
@@ -86,12 +86,62 @@ export const useGoodiesStore = defineStore('goodies', () => {
 
   // Méthodes pour les pages publiques
   const canAccessGoodie = (goodie: Goodie): boolean => {
-    // Si le goodie est public, tout le monde peut y accéder
-    if (goodie.isPublic) {
+    // Public est accessible à tous
+    if (goodie.accessLevel === 'public') {
       return true
     }
-    // Sinon, seuls les utilisateurs connectés peuvent y accéder
-    return authStore.isAuthenticated
+
+    // Si l'utilisateur n'est pas connecté, seul public est accessible
+    if (!authStore.isAuthenticated || !authStore.user) {
+      return false
+    }
+
+    const userRole = authStore.user.role?.toLowerCase()
+
+    // Les staff (admin, superadmin, moderator) ont accès à tout
+    if (['admin', 'superadmin', 'moderator'].includes(userRole)) {
+      return true
+    }
+
+    // Hiérarchie des niveaux d'accès
+    const levelHierarchy: Record<'public' | 'member' | 'premium' | 'vip', number> = {
+      public: 0,
+      member: 1,
+      premium: 2,
+      vip: 3,
+    }
+
+    // Mapping des rôles utilisateur vers leurs niveaux
+    const roleToLevel: Record<string, number> = {
+      user: 0, // user = public
+      member: 1,
+      premium: 2,
+      vip: 3,
+      admin: 999, // admin a accès à tout
+      superadmin: 999,
+      moderator: 999,
+    }
+
+    const userLevel = roleToLevel[userRole] || 0
+    const requiredLevel = levelHierarchy[goodie.accessLevel]
+
+    return userLevel >= requiredLevel
+  }
+
+  // Obtenir le message d'accès requis pour un goodie
+  const getAccessMessage = (goodie: Goodie): string => {
+    switch (goodie.accessLevel) {
+      case 'public':
+        return 'Disponible pour tous'
+      case 'member':
+        return 'Devenir membre pour accéder'
+      case 'premium':
+        return 'Disponible premium'
+      case 'vip':
+        return 'Disponible VIP'
+      default:
+        return 'Accès restreint'
+    }
   }
 
   // Méthodes pour l'admin
@@ -103,7 +153,7 @@ export const useGoodiesStore = defineStore('goodies', () => {
       description: '',
       offeredByName: '',
       offeredByLink: '',
-      isPublic: true,
+      accessLevel: 'public',
       deleteImage: false,
       deleteFile: false,
     }
@@ -119,7 +169,7 @@ export const useGoodiesStore = defineStore('goodies', () => {
       description: goodie.description || '',
       offeredByName: goodie.offeredByName || '',
       offeredByLink: goodie.offeredByLink || '',
-      isPublic: goodie.isPublic,
+      accessLevel: goodie.accessLevel,
       existingImage: goodie.imageUrl,
       deleteImage: false,
       existingFile: goodie.fileUrl,
@@ -137,7 +187,7 @@ export const useGoodiesStore = defineStore('goodies', () => {
       description: '',
       offeredByName: '',
       offeredByLink: '',
-      isPublic: true,
+      accessLevel: 'public',
       deleteImage: false,
       deleteFile: false,
     }
@@ -166,7 +216,7 @@ export const useGoodiesStore = defineStore('goodies', () => {
       if (form.value.offeredByLink) {
         formData.append('offeredByLink', form.value.offeredByLink)
       }
-      formData.append('isPublic', form.value.isPublic.toString())
+      formData.append('accessLevel', form.value.accessLevel)
 
       // Ajouter l'image
       if (form.value.image) {
@@ -283,6 +333,7 @@ export const useGoodiesStore = defineStore('goodies', () => {
     // Méthodes publiques
     fetchGoodies,
     canAccessGoodie,
+    getAccessMessage,
     
     // Méthodes admin
     openAddModal,

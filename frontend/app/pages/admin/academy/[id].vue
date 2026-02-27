@@ -30,6 +30,7 @@ const courseForm = ref({
   thumbnailImage: null as File | null,
   existingThumbnailImage: null as string | null,
   isPublished: false,
+  accessLevel: 'public' as 'public' | 'member' | 'premium' | 'vip',
   order: 0,
   instructorAvatar: null as File | null,
   existingInstructorAvatar: null as string | null,
@@ -80,6 +81,7 @@ onMounted(async () => {
           thumbnailImage: null,
           existingThumbnailImage: academyStore.currentCourse.thumbnailImage,
           isPublished: academyStore.currentCourse.isPublished,
+          accessLevel: academyStore.currentCourse.accessLevel || 'public',
           order: academyStore.currentCourse.order,
           instructorAvatar: null,
           existingInstructorAvatar: academyStore.currentCourse.instructorAvatar,
@@ -116,6 +118,7 @@ const saveCourse = async () => {
       title: courseForm.value.title,
       description: courseForm.value.description || undefined,
       isPublished: courseForm.value.isPublished,
+      accessLevel: courseForm.value.accessLevel,
       order: courseForm.value.order,
       instructorFirstName: courseForm.value.instructorFirstName || undefined,
       instructorLastName: courseForm.value.instructorLastName || undefined,
@@ -600,7 +603,7 @@ const removeThumbnail = () => {
     </div>
 
     <!-- Course form -->
-    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <template #header>
         <h3 class="font-semibold">Informations du cours</h3>
       </template>
@@ -625,7 +628,7 @@ const removeThumbnail = () => {
               <img
                 :src="getThumbnailPreview()!"
                 alt="Image de couverture"
-                class="w-full max-w-md object-cover rounded-lg border border-white/10"
+                class="w-full max-w-md object-cover rounded-lg border-0"
                 style="aspect-ratio: 4/3;"
               />
               <UButton
@@ -668,11 +671,29 @@ const removeThumbnail = () => {
             label="Publier le cours"
           />
         </UFormGroup>
+
+        <UFormGroup label="Niveau d'accès requis" name="accessLevel">
+          <USelect
+            v-model="courseForm.accessLevel"
+            :items="[
+              { value: 'public', label: 'Public - Accessible à tous' },
+              { value: 'member', label: 'Membre - Accessible aux membres' },
+              { value: 'premium', label: 'Premium - Accessible aux membres premium' },
+              { value: 'vip', label: 'VIP - Accessible aux membres VIP' },
+            ]"
+            placeholder="Sélectionner le niveau d'accès"
+          />
+          <template #description>
+            <span class="text-xs text-white/60">
+              Détermine qui peut accéder à ce cours. Les membres premium et VIP ont accès aux niveaux inférieurs.
+            </span>
+          </template>
+        </UFormGroup>
       </div>
     </UCard>
 
     <!-- Instructor information -->
-    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <template #header>
         <h3 class="font-semibold">Informations du formateur</h3>
       </template>
@@ -685,7 +706,7 @@ const removeThumbnail = () => {
               <img
                 :src="getInstructorAvatarPreview()!"
                 alt="Avatar formateur"
-                class="w-48 h-48 object-cover rounded-lg border border-white/10"
+                class="w-48 h-48 object-cover rounded-lg border-0"
               />
               <UButton
                 color="error"
@@ -763,7 +784,7 @@ const removeThumbnail = () => {
         :key="module.id"
         class="space-y-2"
       >
-        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+        <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="font-semibold">{{ module.title }}</h3>

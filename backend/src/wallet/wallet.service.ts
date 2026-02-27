@@ -282,7 +282,7 @@ export class WalletService {
         fromUserId: buyerId,
         toUserId: listing.sellerId,
         listingId,
-        description: `Exchange for listing: ${listing.title}`,
+        description: `[Nuna'a Heritage] Exchange for listing: ${listing.title}`,
       });
 
       return await manager.save(transaction);
@@ -317,5 +317,61 @@ export class WalletService {
     queryBuilder.orderBy('user.email', 'ASC');
 
     return await queryBuilder.getMany();
+  }
+
+  /**
+   * Crédite un utilisateur depuis l'admin (transaction système)
+   * @param adminUserId ID de l'admin qui effectue l'action
+   * @param targetUserId ID de l'utilisateur à créditer
+   * @param amount Montant en Pūpū
+   * @param description Description de la transaction
+   */
+  async adminCreditUser(
+    adminUserId: number,
+    targetUserId: number,
+    amount: number,
+    description: string,
+  ): Promise<Transaction> {
+    if (amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+
+    if (!description || description.trim().length === 0) {
+      throw new BadRequestException('Description is required');
+    }
+
+    // Utiliser une transaction pour garantir l'atomicité
+    return await this.dataSource.transaction(async (manager) => {
+      // Lock and get target user
+      const targetUser = await manager.findOne(User, {
+        where: { id: targetUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!targetUser) {
+        throw new NotFoundException(`User with ID ${targetUserId} not found`);
+      }
+
+      // Calculate new balance
+      const balanceBefore = parseFloat(targetUser.walletBalance.toString());
+      const balanceAfter = balanceBefore + amount;
+
+      // Update balance
+      targetUser.walletBalance = balanceAfter;
+      await manager.save(targetUser);
+
+      // Create CREDIT transaction
+      const creditTransaction = manager.create(Transaction, {
+        type: TransactionType.CREDIT,
+        amount,
+        balanceBefore,
+        balanceAfter,
+        status: TransactionStatus.COMPLETED,
+        fromUserId: adminUserId, // L'admin est l'origine
+        toUserId: targetUserId,
+        description: `[Nuna'a Heritage] ${description.trim()}`,
+      });
+
+      return await manager.save(creditTransaction);
+    });
   }
 }

@@ -13,7 +13,7 @@ const isSidebarOpen = ref(true)
 // Vérifier si l'utilisateur est staff ou admin
 const isStaffOrAdmin = computed(() => {
   const role = authStore.user?.role?.toLowerCase()
-  return role === 'superadmin' || role === 'admin' || role === 'staff'
+  return role === 'superadmin' || role === 'admin' || role === 'staff' || role === 'moderator'
 })
 
 // Obtenir le texte pour l'avatar (initiales)
@@ -54,35 +54,55 @@ onMounted(() => {
 })
 
 // Items du menu dropdown
-const userMenuItems = computed<DropdownMenuItem[][]>(() => [
-  [
+const userMenuItems = computed<DropdownMenuItem[][]>(() => {
+  const profileItems: DropdownMenuItem[] = [
     {
-      label: authStore.user?.email || 'Utilisateur',
-      avatar: getAvatarUrl.value
-        ? {
-            src: getAvatarUrl.value,
-            alt: authStore.user?.email || 'User',
-          }
-        : {
-            text: getAvatarText.value,
-            alt: authStore.user?.email || 'User',
-          },
-      type: 'label',
+      label: 'Mon espace',
+      icon: 'i-heroicons-home',
+      to: '/account',
     },
-  ],
-  [
     {
       label: 'Mon profil',
       icon: 'i-heroicons-user-circle',
       to: '/account/profile',
     },
-    {
-      label: 'Déconnexion',
-      icon: 'i-heroicons-arrow-right-on-rectangle',
-      onSelect: handleLogout,
-    },
-  ],
-])
+  ]
+
+  // Ajouter le lien Dashboard si l'utilisateur est staff ou admin
+  if (isStaffOrAdmin.value) {
+    profileItems.push({
+      label: 'Dashboard',
+      icon: 'i-heroicons-squares-2x2',
+      to: '/admin/dashboard',
+    })
+  }
+
+  return [
+    [
+      {
+        label: authStore.user?.email || 'Utilisateur',
+        avatar: getAvatarUrl.value
+          ? {
+              src: getAvatarUrl.value,
+              alt: authStore.user?.email || 'User',
+            }
+          : {
+              text: getAvatarText.value,
+              alt: authStore.user?.email || 'User',
+            },
+        type: 'label',
+      },
+    ],
+    profileItems,
+    [
+      {
+        label: 'Déconnexion',
+        icon: 'i-heroicons-arrow-right-on-rectangle',
+        onSelect: handleLogout,
+      },
+    ],
+  ]
+})
 
 const adminMenuItems = [
   {
@@ -94,6 +114,11 @@ const adminMenuItems = [
     label: 'Gestion des utilisateurs',
     icon: 'i-heroicons-users',
     to: '/admin/users',
+  },
+  {
+    label: 'Vérification',
+    icon: 'i-heroicons-shield-check',
+    to: '/admin/verification',
   },
   {
     label: 'Gestion du blog',

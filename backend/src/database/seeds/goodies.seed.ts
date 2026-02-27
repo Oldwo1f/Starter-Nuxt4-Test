@@ -21,7 +21,7 @@ export async function seedGoodies(dataSource: DataSource): Promise<void> {
       imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=800&fit=crop',
       offeredByName: 'Nuna\'a Heritage',
       offeredByLink: 'https://nunaaheritage.aito-flow.com',
-      isPublic: true,
+      accessLevel: 'public' as const,
     },
     {
       name: 'Cours de Langue Tahitienne',
@@ -30,7 +30,7 @@ export async function seedGoodies(dataSource: DataSource): Promise<void> {
       imageUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=800&fit=crop',
       offeredByName: 'Nuna\'a Heritage',
       offeredByLink: 'https://nunaaheritage.aito-flow.com',
-      isPublic: true,
+      accessLevel: 'public' as const,
     },
     {
       name: 'Recettes Traditionnelles',
@@ -39,7 +39,7 @@ export async function seedGoodies(dataSource: DataSource): Promise<void> {
       imageUrl: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&h=800&fit=crop',
       offeredByName: 'Communauté Nuna\'a',
       offeredByLink: null,
-      isPublic: true,
+      accessLevel: 'public' as const,
     },
     {
       name: 'Accès VIP aux Événements',
@@ -48,7 +48,7 @@ export async function seedGoodies(dataSource: DataSource): Promise<void> {
       imageUrl: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=800&fit=crop',
       offeredByName: 'Nuna\'a Heritage',
       offeredByLink: 'https://nunaaheritage.aito-flow.com',
-      isPublic: false, // Réservé aux membres connectés
+      accessLevel: 'vip' as const, // Réservé aux membres VIP
     },
     {
       name: 'Mentorat Entrepreneurial',
@@ -57,7 +57,7 @@ export async function seedGoodies(dataSource: DataSource): Promise<void> {
       imageUrl: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&h=800&fit=crop',
       offeredByName: 'Naho - Nuna\'a Heritage',
       offeredByLink: 'https://nunaaheritage.aito-flow.com',
-      isPublic: false, // Réservé aux membres connectés
+      accessLevel: 'member' as const, // Réservé aux membres
     },
     {
       name: 'Bibliothèque Numérique',
@@ -66,7 +66,7 @@ export async function seedGoodies(dataSource: DataSource): Promise<void> {
       imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=800&fit=crop',
       offeredByName: 'Nuna\'a Heritage',
       offeredByLink: 'https://nunaaheritage.aito-flow.com',
-      isPublic: true,
+      accessLevel: 'public' as const,
     },
   ];
 
@@ -79,12 +79,18 @@ export async function seedGoodies(dataSource: DataSource): Promise<void> {
       imageUrl: goodieData.imageUrl,
       offeredByName: goodieData.offeredByName,
       offeredByLink: goodieData.offeredByLink,
-      isPublic: goodieData.isPublic,
+      accessLevel: goodieData.accessLevel,
       createdById: null, // Pas de créateur spécifique pour les seeds
     });
 
     await goodieRepository.save(goodie);
-    const visibility = goodieData.isPublic ? 'Public' : 'Privé';
+    const levelLabels: Record<'public' | 'member' | 'premium' | 'vip', string> = {
+      public: 'Public',
+      member: 'Membre',
+      premium: 'Premium',
+      vip: 'VIP',
+    };
+    const visibility = levelLabels[goodieData.accessLevel] || 'Public';
     console.log(`  ✓ Created: ${goodie.name} (${visibility})`);
   }
 

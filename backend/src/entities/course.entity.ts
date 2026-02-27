@@ -25,6 +25,9 @@ export class Course {
   @Column({ type: 'boolean', default: false })
   isPublished: boolean;
 
+  @Column({ type: 'varchar', default: 'public' })
+  accessLevel: 'public' | 'member' | 'premium' | 'vip'; // Niveau d'accès requis
+
   @Column({ type: 'int', default: 0 })
   order: number;
 

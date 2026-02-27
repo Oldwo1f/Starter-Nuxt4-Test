@@ -27,6 +27,18 @@ const isVideoLoading = ref(false)
 let lastProgressUpdate = 0
 const PROGRESS_UPDATE_INTERVAL = 5000 // Update last watched every 5 seconds
 
+// Check if user can access the course
+const canAccessCourse = computed(() => {
+  if (!academyStore.currentCourse) return false
+  return academyStore.canAccessCourse(academyStore.currentCourse)
+})
+
+// Get access message for the course
+const getAccessMessage = computed(() => {
+  if (!academyStore.currentCourse) return ''
+  return academyStore.getAccessMessage(academyStore.currentCourse)
+})
+
 // Get all videos from course
 const allVideos = computed(() => {
   if (!academyStore.currentCourse) return []
@@ -218,6 +230,10 @@ const handleTimeUpdate = async () => {
 
 // Select video
 const selectVideo = async (video: any) => {
+  // Vérifier l'accès avant de permettre la sélection
+  if (!canAccessCourse.value) {
+    return
+  }
   currentVideo.value = video
   // Update last watched when selecting a video
   if (video) {
@@ -336,9 +352,29 @@ const overallProgress = computed(() => {
           <div v-if="currentVideo" class="space-y-4">
             <!-- Video player -->
             <div class="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
+              <!-- Lock overlay for restricted courses -->
+              <div
+                v-if="!canAccessCourse"
+                class="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+              >
+                <div class="text-center">
+                  <UIcon name="i-heroicons-lock-closed" class="mx-auto mb-2 h-12 w-12 text-white/80" />
+                  <p class="text-sm font-medium text-white">{{ getAccessMessage }}</p>
+                  <UButton
+                    to="/pricing"
+                    size="sm"
+                    color="primary"
+                    class="mt-3"
+                    icon="i-heroicons-arrow-up-right"
+                  >
+                    Voir les tarifs
+                  </UButton>
+                </div>
+              </div>
+              
               <!-- YouTube video -->
               <iframe
-                v-if="currentVideo.videoUrl && (currentVideo.videoUrl.includes('youtube.com') || currentVideo.videoUrl.includes('youtu.be'))"
+                v-if="canAccessCourse && currentVideo.videoUrl && (currentVideo.videoUrl.includes('youtube.com') || currentVideo.videoUrl.includes('youtu.be'))"
                 :src="getYouTubeEmbedUrl(currentVideo.videoUrl)"
                 class="h-full w-full"
                 frameborder="0"
@@ -348,7 +384,7 @@ const overallProgress = computed(() => {
               />
               <!-- Uploaded video file -->
               <video
-                v-else
+                v-else-if="canAccessCourse"
                 ref="videoPlayer"
                 :src="getVideoUrl(currentVideo)"
                 controls
@@ -387,7 +423,7 @@ const overallProgress = computed(() => {
                 }"
               />
               <div
-                v-if="isVideoLoading"
+                v-if="isVideoLoading && canAccessCourse"
                 class="absolute inset-0 flex items-center justify-center bg-black/50"
               >
                 <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-white" />
@@ -440,7 +476,7 @@ const overallProgress = computed(() => {
 
         <!-- Sidebar - Course content -->
         <div class="lg:col-span-1">
-          <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+          <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
             <template #header>
               <h3 class="font-semibold">Sommaire</h3>
             </template>
@@ -484,13 +520,20 @@ const overallProgress = computed(() => {
                         ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
                         : 'hover:bg-white/10 text-white/70',
                       isVideoCompleted(video.id) && 'text-primary-300',
+                      !canAccessCourse && 'opacity-50 cursor-not-allowed',
                     ]"
+                    :disabled="!canAccessCourse"
                     @click="selectVideo(video)"
                   >
                     <div class="flex items-center justify-between">
                       <span class="flex items-center gap-2">
                         <UIcon
-                          v-if="isVideoCompleted(video.id)"
+                          v-if="!canAccessCourse"
+                          name="i-heroicons-lock-closed"
+                          class="h-4 w-4 text-white/60"
+                        />
+                        <UIcon
+                          v-else-if="isVideoCompleted(video.id)"
                           name="i-heroicons-check-circle"
                           class="h-4 w-4 text-primary-400"
                         />

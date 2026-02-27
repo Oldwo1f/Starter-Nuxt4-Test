@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Course } from '../entities/course.entity';
 import { AcademyModule } from '../entities/module.entity';
 import { Video } from '../entities/video.entity';
 import { CourseProgress } from '../entities/course-progress.entity';
+import { UserRole } from '../entities/user.entity';
 
 @Injectable()
 export class AcademyService {
@@ -19,12 +20,58 @@ export class AcademyService {
     private progressRepository: Repository<CourseProgress>,
   ) {}
 
+  /**
+   * Vérifie si un rôle utilisateur a accès à un niveau donné
+   * Hiérarchie: public < member < premium < vip
+   */
+  private hasAccessToLevel(userRole: UserRole | null, requiredLevel: 'public' | 'member' | 'premium' | 'vip'): boolean {
+    // Public est accessible à tous
+    if (requiredLevel === 'public') {
+      return true;
+    }
+
+    // Si l'utilisateur n'est pas connecté, seul public est accessible
+    if (!userRole) {
+      return false;
+    }
+
+    // Les staff (admin, superadmin, moderator) ont accès à tout
+    if ([UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR].includes(userRole)) {
+      return true;
+    }
+
+    // Hiérarchie des niveaux d'accès
+    const levelHierarchy: Record<'public' | 'member' | 'premium' | 'vip', number> = {
+      public: 0,
+      member: 1,
+      premium: 2,
+      vip: 3,
+    };
+
+    // Mapping des rôles utilisateur vers leurs niveaux
+    const roleToLevel: Record<UserRole, number> = {
+      [UserRole.USER]: 0, // user = public
+      [UserRole.MEMBER]: 1,
+      [UserRole.PREMIUM]: 2,
+      [UserRole.VIP]: 3,
+      [UserRole.ADMIN]: 999, // admin a accès à tout
+      [UserRole.SUPERADMIN]: 999,
+      [UserRole.MODERATOR]: 999,
+    };
+
+    const userLevel = roleToLevel[userRole] || 0;
+    const requiredLevelValue = levelHierarchy[requiredLevel];
+
+    return userLevel >= requiredLevelValue;
+  }
+
   // Course methods
   async createCourse(
     title: string,
     description?: string,
     thumbnailImage?: string,
     isPublished: boolean = false,
+    accessLevel: 'public' | 'member' | 'premium' | 'vip' = 'public',
     order: number = 0,
     instructorAvatar?: string,
     instructorFirstName?: string,
@@ -37,6 +84,7 @@ export class AcademyService {
       description: description || null,
       thumbnailImage: thumbnailImage || null,
       isPublished,
+      accessLevel,
       order,
       instructorAvatar: instructorAvatar || null,
       instructorFirstName: instructorFirstName || null,
@@ -47,7 +95,7 @@ export class AcademyService {
     return this.courseRepository.save(course);
   }
 
-  async findAllCourses(userId?: number): Promise<Course[]> {
+  async findAllCourses(userRole: UserRole | null = null, userId?: number): Promise<Course[]> {
     const queryBuilder = this.courseRepository.createQueryBuilder('course');
     
     queryBuilder.leftJoinAndSelect('course.modules', 'module');
@@ -57,14 +105,8 @@ export class AcademyService {
     queryBuilder.addOrderBy('module.order', 'ASC');
     queryBuilder.addOrderBy('video.order', 'ASC');
 
-    // Only show published courses for non-admin users
-    if (userId) {
-      // Check if user is admin (we'll need to inject UsersService or check role differently)
-      // For now, show all courses if userId is provided (authenticated)
-      // In production, you'd check the user role
-    } else {
-      queryBuilder.where('course.isPublished = :isPublished', { isPublished: true });
-    }
+    // Retourner TOUS les cours (même ceux non accessibles)
+    // Le filtrage se fera côté frontend pour afficher tous les cours avec cadenas si nécessaire
 
     const courses = await queryBuilder.getMany();
 
@@ -79,7 +121,7 @@ export class AcademyService {
     return courses;
   }
 
-  async findOneCourse(id: number, userId?: number): Promise<Course> {
+  async findOneCourse(id: number, userRole: UserRole | null = null, userId?: number): Promise<Course> {
     const queryBuilder = this.courseRepository.createQueryBuilder('course');
     
     queryBuilder.leftJoinAndSelect('course.modules', 'module');
@@ -90,16 +132,14 @@ export class AcademyService {
     queryBuilder.orderBy('module.order', 'ASC');
     queryBuilder.addOrderBy('video.order', 'ASC');
 
-    // Only show published courses for non-admin users
-    if (!userId) {
-      queryBuilder.andWhere('course.isPublished = :isPublished', { isPublished: true });
-    }
-
     const course = await queryBuilder.getOne();
 
     if (!course) {
       throw new NotFoundException(`Course with ID ${id} not found`);
     }
+
+    // Vérifier l'accès au cours (mais retourner quand même le cours pour l'affichage)
+    // Le frontend gérera l'affichage du cadenas si nécessaire
 
     // Add progress information if userId is provided
     if (userId) {
@@ -116,6 +156,7 @@ export class AcademyService {
     description?: string,
     thumbnailImage?: string,
     isPublished?: boolean,
+    accessLevel?: 'public' | 'member' | 'premium' | 'vip',
     order?: number,
     instructorAvatar?: string,
     instructorFirstName?: string,
@@ -132,6 +173,7 @@ export class AcademyService {
     if (description !== undefined) course.description = description || null;
     if (thumbnailImage !== undefined) course.thumbnailImage = thumbnailImage || null;
     if (isPublished !== undefined) course.isPublished = isPublished;
+    if (accessLevel !== undefined) course.accessLevel = accessLevel;
     if (order !== undefined) course.order = order;
     if (instructorAvatar !== undefined) course.instructorAvatar = instructorAvatar || null;
     if (instructorFirstName !== undefined) course.instructorFirstName = instructorFirstName || null;

@@ -98,7 +98,7 @@ const handleApply = () => {
           class="flex-1"
           @click="localFilters.type = localFilters.type === 'bien' ? undefined : 'bien'"
         >
-          Biens
+          Produits
         </UButton>
         <UButton
           :variant="localFilters.type === 'service' ? 'solid' : 'outline'"

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsUrl } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsUrl, IsIn } from 'class-validator';
 
 export class CreateGoodieDto {
   @ApiProperty({
@@ -45,10 +45,14 @@ export class CreateGoodieDto {
   offeredByLink?: string;
 
   @ApiPropertyOptional({
-    description: 'Whether the goodie is public (accessible to all) or requires authentication',
-    default: true,
+    description: 'Access level required to access the goodie',
+    enum: ['public', 'member', 'premium', 'vip'],
+    default: 'public',
   })
-  @IsBoolean()
+  @IsString()
   @IsOptional()
-  isPublic?: boolean;
+  @IsIn(['public', 'member', 'premium', 'vip'], {
+    message: 'Access level must be one of: public, member, premium, vip',
+  })
+  accessLevel?: 'public' | 'member' | 'premium' | 'vip';
 }

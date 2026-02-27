@@ -20,7 +20,7 @@ const getImageUrl = (listing: any) => {
 
 <template>
   <UCard
-    class="cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-transform hover:scale-[1.02] sm:hover:scale-105 hover:border-primary-500/50"
+    class="cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-transform hover:scale-[1.02] sm:hover:scale-105"
     @click="navigateTo(`/marketplace/${listing.id}`)"
   >
     <template v-if="viewMode === 'grid'" #header>
@@ -63,7 +63,7 @@ const getImageUrl = (listing: any) => {
         <div class="flex flex-wrap items-center gap-4 text-xs text-white/60">
           <span>{{ listing.location?.commune }}, {{ listing.location?.ile }}</span>
           <span>{{ listing.category?.name }}</span>
-          <span>{{ listing.type === 'bien' ? 'Bien' : 'Service' }}</span>
+          <span>{{ listing.type === 'bien' ? 'Produit' : 'Service' }}</span>
         </div>
       </div>
     </div>

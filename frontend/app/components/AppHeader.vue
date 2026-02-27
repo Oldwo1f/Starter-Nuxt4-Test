@@ -8,6 +8,17 @@ const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
+// Type pour les items du menu
+type MenuItem = {
+  label: string
+  to: string
+  icon: string
+  active: boolean
+  external?: boolean
+  target?: string
+  color?: 'primary' | 'neutral' | 'success' | 'info' | 'warning' | 'error'
+}
+
 const handleLogout = () => {
   authStore.logout()
   router.push('/')
@@ -16,7 +27,7 @@ const handleLogout = () => {
 // Vérifier si l'utilisateur est staff ou admin
 const isStaffOrAdmin = computed(() => {
   const role = authStore.user?.role?.toLowerCase()
-  return role === 'superadmin' || role === 'admin' || role === 'staff'
+  return role === 'superadmin' || role === 'admin' || role === 'staff' || role === 'moderator'
 })
 
 // Détecter la section actuelle
@@ -32,7 +43,7 @@ const currentSection = computed(() => {
 })
 
 // Menu pour la section Nuna'a Heritage
-const heritageMenuItems = computed(() => [
+const heritageMenuItems = computed<MenuItem[]>(() => [
   {
     label: 'Accueil',
     to: '/',
@@ -85,9 +96,9 @@ const heritageMenuItems = computed(() => [
 ])
 
 // Menu pour la section Marketplace
-const marketplaceMenuItems = computed(() => [
+const marketplaceMenuItems = computed<MenuItem[]>(() => [
   {
-    label: 'Accueil Marketplace',
+    label: 'Place de TROC',
     to: '/marketplace',
     icon: 'i-heroicons-home',
     active: route.path === '/marketplace',
@@ -138,7 +149,7 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
   const profileItems: DropdownMenuItem[] = [
     {
       label: 'Mon espace',
-      icon: 'i-heroicons-squares-2x2',
+      icon: 'i-heroicons-home',
       to: '/account',
     },
     {
@@ -233,6 +244,11 @@ const mobileMenuItems = computed<DropdownMenuItem[][]>(() => {
             :variant="item.active ? 'solid' : 'ghost'"
             :icon="item.icon"
             size="sm"
+            :class="[
+              (item.label === 'Nuna\'a Troc' || item.label === 'Academy') 
+                ? (item.active ? '!text-black border border-green-500 rounded-md' : '!text-green-500 border border-green-500 rounded-md')
+                : (item.active ? '!text-black' : '!text-white/80')
+            ]"
             rel="noopener noreferrer"
           >
             {{ item.label }}
@@ -244,6 +260,11 @@ const mobileMenuItems = computed<DropdownMenuItem[][]>(() => {
             :variant="item.active ? 'solid' : 'ghost'"
             :icon="item.icon"
             size="sm"
+            :class="[
+              (item.label === 'Nuna\'a Troc' || item.label === 'Academy') 
+                ? (item.active ? '!text-black border border-green-500 rounded-md' : '!text-green-500 border border-green-500 rounded-md')
+                : (item.active ? '!text-black' : '!text-white/80')
+            ]"
           >
             {{ item.label }}
           </UButton>

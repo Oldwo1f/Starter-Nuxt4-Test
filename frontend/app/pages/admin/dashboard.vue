@@ -16,7 +16,7 @@ const authStore = useAuthStore()
     </div>
 
     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-users" />
@@ -27,7 +27,7 @@ const authStore = useAuthStore()
         <p class="text-sm text-white/60">Total utilisateurs</p>
       </UCard>
 
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-document-text" />
@@ -38,7 +38,7 @@ const authStore = useAuthStore()
         <p class="text-sm text-white/60">Total articles</p>
       </UCard>
 
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-chat-bubble-left-right" />
@@ -49,7 +49,7 @@ const authStore = useAuthStore()
         <p class="text-sm text-white/60">Total commentaires</p>
       </UCard>
 
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-chart-bar" />
@@ -61,7 +61,7 @@ const authStore = useAuthStore()
       </UCard>
     </div>
 
-    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-information-circle" />

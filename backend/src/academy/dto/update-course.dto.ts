@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsIn } from 'class-validator';
 
 export class UpdateCourseDto {
   @ApiPropertyOptional({
@@ -31,6 +31,17 @@ export class UpdateCourseDto {
   @IsBoolean()
   @IsOptional()
   isPublished?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Access level required to access the course',
+    enum: ['public', 'member', 'premium', 'vip'],
+  })
+  @IsString()
+  @IsOptional()
+  @IsIn(['public', 'member', 'premium', 'vip'], {
+    message: 'Access level must be one of: public, member, premium, vip',
+  })
+  accessLevel?: 'public' | 'member' | 'premium' | 'vip';
 
   @ApiPropertyOptional({
     description: 'Display order',

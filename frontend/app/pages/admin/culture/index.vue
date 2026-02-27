@@ -67,6 +67,34 @@ const getYouTubeThumbnail = (url: string) => {
   return null
 }
 
+// Gestionnaire pour le double-clic sur les lignes du tableau
+const handleTableDoubleClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  const row = target.closest('tr')
+  
+  if (!row) return
+  
+  // Ignorer si on clique sur un bouton ou un lien
+  if (target.closest('button') || target.closest('a')) {
+    return
+  }
+  
+  // Trouver l'index de la ligne dans le tableau
+  const tbody = row.closest('tbody')
+  if (!tbody) return
+  
+  const rows = Array.from(tbody.querySelectorAll('tr'))
+  const rowIndex = rows.indexOf(row)
+  
+  // Récupérer la vidéo correspondante
+  if (rowIndex >= 0 && rowIndex < cultureStore.cultures.length) {
+    const culture = cultureStore.cultures[rowIndex]
+    if (culture) {
+      cultureStore.openEditModal(culture)
+    }
+  }
+}
+
 // Wrapper pour fetchCultures avec gestion des toasts
 const handleFetchCultures = async () => {
   await cultureStore.fetchCultures()
@@ -139,7 +167,7 @@ onMounted(() => {
   <div>
     <div class="space-y-6">
       <!-- Tableau des vidéos -->
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-2">
@@ -164,12 +192,20 @@ onMounted(() => {
           </div>
         </template>
 
-        <div class="overflow-auto">
+        <div 
+          class="overflow-auto"
+          @dblclick="handleTableDoubleClick"
+        >
           <UTable
             v-if="!cultureStore.isLoading && Array.isArray(cultureStore.cultures) && cultureStore.cultures.length > 0"
             :data="cultureStore.cultures"
             :columns="columns"
             :loading="cultureStore.isLoading"
+            :ui="{
+              tr: {
+                base: 'cursor-pointer hover:bg-white/5 transition-colors',
+              },
+            }"
           >
             <template #type-cell="{ row }">
               <UBadge
@@ -298,7 +334,7 @@ onMounted(() => {
           </UFormGroup>
 
           <!-- Aperçu de la vidéo YouTube -->
-          <div v-if="cultureStore.form.youtubeUrl && getYouTubeThumbnail(cultureStore.form.youtubeUrl)" class="rounded-lg overflow-hidden border border-white/10">
+          <div v-if="cultureStore.form.youtubeUrl && getYouTubeThumbnail(cultureStore.form.youtubeUrl)" class="rounded-lg overflow-hidden border-0">
             <img
               :src="getYouTubeThumbnail(cultureStore.form.youtubeUrl)!"
               alt="Aperçu vidéo"

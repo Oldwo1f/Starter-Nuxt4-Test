@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { ReferralService } from '../referral/referral.service';
 import { User } from '../entities/user.entity';
 import * as crypto from 'crypto';
 import axios from 'axios';
@@ -10,6 +11,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private referralService: ReferralService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -40,6 +42,7 @@ export class AuthService {
         role: user.role,
         emailVerified: user.emailVerified,
         isActive: user.isActive,
+        paidAccessExpiresAt: user.paidAccessExpiresAt,
       },
     };
   }
@@ -49,6 +52,7 @@ export class AuthService {
     password: string,
     firstName?: string,
     lastName?: string,
+    referralCode?: string,
   ) {
     const existingUser = await this.usersService.findByEmail(email);
     if (existingUser) {
@@ -66,6 +70,16 @@ export class AuthService {
       verificationToken,
       verificationTokenExpiry,
     );
+
+    // Créer la relation de parrainage si un code est fourni
+    if (referralCode) {
+      try {
+        await this.referralService.createReferral(referralCode, user.id);
+      } catch (error) {
+        // Ne pas bloquer l'inscription si le code est invalide, juste logger
+        console.warn(`Invalid referral code during registration: ${referralCode}`, error);
+      }
+    }
 
     // TODO: Send verification email
     // For now, we'll just log it (in production, send email)

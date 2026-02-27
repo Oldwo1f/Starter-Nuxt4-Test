@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Delete, Param, UseGuards, ParseIntP
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody, ApiProperty, ApiQuery } from '@nestjs/swagger';
 import { IsEnum, IsString, IsOptional } from 'class-validator';
 import { UsersService } from './users.service';
+import { ReferralService } from '../referral/referral.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -53,7 +54,10 @@ export class UpdateUserDto {
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly referralService: ReferralService,
+  ) {}
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
@@ -98,8 +102,17 @@ export class UsersController {
   @ApiBody({ type: UpdateUserRoleDto })
   @ApiResponse({ status: 200, description: 'User role updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  updateRole(@Param('id', ParseIntPipe) id: number, @Body() updateUserRoleDto: UpdateUserRoleDto) {
-    return this.usersService.updateRole(id, updateUserRoleDto.role);
+  async updateRole(@Param('id', ParseIntPipe) id: number, @Body() updateUserRoleDto: UpdateUserRoleDto) {
+    const oldUser = await this.usersService.findById(id);
+    const updatedUser = await this.usersService.updateRole(id, updateUserRoleDto.role);
+    
+    // Si l'utilisateur devient MEMBER et qu'il était USER avant, vérifier les parrainages
+    if (updateUserRoleDto.role === UserRole.MEMBER && oldUser && oldUser.role === UserRole.USER) {
+      // Vérifier et créditer les parrains si nécessaire
+      await this.referralService.checkAndRewardReferrer(id);
+    }
+    
+    return updatedUser;
   }
 
   @Patch(':id')

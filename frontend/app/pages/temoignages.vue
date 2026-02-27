@@ -108,7 +108,7 @@ const testimonials = [
         <UCard
           v-for="testimonial in testimonials"
           :key="testimonial.id"
-          class="group cursor-pointer overflow-hidden bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20"
+          class="group cursor-pointer overflow-hidden bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20"
         >
           <template #header>
             <div class="relative aspect-video w-full overflow-hidden rounded-lg bg-black">

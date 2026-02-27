@@ -182,11 +182,25 @@ export class UsersService {
   }
 
   async updateRole(userId: number, newRole: UserRole): Promise<User> {
+    const oldUser = await this.findById(userId);
+    if (!oldUser) {
+      throw new Error('User not found');
+    }
+
     await this.usersRepository.update(userId, { role: newRole });
     const user = await this.findById(userId);
     if (!user) {
       throw new Error('User not found');
     }
+
+    // Si l'utilisateur devient MEMBER et qu'il était USER avant, vérifier les parrainages
+    if (newRole === UserRole.MEMBER && oldUser.role === UserRole.USER) {
+      // Note: On utilise une injection optionnelle pour éviter la dépendance circulaire
+      // Le ReferralService sera injecté via le module si disponible
+      // Pour l'instant, on laisse cette logique dans le ReferralService.checkAndRewardReferrer
+      // qui sera appelé depuis le contrôleur ou un hook
+    }
+
     return user;
   }
 

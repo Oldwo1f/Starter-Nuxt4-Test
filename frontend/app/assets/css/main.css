@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/* Forcer le dark mode */
+html {
+  color-scheme: dark;
+}
+
+html.dark,
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 html,
 body {
   height: 100%;
@@ -14,4 +24,22 @@ body {
   background-attachment: fixed;
   background-position: center top;
   color: rgba(255, 255, 255, 0.92);
+}
+
+/* Forcer les UCard à avoir un background sombre même en light mode */
+/* Cible les éléments avec bg-white qui ne sont pas des opacités (comme bg-white/10) */
+[class*="bg-white"]:not([class*="bg-white/"]):not([class*="bg-white-"]) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)) !important;
+}
+
+/* Forcer les boutons du menu à être blancs */
+nav button[class*="Button"],
+nav [class*="Button"] {
+  color: white !important;
+}
+
+nav button[class*="Button"] *,
+nav [class*="Button"] * {
+  color: white !important;
 }

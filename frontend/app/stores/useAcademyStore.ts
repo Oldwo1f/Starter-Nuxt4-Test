@@ -31,6 +31,7 @@ export interface Course {
   description?: string | null
   thumbnailImage?: string | null
   isPublished: boolean
+  accessLevel: 'public' | 'member' | 'premium' | 'vip'
   order: number
   instructorAvatar?: string | null
   instructorFirstName?: string | null
@@ -423,18 +424,80 @@ export const useAcademyStore = defineStore('academy', () => {
     }
   }
 
+  // Méthodes pour vérifier l'accès aux cours
+  const canAccessCourse = (course: Course): boolean => {
+    // Public est accessible à tous
+    if (course.accessLevel === 'public') {
+      return true
+    }
+
+    // Si l'utilisateur n'est pas connecté, seul public est accessible
+    if (!authStore.isAuthenticated || !authStore.user) {
+      return false
+    }
+
+    const userRole = authStore.user.role?.toLowerCase()
+
+    // Les staff (admin, superadmin, moderator) ont accès à tout
+    if (['admin', 'superadmin', 'moderator'].includes(userRole)) {
+      return true
+    }
+
+    // Hiérarchie des niveaux d'accès
+    const levelHierarchy: Record<'public' | 'member' | 'premium' | 'vip', number> = {
+      public: 0,
+      member: 1,
+      premium: 2,
+      vip: 3,
+    }
+
+    // Mapping des rôles utilisateur vers leurs niveaux
+    const roleToLevel: Record<string, number> = {
+      user: 0, // user = public
+      member: 1,
+      premium: 2,
+      vip: 3,
+      admin: 999, // admin a accès à tout
+      superadmin: 999,
+      moderator: 999,
+    }
+
+    const userLevel = roleToLevel[userRole] || 0
+    const requiredLevel = levelHierarchy[course.accessLevel]
+
+    return userLevel >= requiredLevel
+  }
+
+  // Obtenir le message d'accès requis pour un cours
+  const getAccessMessage = (course: Course): string => {
+    switch (course.accessLevel) {
+      case 'public':
+        return 'Disponible pour tous'
+      case 'member':
+        return 'Devenir membre pour accéder'
+      case 'premium':
+        return 'Disponible pour les membres premium'
+      case 'vip':
+        return 'Disponible pour les membres VIP'
+      default:
+        return 'Accès restreint'
+    }
+  }
+
   return {
     // States
     courses: readonly(courses),
     currentCourse: readonly(currentCourse),
     isLoading: readonly(isLoading),
     error: readonly(error),
-
+    
     // Public methods
     fetchCourses,
     fetchCourse,
     getCourseProgress,
     updateProgress,
+    canAccessCourse,
+    getAccessMessage,
 
     // Admin methods
     createCourse,

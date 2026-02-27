@@ -67,6 +67,9 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   emailChangedAt: Date | null;
 
+  @Column({ type: 'timestamp', nullable: true })
+  paidAccessExpiresAt: Date | null;
+
   @Column({ type: 'varchar', nullable: true })
   resetToken: string | null;
 
@@ -81,6 +84,9 @@ export class User {
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   walletBalance: number; // Solde en Pūpū
+
+  @Column({ type: 'varchar', nullable: true, unique: true })
+  referralCode: string | null; // Code de parrainage unique
 
   @OneToMany(() => BlogPost, (blogPost) => blogPost.author)
   blogPosts: BlogPost[];

@@ -43,9 +43,9 @@ const columns = [
     enableSorting: false,
   },
   {
-    id: 'isPublic',
-    accessorKey: 'isPublic',
-    header: 'Public',
+    id: 'accessLevel',
+    accessorKey: 'accessLevel',
+    header: 'Niveau d\'accès',
     enableSorting: true,
   },
   {
@@ -54,6 +54,34 @@ const columns = [
     enableSorting: false,
   },
 ]
+
+// Gestionnaire pour le double-clic sur les lignes du tableau
+const handleTableDoubleClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  const row = target.closest('tr')
+  
+  if (!row) return
+  
+  // Ignorer si on clique sur un bouton ou un lien
+  if (target.closest('button') || target.closest('a')) {
+    return
+  }
+  
+  // Trouver l'index de la ligne dans le tableau
+  const tbody = row.closest('tbody')
+  if (!tbody) return
+  
+  const rows = Array.from(tbody.querySelectorAll('tr'))
+  const rowIndex = rows.indexOf(row)
+  
+  // Récupérer le goodie correspondant
+  if (rowIndex >= 0 && rowIndex < goodieStore.goodies.length) {
+    const goodie = goodieStore.goodies[rowIndex]
+    if (goodie) {
+      goodieStore.openEditModal(goodie)
+    }
+  }
+}
 
 // Wrapper pour fetchGoodies avec gestion des toasts
 const handleFetchGoodies = async () => {
@@ -210,7 +238,7 @@ onMounted(() => {
   <div>
     <div class="space-y-6">
       <!-- Tableau des goodies -->
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-2">
@@ -235,12 +263,20 @@ onMounted(() => {
           </div>
         </template>
 
-        <div class="overflow-auto">
+        <div 
+          class="overflow-auto"
+          @dblclick="handleTableDoubleClick"
+        >
           <UTable
             v-if="!goodieStore.isLoading && Array.isArray(goodieStore.goodies) && goodieStore.goodies.length > 0"
             :data="goodieStore.goodies"
             :columns="columns"
             :loading="goodieStore.isLoading"
+            :ui="{
+              tr: {
+                base: 'cursor-pointer hover:bg-white/5 transition-colors',
+              },
+            }"
           >
             <template #link-cell="{ row }">
               <a
@@ -256,18 +292,19 @@ onMounted(() => {
             </template>
 
             <template #offeredBy-cell="{ row }">
-              <div class="flex flex-col gap-1">
+              <div class="flex items-center gap-2">
                 <span v-if="(row.original || row).offeredByName" class="text-white/90">
                   {{ (row.original || row).offeredByName }}
                 </span>
                 <a
-                  v-if="(row.original || row).offeredByLink"
+                  v-if="(row.original || row).offeredByLink && String((row.original || row).offeredByLink).trim()"
                   :href="(row.original || row).offeredByLink"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-primary-400 hover:text-primary-300 underline text-sm truncate max-w-xs"
+                  class="text-primary-400 hover:text-primary-300 transition-colors"
+                  title="Ouvrir le lien"
                 >
-                  {{ (row.original || row).offeredByLink }}
+                  <UIcon name="i-heroicons-link" class="w-4 h-4" />
                 </a>
                 <span v-if="!(row.original || row).offeredByName && !(row.original || row).offeredByLink" class="text-white/40">-</span>
               </div>
@@ -285,9 +322,34 @@ onMounted(() => {
               </div>
             </template>
 
-            <template #isPublic-cell="{ row }">
-              <UBadge :color="(row.original || row).isPublic ? 'success' : 'neutral'" variant="subtle">
-                {{ (row.original || row).isPublic ? 'Public' : 'Privé' }}
+            <template #accessLevel-cell="{ row }">
+              <UBadge 
+                v-if="(row.original || row).accessLevel === 'public'"
+                color="neutral"
+                variant="outline"
+              >
+                Public
+              </UBadge>
+              <UBadge 
+                v-else-if="(row.original || row).accessLevel === 'member'"
+                color="success"
+                variant="subtle"
+              >
+                Membre
+              </UBadge>
+              <UBadge 
+                v-else-if="(row.original || row).accessLevel === 'premium'"
+                color="warning"
+                variant="subtle"
+              >
+                Premium
+              </UBadge>
+              <UBadge 
+                v-else-if="(row.original || row).accessLevel === 'vip'"
+                class="bg-purple-500/20 text-purple-400 ring-1 ring-inset ring-purple-500/50"
+                variant="subtle"
+              >
+                VIP
               </UBadge>
             </template>
 
@@ -371,7 +433,7 @@ onMounted(() => {
           <UFormGroup label="Fichier (zip, pdf, etc.)" name="file">
             <div class="space-y-4">
               <!-- Afficher le fichier existant -->
-              <div v-if="getFilePreview()" class="flex items-center gap-3 p-3 rounded-lg border border-white/10 bg-white/5">
+              <div v-if="getFilePreview()" class="flex items-center gap-3 p-3 rounded-lg border-0 bg-white/5">
                 <UIcon name="i-heroicons-document" class="w-6 h-6 text-primary-400" />
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium truncate">{{ getFileName() }}</p>
@@ -439,7 +501,7 @@ onMounted(() => {
                 <img
                   :src="getImagePreview()!"
                   alt="Image du goodie"
-                  class="w-48 h-48 object-cover rounded-lg border border-white/10"
+                  class="w-48 h-48 object-cover rounded-lg border-0"
                 />
                 <UButton
                   color="error"
@@ -458,12 +520,22 @@ onMounted(() => {
             </div>
           </UFormGroup>
 
-          <UFormGroup label="Visibilité" name="isPublic">
-            <USwitch
-              v-model="goodieStore.form.isPublic"
-              label="Public (accessible à tous)"
-              description="Si désactivé, le goodie sera réservé aux membres connectés"
+          <UFormGroup label="Niveau d'accès requis" name="accessLevel">
+            <USelect
+              v-model="goodieStore.form.accessLevel"
+              :items="[
+                { value: 'public', label: 'Public - Accessible à tous' },
+                { value: 'member', label: 'Membre - Accessible aux membres' },
+                { value: 'premium', label: 'Premium - Accessible aux membres premium' },
+                { value: 'vip', label: 'VIP - Accessible aux membres VIP' },
+              ]"
+              placeholder="Sélectionner le niveau d'accès"
             />
+            <template #description>
+              <span class="text-xs text-white/60">
+                Détermine qui peut accéder à ce goodie. Les membres premium et VIP ont accès aux niveaux inférieurs.
+              </span>
+            </template>
           </UFormGroup>
         </div>
       </template>

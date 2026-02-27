@@ -79,7 +79,7 @@ const getImageUrlHelper = (imagePath: string | null | undefined) => {
       <UCard
         v-for="course in academyStore.courses"
         :key="course.id"
-        class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10"
+        class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0"
       >
         <template #header>
           <div class="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
@@ -111,7 +111,41 @@ const getImageUrlHelper = (imagePath: string | null | undefined) => {
 
         <div class="space-y-3">
           <div>
-            <h3 class="font-semibold">{{ course.title }}</h3>
+            <div class="flex items-start justify-between gap-2">
+              <h3 class="flex-1 font-semibold">{{ course.title }}</h3>
+              <UBadge 
+                v-if="course.accessLevel === 'public'"
+                color="neutral"
+                variant="outline"
+                size="xs"
+              >
+                Public
+              </UBadge>
+              <UBadge 
+                v-else-if="course.accessLevel === 'member'"
+                color="success"
+                variant="subtle"
+                size="xs"
+              >
+                Membre
+              </UBadge>
+              <UBadge 
+                v-else-if="course.accessLevel === 'premium'"
+                color="warning"
+                variant="subtle"
+                size="xs"
+              >
+                Premium
+              </UBadge>
+              <UBadge 
+                v-else-if="course.accessLevel === 'vip'"
+                class="bg-purple-500/20 text-purple-400 ring-1 ring-inset ring-purple-500/50"
+                variant="subtle"
+                size="xs"
+              >
+                VIP
+              </UBadge>
+            </div>
             <p v-if="course.description" class="mt-1 line-clamp-2 text-sm text-white/70">
               {{ course.description }}
             </p>

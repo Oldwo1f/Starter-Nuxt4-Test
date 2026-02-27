@@ -16,6 +16,7 @@ const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
 
 const canAccess = computed(() => goodiesStore.canAccessGoodie(props.goodie))
+const accessMessage = computed(() => goodiesStore.getAccessMessage(props.goodie))
 
 // Obtenir l'URL de l'image
 const getImageUrl = (): string | null => {
@@ -52,33 +53,17 @@ const handleClick = () => {
 
 // Vérifier si le lien/fichier doit être visible
 const shouldShowLink = computed(() => {
-  // Afficher le lien/fichier seulement si le goodie est public OU si l'utilisateur a accès
-  return (props.goodie.fileUrl || props.goodie.link) && (props.goodie.isPublic || canAccess.value)
+  // Afficher le lien/fichier seulement si l'utilisateur a accès
+  return (props.goodie.fileUrl || props.goodie.link) && canAccess.value
 })
 </script>
 
 <template>
-  <UCard class="relative cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-transform hover:scale-105 hover:border-primary-500/50" @click="handleClick">
-    <!-- Lock overlay for restricted goodies -->
-    <div
-      v-if="!canAccess"
-      class="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm"
-    >
-      <div class="text-center">
-        <UIcon name="i-heroicons-lock-closed" class="mx-auto mb-2 h-12 w-12 text-white/80" />
-        <p class="text-sm font-medium text-white">Réservé aux membres</p>
-        <UButton
-          to="/login"
-          size="sm"
-          color="primary"
-          class="mt-3"
-          icon="i-heroicons-lock-open"
-          @click.stop
-        >
-          Se connecter
-        </UButton>
-      </div>
-    </div>
+  <UCard 
+    class="relative bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-transform hover:scale-105" 
+    :class="{ 'cursor-pointer': canAccess }"
+    @click="canAccess ? handleClick() : null"
+  >
 
     <template #header>
       <div class="relative aspect-square w-full overflow-hidden rounded-lg bg-white/5">
@@ -100,8 +85,12 @@ const shouldShowLink = computed(() => {
     <div class="space-y-3">
       <div class="flex items-start justify-between gap-2">
         <h3 class="flex-1 font-semibold line-clamp-2">{{ goodie.name }}</h3>
-        <UBadge :color="goodie.isPublic ? 'green' : 'orange'" variant="subtle" size="xs">
-          {{ goodie.isPublic ? 'Public' : 'Privé' }}
+        <UBadge 
+          :color="goodie.accessLevel === 'public' ? 'green' : goodie.accessLevel === 'member' ? 'blue' : goodie.accessLevel === 'premium' ? 'purple' : 'amber'" 
+          variant="subtle" 
+          size="xs"
+        >
+          {{ goodie.accessLevel === 'public' ? 'Public' : goodie.accessLevel === 'member' ? 'Membre' : goodie.accessLevel === 'premium' ? 'Premium' : 'VIP' }}
         </UBadge>
       </div>
 
@@ -120,7 +109,7 @@ const shouldShowLink = computed(() => {
           <span>{{ new Date(goodie.createdAt).toLocaleDateString('fr-FR') }}</span>
         </div>
 
-        <!-- Bouton visible uniquement si le goodie est public ou si l'utilisateur a accès -->
+        <!-- Bouton visible uniquement si l'utilisateur a accès -->
         <UButton
           v-if="shouldShowLink"
           size="sm"
@@ -132,17 +121,18 @@ const shouldShowLink = computed(() => {
           {{ goodie.fileUrl ? 'Télécharger' : 'Voir' }}
         </UButton>
         
-        <!-- Bouton grisé avec cadenas si le goodie est privé et l'utilisateur n'a pas accès -->
+        <!-- Bouton avec cadenas si le goodie est restreint et l'utilisateur n'a pas accès -->
         <UButton
-          v-else-if="(goodie.fileUrl || goodie.link) && !goodie.isPublic && !canAccess"
+          v-else-if="(goodie.fileUrl || goodie.link) && !canAccess"
           disabled
           size="sm"
           color="neutral"
           variant="outline"
           icon="i-heroicons-lock-closed"
           class="opacity-50 cursor-not-allowed"
+          @click.stop
         >
-          {{ goodie.fileUrl ? 'Télécharger' : 'Voir' }}
+          {{ accessMessage }}
         </UButton>
       </div>
     </div>

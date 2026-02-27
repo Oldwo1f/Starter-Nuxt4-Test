@@ -14,6 +14,8 @@ import { GoodiesModule } from './goodies/goodies.module';
 import { PartnersModule } from './partners/partners.module';
 import { CultureModule } from './culture/culture.module';
 import { AcademyModule } from './academy/academy.module';
+import { ReferralModule } from './referral/referral.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { AcademyModule } from './academy/academy.module';
     PartnersModule,
     CultureModule,
     AcademyModule,
+    ReferralModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

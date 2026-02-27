@@ -11,6 +11,29 @@ import type { User } from '~/stores/useUserStore'
 const userStore = useUserStore()
 const authStore = useAuthStore()
 const toast = useToast()
+const config = useRuntimeConfig()
+const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
+
+// État pour les données de parrainage
+const referralData = ref<{
+  referralCode: string | null
+  stats: {
+    total: number
+    inscrits: number
+    membres: number
+    validees: number
+    rewardsEarned: number
+  } | null
+  referrals: any[]
+} | null>(null)
+const isLoadingReferral = ref(false)
+
+// État pour le formulaire de crédit
+const creditForm = ref({
+  amount: 0,
+  description: '',
+})
+const isCreditingUser = ref(false)
 
 // Wrapper pour fetchUsers avec gestion des toasts
 const handleFetchUsers = async () => {
@@ -121,6 +144,118 @@ const getRoleColor = (role: string) => {
   return 'primary'
 }
 
+// Fonction pour récupérer les données de parrainage
+const fetchReferralData = async (userId: number) => {
+  if (!authStore.accessToken) return
+  
+  isLoadingReferral.value = true
+  try {
+    const response = await $fetch<{
+      referralCode: string
+      stats: {
+        total: number
+        inscrits: number
+        membres: number
+        validees: number
+        rewardsEarned: number
+      }
+      referrals: any[]
+    }>(`${API_BASE_URL}/referral/user/${userId}/stats`, {
+      headers: {
+        Authorization: `Bearer ${authStore.accessToken}`,
+      },
+    })
+    referralData.value = response
+  } catch (error: any) {
+    console.error('Erreur lors de la récupération des données de parrainage:', error)
+    referralData.value = null
+  } finally {
+    isLoadingReferral.value = false
+  }
+}
+
+// Watcher pour charger les données de parrainage quand un utilisateur est sélectionné
+watch(() => userStore.selectedUser, (newUser) => {
+  if (newUser) {
+    fetchReferralData(newUser.id)
+    // Réinitialiser le formulaire de crédit
+    creditForm.value = {
+      amount: 0,
+      description: '',
+    }
+  } else {
+    referralData.value = null
+  }
+})
+
+// Fonction pour créditer un utilisateur
+const handleCreditUser = async () => {
+  if (!userStore.selectedUser || !authStore.accessToken) return
+
+  if (!creditForm.value.amount || creditForm.value.amount <= 0) {
+    toast.add({
+      title: 'Erreur',
+      description: 'Le montant doit être supérieur à 0',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+    return
+  }
+
+  if (!creditForm.value.description || creditForm.value.description.trim().length === 0) {
+    toast.add({
+      title: 'Erreur',
+      description: 'La description est requise',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+    return
+  }
+
+  isCreditingUser.value = true
+  try {
+    const response = await $fetch(
+      `${API_BASE_URL}/wallet/admin/credit/${userStore.selectedUser.id}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: {
+          amount: creditForm.value.amount,
+          description: creditForm.value.description.trim(),
+        },
+      }
+    )
+
+    toast.add({
+      title: 'Succès',
+      description: `${creditForm.value.amount} Pūpū ont été crédités à ${userStore.selectedUser.email}`,
+      color: 'success',
+      icon: 'i-heroicons-check-circle',
+    })
+
+    // Réinitialiser le formulaire
+    creditForm.value = {
+      amount: 0,
+      description: '',
+    }
+
+    // Recharger les utilisateurs pour mettre à jour le solde
+    await handleFetchUsers()
+  } catch (error: any) {
+    toast.add({
+      title: 'Erreur',
+      description: error.data?.message || error.message || 'Erreur lors du crédit',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+  } finally {
+    isCreditingUser.value = false
+  }
+}
+
 // Vérifier si l'utilisateur connecté peut modifier les rôles
 const canModifyRoles = computed(() => {
   const role = authStore.user?.role?.toLowerCase()
@@ -184,6 +319,9 @@ const columns = [
 ]
 
 
+// Ref pour le conteneur du tableau
+const tableContainer = ref<HTMLElement | null>(null)
+
 // Calcul de la hauteur disponible pour le tableau
 const tableHeight = ref('600px')
 
@@ -211,6 +349,35 @@ const calculateTableHeight = () => {
   }
 }
 
+// Gestionnaire pour le double-clic sur les lignes du tableau
+const handleTableDoubleClick = (event: MouseEvent) => {
+  // Trouver l'élément <tr> le plus proche
+  const target = event.target as HTMLElement
+  const row = target.closest('tr')
+  
+  if (!row) return
+  
+  // Ignorer si on clique sur un bouton ou un lien
+  if (target.closest('button') || target.closest('a')) {
+    return
+  }
+  
+  // Trouver l'index de la ligne dans le tableau
+  const tbody = row.closest('tbody')
+  if (!tbody) return
+  
+  const rows = Array.from(tbody.querySelectorAll('tr'))
+  const rowIndex = rows.indexOf(row)
+  
+  // Récupérer l'utilisateur correspondant
+  if (rowIndex >= 0 && rowIndex < userStore.data.length) {
+    const user = userStore.data[rowIndex]
+    if (user) {
+      userStore.openUserDetails(user)
+    }
+  }
+}
+
 onMounted(() => {
   handleFetchUsers()
   calculateTableHeight()
@@ -230,7 +397,7 @@ onUnmounted(() => {
   <div>
     <div class="space-y-6">
           <!-- Tableau des utilisateurs -->
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-2">
@@ -265,7 +432,12 @@ onUnmounted(() => {
           </div>
         </template>
 
-        <div class="overflow-auto" :style="{ maxHeight: tableHeight }">
+        <div 
+          ref="tableContainer"
+          class="overflow-auto" 
+          :style="{ maxHeight: tableHeight }"
+          @dblclick="handleTableDoubleClick"
+        >
           <UTable
             v-if="!userStore.isLoading && userStore.users.length > 0"
             v-model:sorting="userStore.sorting"
@@ -275,6 +447,11 @@ onUnmounted(() => {
             manual-pagination
             manual-sorting
             sticky
+            :ui="{
+              tr: {
+                base: 'cursor-pointer hover:bg-white/5 transition-colors',
+              },
+            }"
           >
           <template #avatar-cell="{ row }">
             <div class="flex items-center gap-3">
@@ -414,7 +591,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Formulaire d'informations -->
-          <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+          <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
             <template #header>
               <div class="flex items-center justify-between">
                 <span class="font-medium">Informations personnelles</span>
@@ -547,8 +724,162 @@ onUnmounted(() => {
             </div>
           </UCard>
 
+          <!-- Informations de parrainage -->
+          <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+            <template #header>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-heroicons-user-plus" class="w-5 h-5" />
+                  <span class="font-medium">Parrainage</span>
+                </div>
+                <UButton
+                  v-if="userStore.selectedUser"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-heroicons-arrow-path"
+                  :loading="isLoadingReferral"
+                  @click="fetchReferralData(userStore.selectedUser.id)"
+                >
+                  Actualiser
+                </UButton>
+              </div>
+            </template>
+
+            <div v-if="isLoadingReferral" class="text-center py-8">
+              <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin mx-auto text-white/60" />
+              <p class="text-white/60 mt-2 text-sm">Chargement des données de parrainage...</p>
+            </div>
+
+            <div v-else-if="referralData" class="space-y-4">
+              <!-- Code de parrainage -->
+              <div>
+                <label class="block text-sm font-medium text-white/70 mb-2">Code de parrainage</label>
+                <UInput
+                  :value="referralData.referralCode || 'Non généré'"
+                  disabled
+                  icon="i-heroicons-gift"
+                  class="font-mono"
+                />
+              </div>
+
+              <!-- Statistiques -->
+              <div v-if="referralData.stats">
+                <label class="block text-sm font-medium text-white/70 mb-3">Statistiques</label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div class="bg-white/5 rounded-lg p-3 text-center">
+                    <div class="text-xl font-bold text-primary-400">{{ referralData.stats.total }}</div>
+                    <div class="text-xs text-white/60 mt-1">Total filleuls</div>
+                  </div>
+                  <div class="bg-white/5 rounded-lg p-3 text-center">
+                    <div class="text-xl font-bold text-gray-400">{{ referralData.stats.inscrits }}</div>
+                    <div class="text-xs text-white/60 mt-1">Inscrits</div>
+                  </div>
+                  <div class="bg-white/5 rounded-lg p-3 text-center">
+                    <div class="text-xl font-bold text-blue-400">{{ referralData.stats.membres }}</div>
+                    <div class="text-xs text-white/60 mt-1">Membres</div>
+                  </div>
+                  <div class="bg-white/5 rounded-lg p-3 text-center">
+                    <div class="text-xl font-bold text-green-400">{{ referralData.stats.validees }}</div>
+                    <div class="text-xs text-white/60 mt-1">Validées</div>
+                  </div>
+                </div>
+                <div class="mt-3 bg-primary-500/10 rounded-lg p-3 text-center border border-primary-500/20">
+                  <div class="text-lg font-bold text-primary-300">
+                    {{ referralData.stats.rewardsEarned }} 🐚
+                  </div>
+                  <div class="text-xs text-white/60 mt-1">Récompenses gagnées</div>
+                </div>
+              </div>
+
+              <!-- Liste des filleuls -->
+              <div v-if="referralData.referrals && referralData.referrals.length > 0">
+                <label class="block text-sm font-medium text-white/70 mb-2">Filleuls ({{ referralData.referrals.length }})</label>
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                  <div
+                    v-for="referral in referralData.referrals"
+                    :key="referral.id"
+                    class="flex items-center justify-between bg-white/5 rounded-lg p-2 text-sm"
+                  >
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium text-white/90 truncate">
+                        {{ referral.referred.firstName && referral.referred.lastName
+                          ? `${referral.referred.firstName} ${referral.referred.lastName}`
+                          : referral.referred.email }}
+                      </div>
+                      <div class="text-xs text-white/60 truncate">{{ referral.referred.email }}</div>
+                    </div>
+                    <UBadge
+                      :color="referral.status === 'validee' ? 'green' : referral.status === 'membre' ? 'blue' : 'gray'"
+                      variant="soft"
+                      size="xs"
+                    >
+                      {{ referral.status === 'validee' ? 'Validée' : referral.status === 'membre' ? 'Membre' : 'Inscrit' }}
+                    </UBadge>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else-if="referralData.stats && referralData.stats.total === 0" class="text-center py-4 text-white/60 text-sm">
+                Aucun filleul
+              </div>
+            </div>
+
+            <div v-else class="text-center py-4 text-white/60 text-sm">
+              Impossible de charger les données de parrainage
+            </div>
+          </UCard>
+
+          <!-- Attribution de Pūpū (si admin/superadmin) -->
+          <UCard v-if="canModifyRoles" class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <UIcon name="i-heroicons-currency-dollar" class="w-5 h-5" />
+                <span class="font-medium">Attribuer des Pūpū</span>
+              </div>
+            </template>
+            <div class="p-4 space-y-4">
+              <UFormGroup label="Montant (Pūpū)" name="creditAmount">
+                <UInput
+                  v-model.number="creditForm.amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  icon="i-heroicons-currency-dollar"
+                />
+                <template #description>
+                  Montant en Pūpū à attribuer à cet utilisateur
+                </template>
+              </UFormGroup>
+
+              <UFormGroup label="Description" name="creditDescription">
+                <UTextarea
+                  v-model="creditForm.description"
+                  placeholder="Ex: Compensation pour participation à un événement"
+                  rows="3"
+                />
+                <template #description>
+                  Description de la transaction (sera préfixée par "[Nuna'a Heritage]")
+                </template>
+              </UFormGroup>
+
+              <div class="flex items-center gap-3 pt-2">
+                <UButton
+                  @click="handleCreditUser"
+                  color="primary"
+                  :loading="isCreditingUser"
+                  :disabled="isCreditingUser || !creditForm.amount || creditForm.amount <= 0 || !creditForm.description"
+                  block
+                >
+                  <UIcon name="i-heroicons-plus-circle" class="mr-1" />
+                  Créditer l'utilisateur
+                </UButton>
+              </div>
+            </div>
+          </UCard>
+
           <!-- Modification du rôle (si admin/superadmin) -->
-          <UCard v-if="canModifyRoles" class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+          <UCard v-if="canModifyRoles" class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
             <template #header>
               <span class="font-medium">Modifier le rôle</span>
             </template>
@@ -566,7 +897,7 @@ onUnmounted(() => {
           </UCard>
 
           <!-- Bouton de suppression (si admin/superadmin) -->
-          <UCard v-if="canModifyRoles" class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+          <UCard v-if="canModifyRoles" class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
             <div class="p-4">
               <UButton
                 color="error"

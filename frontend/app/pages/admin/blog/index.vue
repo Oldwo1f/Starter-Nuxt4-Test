@@ -47,6 +47,34 @@ const columns = [
 // Calcul de la hauteur disponible pour le tableau
 const tableHeight = ref('600px')
 
+// Gestionnaire pour le double-clic sur les lignes du tableau
+const handleTableDoubleClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  const row = target.closest('tr')
+  
+  if (!row) return
+  
+  // Ignorer si on clique sur un bouton ou un lien
+  if (target.closest('button') || target.closest('a')) {
+    return
+  }
+  
+  // Trouver l'index de la ligne dans le tableau
+  const tbody = row.closest('tbody')
+  if (!tbody) return
+  
+  const rows = Array.from(tbody.querySelectorAll('tr'))
+  const rowIndex = rows.indexOf(row)
+  
+  // Récupérer l'article correspondant
+  if (rowIndex >= 0 && rowIndex < blogStore.data.length) {
+    const post = blogStore.data[rowIndex]
+    if (post) {
+      blogStore.openEditModal(post)
+    }
+  }
+}
+
 const calculateTableHeight = () => {
   if (import.meta.client) {
     const viewportHeight = window.innerHeight
@@ -341,7 +369,7 @@ const getImagePreviewUrl = (file: File) => {
      
 
       <!-- Tableau des articles -->
-      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10">
+      <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-2">
@@ -380,7 +408,11 @@ const getImagePreviewUrl = (file: File) => {
           </div>
         </template>
 
-        <div class="overflow-auto" :style="{ maxHeight: tableHeight }">
+        <div 
+          class="overflow-auto" 
+          :style="{ maxHeight: tableHeight }"
+          @dblclick="handleTableDoubleClick"
+        >
           <UTable
             v-if="!blogStore.isLoading && blogStore.blogPosts.length > 0"
             v-model:sorting="blogStore.sorting"
@@ -390,6 +422,11 @@ const getImagePreviewUrl = (file: File) => {
             manual-pagination
             manual-sorting
             sticky
+            :ui="{
+              tr: {
+                base: 'cursor-pointer hover:bg-white/5 transition-colors',
+              },
+            }"
           >
             <template #actions-cell="{ row }">
               <div class="flex items-center gap-2">
@@ -496,7 +533,7 @@ const getImagePreviewUrl = (file: File) => {
               content-type="markdown"
               placeholder="Contenu de l'article..." 
               :ui="{
-                root: 'border border-white/10 rounded-lg overflow-hidden',
+                root: 'border-0 rounded-lg overflow-hidden',
                 content: 'min-h-[300px] p-4 focus:outline-none'
               }"
             >

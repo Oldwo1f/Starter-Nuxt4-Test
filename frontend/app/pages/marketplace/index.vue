@@ -13,6 +13,14 @@ const authStore = useAuthStore()
 // View mode: 'list' or 'grid'
 const viewMode = ref<'list' | 'grid'>('list')
 
+// Mobile detection for view mode (using sm breakpoint: 640px)
+const isMobileView = ref(false)
+
+// Effective view mode: force 'grid' on mobile, use viewMode on desktop
+const effectiveViewMode = computed<'list' | 'grid'>(() => {
+  return isMobileView.value ? 'grid' : viewMode.value
+})
+
 // Filters slideover state
 const isFiltersOpen = ref(false)
 
@@ -115,10 +123,35 @@ const fetchListings = async () => {
 // Watch filters and reset page, then refetch (only for desktop, mobile uses apply button)
 // On desktop, filters apply automatically. On mobile, user clicks "Appliquer"
 const isMobile = ref(false)
+
+// Watch viewMode to prevent 'list' mode on mobile
+watch(viewMode, (newMode) => {
+  if (isMobileView.value && newMode === 'list') {
+    viewMode.value = 'grid'
+  }
+})
+
 onMounted(() => {
-  isMobile.value = window.innerWidth < 1024 // lg breakpoint
+  // Mobile detection for filters (lg breakpoint: 1024px)
+  isMobile.value = window.innerWidth < 1024
+  
+  // Mobile detection for view mode (sm breakpoint: 640px)
+  isMobileView.value = window.innerWidth < 640
+  
+  // Force grid mode on mobile if currently in list mode
+  if (isMobileView.value && viewMode.value === 'list') {
+    viewMode.value = 'grid'
+  }
+  
   window.addEventListener('resize', () => {
     isMobile.value = window.innerWidth < 1024
+    const wasMobile = isMobileView.value
+    isMobileView.value = window.innerWidth < 640
+    
+    // If switching to mobile, force grid mode
+    if (isMobileView.value && viewMode.value === 'list') {
+      viewMode.value = 'grid'
+    }
   })
 })
 
@@ -261,20 +294,20 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
     <!-- Header -->
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-3xl font-bold">Marketplace</h1>
-        <p class="text-white/60">Découvrez les biens et services disponibles</p>
+        <h1 class="text-3xl font-bold">Place de TROC</h1>
+        <p class="text-white/60">Découvrez les produits et services disponibles</p>
       </div>
       <div class="flex items-center gap-2">
         <!-- View mode toggle (hidden on mobile) -->
         <div class="hidden sm:flex rounded-lg border border-white/20 p-1">
           <UButton
-            :variant="viewMode === 'list' ? 'solid' : 'ghost'"
+            :variant="effectiveViewMode === 'list' ? 'solid' : 'ghost'"
             size="sm"
             icon="i-heroicons-bars-3"
             @click="viewMode = 'list'"
           />
           <UButton
-            :variant="viewMode === 'grid' ? 'solid' : 'ghost'"
+            :variant="effectiveViewMode === 'grid' ? 'solid' : 'ghost'"
             size="sm"
             icon="i-heroicons-squares-2x2"
             @click="viewMode = 'grid'"
@@ -337,12 +370,12 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
     </div>
 
     <div v-else-if="listings.length > 0">
-      <!-- List View (default on mobile) -->
-      <div v-if="viewMode === 'list'" class="space-y-4">
+      <!-- List View (hidden on mobile, forced to grid) -->
+      <div v-if="effectiveViewMode === 'list'" class="space-y-4">
         <UCard
           v-for="listing in listings"
           :key="listing.id"
-          :class="['cursor-pointer transition-transform hover:scale-[1.02]', getBorderClass(listing.type)]"
+          :class="['cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-transform hover:scale-[1.02]', getBorderClass(listing.type)]"
           @click="navigateTo(`/marketplace/${listing.id}`)"
         >
           <div class="flex gap-4">
@@ -419,12 +452,12 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
         </UCard>
       </div>
 
-      <!-- Grid View -->
+      <!-- Grid View (forced on mobile) -->
       <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <UCard
           v-for="listing in listings"
           :key="listing.id"
-          :class="['cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-transform hover:scale-105 hover:border-primary-500/50', getBorderClass(listing.type)]"
+          :class="['cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-transform hover:scale-105', getBorderClass(listing.type)]"
           @click="navigateTo(`/marketplace/${listing.id}`)"
         >
           <template #header>

@@ -106,6 +106,32 @@ const testimonials = [
 // Contrôle du son de la vidéo
 const videoRef = ref<HTMLVideoElement | null>(null)
 const isMuted = ref(true)
+const isPlaying = ref(false)
+const showPlayButton = ref(true)
+
+// Détecter si la vidéo est en lecture
+const handleVideoPlay = () => {
+  isPlaying.value = true
+  showPlayButton.value = false
+}
+
+const handleVideoPause = () => {
+  isPlaying.value = false
+  showPlayButton.value = true
+}
+
+// Lancer la vidéo manuellement
+const playVideo = async () => {
+  if (videoRef.value) {
+    try {
+      await videoRef.value.play()
+      isPlaying.value = true
+      showPlayButton.value = false
+    } catch (error) {
+      console.error('Erreur lors de la lecture de la vidéo:', error)
+    }
+  }
+}
 
 const toggleVideoSound = () => {
   if (videoRef.value) {
@@ -113,6 +139,38 @@ const toggleVideoSound = () => {
     videoRef.value.muted = isMuted.value
   }
 }
+
+// Vérifier l'état de la vidéo au montage
+onMounted(() => {
+  if (videoRef.value) {
+    // Vérifier si la vidéo est déjà en lecture
+    if (!videoRef.value.paused) {
+      isPlaying.value = true
+      showPlayButton.value = false
+    }
+    
+    // Écouter les événements de lecture
+    videoRef.value.addEventListener('play', handleVideoPlay)
+    videoRef.value.addEventListener('pause', handleVideoPause)
+    videoRef.value.addEventListener('playing', handleVideoPlay)
+    
+    // Vérifier après un court délai si l'autoplay a fonctionné
+    setTimeout(() => {
+      if (videoRef.value && videoRef.value.paused) {
+        showPlayButton.value = true
+      }
+    }, 500)
+  }
+})
+
+// Nettoyer les écouteurs d'événements
+onUnmounted(() => {
+  if (videoRef.value) {
+    videoRef.value.removeEventListener('play', handleVideoPlay)
+    videoRef.value.removeEventListener('pause', handleVideoPause)
+    videoRef.value.removeEventListener('playing', handleVideoPlay)
+  }
+})
 
 // Fonction pour gérer l'ouverture/fermeture des panneaux
 // Toujours garder au moins un panneau ouvert
@@ -206,6 +264,12 @@ const accordionSections = [
         icon: 'i-heroicons-microphone',
         external: false,
       },
+      {
+        label: 'Reportages d\'époques',
+        to: 'https://www.tahitivod.pf/discover?locale=fr',
+        icon: 'i-heroicons-film',
+        external: true,
+      },
     ],
   },
 ]
@@ -255,11 +319,28 @@ const accordionSections = [
                 :muted="isMuted"
                 playsinline
                 class="h-full w-full object-cover"
+                @play="handleVideoPlay"
+                @pause="handleVideoPause"
+                @playing="handleVideoPlay"
               />
+              <!-- Bouton de lecture -->
+              <button
+                v-if="showPlayButton"
+                @click="playVideo"
+                class="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-black"
+                aria-label="Lancer la vidéo"
+              >
+                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-primary-500/90 backdrop-blur-sm transition-all hover:scale-110 hover:bg-primary-500">
+                  <UIcon
+                    name="i-heroicons-play"
+                    class="ml-1 h-10 w-10 text-white"
+                  />
+                </div>
+              </button>
               <!-- Bouton contrôle du son -->
               <button
                 @click="toggleVideoSound"
-                class="absolute bottom-4 right-4 flex h-12 w-12 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm transition-all hover:bg-black/80 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-black"
+                class="absolute bottom-4 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm transition-all hover:bg-black/80 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-black"
                 :aria-label="isMuted ? 'Activer le son' : 'Désactiver le son'"
               >
                 <UIcon
@@ -311,7 +392,7 @@ const accordionSections = [
           <div
             v-for="section in accordionSections"
             :key="section.id"
-            class="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] transition-all duration-500"
+            class="group relative overflow-hidden rounded-2xl border-0 bg-gradient-to-br from-white/5 to-white/[0.02] transition-all duration-500"
             :class="{
               'ring-2 ring-primary-500/50 shadow-2xl shadow-primary-500/20': openAccordion === section.id,
             }"
@@ -372,7 +453,7 @@ const accordionSections = [
                   <UCard
                     v-for="item in section.items"
                     :key="item.label"
-                    class="group/item cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-all hover:scale-105 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/20"
+                    class="group/item cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-all hover:scale-105 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/20"
                     @click="handleItemClick(item)"
                   >
                     <div class="flex items-center gap-4">
@@ -497,7 +578,7 @@ const accordionSections = [
           <UCard
             v-for="post in featuredPosts"
             :key="post.id"
-            class="group cursor-pointer overflow-hidden bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20"
+            class="group cursor-pointer overflow-hidden bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20"
             @click="navigateTo(post.to)"
           >
             <template #header>
@@ -611,7 +692,7 @@ const accordionSections = [
     </section>
 
     <!-- Section Témoignages de nos membres -->
-    <section class="relative bg-black/50 py-16 sm:py-24">
+    <!-- <section class="relative bg-black/50 py-16 sm:py-24">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
@@ -622,7 +703,6 @@ const accordionSections = [
           </p>
         </div>
 
-        <!-- Grille de 3 vidéos -->
         <div class="grid gap-8 md:grid-cols-3">
           <div
             v-for="(testimonial, index) in testimonials"
@@ -649,7 +729,6 @@ const accordionSections = [
           </div>
         </div>
 
-        <!-- CTA vers la page témoignages -->
         <div class="mt-12 text-center">
           <UButton
             to="/temoignages"
@@ -666,6 +745,6 @@ const accordionSections = [
           </UButton>
         </div>
       </div>
-    </section>
+    </section> -->
   </div>
 </template>
