@@ -66,7 +66,8 @@ echo -e "${GREEN}📦 Construction des images Docker...${NC}"
 $DOCKER_COMPOSE_CMD build --no-cache
 
 # Arrêter les conteneurs existants
-echo -e "${GREEN}🛑 Arrêt des conteneurs existants...${NC}"
+# ⚠️ IMPORTANT: Pas de flag -v pour préserver les volumes et les données de la DB
+echo -e "${GREEN}🛑 Arrêt des conteneurs existants (volumes préservés)...${NC}"
 $DOCKER_COMPOSE_CMD down
 
 # Démarrer les services
