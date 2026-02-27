@@ -63,35 +63,37 @@ if [ -f "./check-migrations-status.sh" ]; then
     echo ""
 fi
 
-# Étape 3: Appliquer les migrations via le script run-all-migrations.sh
+# Étape 3: Appliquer les migrations
 echo -e "${YELLOW}🔄 Étape 3: Application des migrations${NC}"
+
+# D'abord, exécuter run-all-migrations.sh pour les migrations de base
 if [ -f "./run-all-migrations.sh" ]; then
-    echo "Exécution de run-all-migrations.sh..."
+    echo "Exécution de run-all-migrations.sh (migrations de base)..."
     ./run-all-migrations.sh
     echo ""
+fi
+
+# Ensuite, appliquer les migrations manquantes via SQL direct
+if [ -f "./apply-missing-migrations.sh" ]; then
+    echo "Application des migrations manquantes (accessLevel, paidAccessExpiresAt, bank_transfer_payments)..."
+    ./apply-missing-migrations.sh
+    echo ""
 else
-    echo -e "${YELLOW}⚠️  Script run-all-migrations.sh non trouvé${NC}"
-    echo "Application des migrations via le conteneur backend..."
+    echo -e "${YELLOW}⚠️  Script apply-missing-migrations.sh non trouvé${NC}"
+    echo "Tentative d'application via le conteneur backend..."
     
     if docker ps | grep -q "$CONTAINER_BACKEND"; then
-        echo "Migration: fileUrl dans goodies..."
-        docker exec -it "$CONTAINER_BACKEND" npm run migrate:fileurl-goodies || echo -e "${YELLOW}⚠️  Migration fileurl-goodies déjà appliquée ou erreur${NC}"
-        
         echo "Migration: accessLevel dans goodies..."
-        docker exec -it "$CONTAINER_BACKEND" npm run migrate:access-level || echo -e "${YELLOW}⚠️  Migration access-level déjà appliquée ou erreur${NC}"
+        docker exec -i "$CONTAINER_BACKEND" npm run migrate:access-level 2>&1 || echo -e "${YELLOW}⚠️  Migration access-level déjà appliquée ou erreur${NC}"
         
         echo "Migration: accessLevel dans courses..."
-        docker exec -it "$CONTAINER_BACKEND" npm run migrate:access-level-courses || echo -e "${YELLOW}⚠️  Migration access-level-courses déjà appliquée ou erreur${NC}"
+        docker exec -i "$CONTAINER_BACKEND" npm run migrate:access-level-courses 2>&1 || echo -e "${YELLOW}⚠️  Migration access-level-courses déjà appliquée ou erreur${NC}"
         
         echo "Migration: bank transfer payments..."
-        docker exec -it "$CONTAINER_BACKEND" npm run migrate:bank-transfer-payments || echo -e "${YELLOW}⚠️  Migration bank-transfer-payments déjà appliquée ou erreur${NC}"
-        
-        echo "Migration: videoUrl dans videos..."
-        docker exec -it "$CONTAINER_BACKEND" npm run migrate:video-url || echo -e "${YELLOW}⚠️  Migration video-url déjà appliquée ou erreur${NC}"
+        docker exec -i "$CONTAINER_BACKEND" npm run migrate:bank-transfer-payments 2>&1 || echo -e "${YELLOW}⚠️  Migration bank-transfer-payments déjà appliquée ou erreur${NC}"
     else
-        echo -e "${RED}❌ Le conteneur backend n'est pas en cours d'exécution${NC}"
-        echo "Démarrez-le avec: $DOCKER_COMPOSE_CMD up -d backend"
-        exit 1
+        echo -e "${YELLOW}⚠️  Le conteneur backend n'est pas en cours d'exécution${NC}"
+        echo "Les migrations seront appliquées via SQL direct si les fichiers existent"
     fi
     echo ""
 fi

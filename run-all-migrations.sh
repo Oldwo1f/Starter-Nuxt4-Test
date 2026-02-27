@@ -172,7 +172,114 @@ else
 fi
 
 echo ""
-echo "✅ Toutes les migrations ont été exécutées avec succès!"
+
+# Migration 6: accessLevel dans goodies (remplace isPublic)
+echo "6️⃣  Migration: accessLevel dans goodies (remplace isPublic)..."
+if docker ps | grep -q "^nunaheritage-backend$"; then
+    echo "   Exécution via le conteneur backend..."
+    docker exec -i nunaheritage-backend npm run migrate:access-level 2>&1 | grep -v "^$" || {
+        echo -e "${YELLOW}⚠️  Migration access-level: peut être déjà appliquée ou erreur mineure${NC}"
+    }
+else
+    echo "   Exécution directe SQL..."
+    docker exec -i nunaheritage-postgres psql -U "$DB_USERNAME" -d "$DB_NAME" -f /dev/stdin << 'EOF'
+-- Migration: Update goodies table to use accessLevel instead of isPublic
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns WHERE table_name = 'goodies' AND column_name = 'isPublic'
+  ) THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns WHERE table_name = 'goodies' AND column_name = 'accessLevel'
+    ) THEN
+      ALTER TABLE goodies ADD COLUMN "accessLevel" VARCHAR(20) DEFAULT 'public';
+      UPDATE goodies SET "accessLevel" = CASE 
+        WHEN "isPublic" = true THEN 'public'
+        WHEN "isPublic" = false THEN 'member'
+        ELSE 'public'
+      END;
+      ALTER TABLE goodies ALTER COLUMN "accessLevel" SET NOT NULL;
+      ALTER TABLE goodies ALTER COLUMN "accessLevel" SET DEFAULT 'public';
+      DROP INDEX IF EXISTS "IDX_goodies_isPublic";
+      ALTER TABLE goodies DROP COLUMN "isPublic";
+    END IF;
+  ELSE
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns WHERE table_name = 'goodies' AND column_name = 'accessLevel'
+    ) THEN
+      ALTER TABLE goodies ADD COLUMN "accessLevel" VARCHAR(20) DEFAULT 'public' NOT NULL;
+    END IF;
+  END IF;
+END $$;
+ALTER TABLE goodies DROP CONSTRAINT IF EXISTS "CHK_goodies_accessLevel";
+ALTER TABLE goodies ADD CONSTRAINT "CHK_goodies_accessLevel" 
+  CHECK ("accessLevel" IN ('public', 'member', 'premium', 'vip'));
+DROP INDEX IF EXISTS "IDX_goodies_accessLevel";
+CREATE INDEX "IDX_goodies_accessLevel" ON goodies("accessLevel");
+EOF
+fi
+
+if [ $? -eq 0 ]; then
+    echo "✅ Migration accessLevel dans goodies terminée"
+else
+    echo "⚠️  Migration accessLevel dans goodies: vérifiez manuellement"
+fi
+
+echo ""
+
+# Migration 7: accessLevel dans courses
+echo "7️⃣  Migration: accessLevel dans courses..."
+if docker ps | grep -q "^nunaheritage-backend$"; then
+    echo "   Exécution via le conteneur backend..."
+    docker exec -i nunaheritage-backend npm run migrate:access-level-courses 2>&1 | grep -v "^$" || {
+        echo -e "${YELLOW}⚠️  Migration access-level-courses: peut être déjà appliquée ou erreur mineure${NC}"
+    }
+else
+    echo "   Exécution directe SQL..."
+    docker exec -i nunaheritage-postgres psql -U "$DB_USERNAME" -d "$DB_NAME" -f /dev/stdin << 'EOF'
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS "accessLevel" VARCHAR(20) DEFAULT 'public';
+ALTER TABLE courses ALTER COLUMN "accessLevel" SET NOT NULL;
+ALTER TABLE courses ALTER COLUMN "accessLevel" SET DEFAULT 'public';
+ALTER TABLE courses DROP CONSTRAINT IF EXISTS "CHK_courses_accessLevel";
+ALTER TABLE courses ADD CONSTRAINT "CHK_courses_accessLevel" 
+  CHECK ("accessLevel" IN ('public', 'member', 'premium', 'vip'));
+CREATE INDEX IF NOT EXISTS "IDX_courses_accessLevel" ON courses("accessLevel");
+EOF
+fi
+
+if [ $? -eq 0 ]; then
+    echo "✅ Migration accessLevel dans courses terminée"
+else
+    echo "⚠️  Migration accessLevel dans courses: vérifiez manuellement"
+fi
+
+echo ""
+
+# Migration 8: paidAccessExpiresAt dans users et bank_transfer_payments
+echo "8️⃣  Migration: paidAccessExpiresAt dans users et table bank_transfer_payments..."
+if docker ps | grep -q "^nunaheritage-backend$"; then
+    echo "   Exécution via le conteneur backend..."
+    docker exec -i nunaheritage-backend npm run migrate:bank-transfer-payments 2>&1 | grep -v "^$" || {
+        echo -e "${YELLOW}⚠️  Migration bank-transfer-payments: peut être déjà appliquée ou erreur mineure${NC}"
+    }
+else
+    echo "   Exécution directe SQL..."
+    # Copier le fichier SQL dans le conteneur temporairement ou l'exécuter directement
+    if [ -f "backend/migrations/add_paid_access_and_bank_transfer_payments.sql" ]; then
+        docker exec -i nunaheritage-postgres psql -U "$DB_USERNAME" -d "$DB_NAME" < backend/migrations/add_paid_access_and_bank_transfer_payments.sql
+    else
+        echo "⚠️  Fichier SQL non trouvé, exécution manuelle requise"
+    fi
+fi
+
+if [ $? -eq 0 ]; then
+    echo "✅ Migration paidAccessExpiresAt et bank_transfer_payments terminée"
+else
+    echo "⚠️  Migration paidAccessExpiresAt et bank_transfer_payments: vérifiez manuellement"
+fi
+
+echo ""
+echo "✅ Toutes les migrations ont été exécutées!"
 echo ""
 echo "Vérification des tables créées..."
-docker exec -i nunaheritage-postgres psql -U "$DB_USERNAME" -d "$DB_NAME" -c "\dt" | grep -E "courses|academy_modules|videos|course_progress|goodies" || echo "⚠️  Impossible de lister les tables"
+docker exec -i nunaheritage-postgres psql -U "$DB_USERNAME" -d "$DB_NAME" -c "\dt" | grep -E "courses|academy_modules|videos|course_progress|goodies|bank_transfer_payments" || echo "⚠️  Impossible de lister les tables"
