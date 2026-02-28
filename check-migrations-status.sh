@@ -164,6 +164,26 @@ else
 fi
 echo ""
 
+# Migration 8: Table referrals (système de parrainage)
+echo -e "${YELLOW}8. Migration: Table referrals (système de parrainage)${NC}"
+TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+if check_table "referrals"; then
+    PASSED_CHECKS=$((PASSED_CHECKS + 1))
+    # Vérifier les colonnes importantes
+    check_column "referrals" "referrerId" > /dev/null 2>&1 && \
+        echo -e "  ${GREEN}✅${NC} Colonne referrerId existe" || \
+        echo -e "  ${YELLOW}⚠️${NC}  Colonne referrerId manquante"
+    check_column "referrals" "referredId" > /dev/null 2>&1 && \
+        echo -e "  ${GREEN}✅${NC} Colonne referredId existe" || \
+        echo -e "  ${YELLOW}⚠️${NC}  Colonne referredId manquante"
+    check_column "referrals" "status" > /dev/null 2>&1 && \
+        echo -e "  ${GREEN}✅${NC} Colonne status existe" || \
+        echo -e "  ${YELLOW}⚠️${NC}  Colonne status manquante"
+else
+    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+fi
+echo ""
+
 # Résumé
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}📊 Résumé:${NC}"

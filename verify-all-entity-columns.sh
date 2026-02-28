@@ -63,6 +63,12 @@ EXPECTED_COLUMNS[videos]="id videoUrl"
 # Table bank_transfer_payments (colonnes critiques)
 EXPECTED_COLUMNS[bank_transfer_payments]="id userId needsVerification pupuInscriptionReceived"
 
+# Table referrals (système de parrainage)
+EXPECTED_COLUMNS[referrals]="id referrerId referredId status createdAt updatedAt"
+
+# Table transactions (utilisée par le système de parrainage)
+EXPECTED_COLUMNS[transactions]="id type amount balanceBefore balanceAfter status fromUserId toUserId"
+
 TOTAL_MISSING=0
 
 # Vérifier chaque table

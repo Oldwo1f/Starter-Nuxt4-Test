@@ -97,6 +97,21 @@ else
 fi
 echo ""
 
+# Migration 5: Table referrals (système de parrainage)
+echo -e "${YELLOW}5. Migration: Table referrals (système de parrainage)${NC}"
+if [ -f "backend/migrations/create_referrals_table.sql" ]; then
+    docker exec -e PGPASSWORD="$DB_PASSWORD" -i "$CONTAINER_NAME" \
+        psql -U "$DB_USERNAME" -d "$DB_NAME" < backend/migrations/create_referrals_table.sql
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✅ Migration table referrals terminée${NC}"
+    else
+        echo -e "${RED}❌ Erreur lors de la migration table referrals${NC}"
+    fi
+else
+    echo -e "${RED}❌ Fichier backend/migrations/create_referrals_table.sql non trouvé${NC}"
+fi
+echo ""
+
 # Vérification finale
 echo -e "${BLUE}✅ Vérification finale...${NC}"
 if [ -f "./check-migrations-status.sh" ]; then
