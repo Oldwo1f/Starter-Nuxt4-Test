@@ -32,6 +32,7 @@ Thumbs.db
 # Backend specific
 backend/dist/
 backend/.env
+backend/env.example
 backend/uploads/
 uploads/
 
