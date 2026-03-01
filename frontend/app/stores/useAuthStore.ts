@@ -10,6 +10,17 @@ interface User {
   emailVerified: boolean
   isActive: boolean
   paidAccessExpiresAt?: string | null
+  phoneNumber?: string | null
+  commune?: string | null
+  contactPreferences?: {
+    order: string[]
+    accounts: {
+      messenger?: string
+      telegram?: string
+      whatsapp?: string
+    }
+  } | null
+  tradingPreferences?: string[] | null
 }
 
 interface AuthState {
@@ -23,6 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
   const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
   const user = ref<User | null>(null)
   const accessToken = ref<string | null>(null)
+  const refreshToken = ref<string | null>(null)
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
 
   // Initialize from localStorage (called by plugin on client side)
@@ -31,43 +43,56 @@ export const useAuthStore = defineStore('auth', () => {
     
     try {
       const storedToken = localStorage.getItem('auth_token')
+      const storedRefreshToken = localStorage.getItem('auth_refresh_token')
       const storedUser = localStorage.getItem('auth_user')
       
       if (storedToken && storedUser) {
         accessToken.value = storedToken
         user.value = JSON.parse(storedUser)
+        if (storedRefreshToken) {
+          refreshToken.value = storedRefreshToken
+        }
       }
     } catch (error) {
       // En cas d'erreur de parsing, nettoyer les données corrompues
       console.error('Erreur lors de l\'initialisation de l\'authentification depuis localStorage:', error)
       if (process.client) {
         localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_refresh_token')
         localStorage.removeItem('auth_user')
       }
     }
   }
 
-  const setAuth = (token: string, userData: User) => {
+  const setAuth = (token: string, userData: User, refreshTokenValue?: string) => {
     accessToken.value = token
     user.value = userData
+    if (refreshTokenValue) {
+      refreshToken.value = refreshTokenValue
+    }
     if (process.client) {
       localStorage.setItem('auth_token', token)
       localStorage.setItem('auth_user', JSON.stringify(userData))
+      if (refreshTokenValue) {
+        localStorage.setItem('auth_refresh_token', refreshTokenValue)
+      }
     }
   }
 
   const clearAuth = () => {
     accessToken.value = null
     user.value = null
+    refreshToken.value = null
     if (process.client) {
       localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_refresh_token')
       localStorage.removeItem('auth_user')
     }
   }
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await $fetch<{ access_token: string; user: User }>(
+      const response = await $fetch<{ access_token: string; refresh_token?: string; user: User }>(
         `${API_BASE_URL}/auth/login`,
         {
           method: 'POST',
@@ -77,7 +102,7 @@ export const useAuthStore = defineStore('auth', () => {
           },
         }
       )
-      setAuth(response.access_token, response.user)
+      setAuth(response.access_token, response.user, response.refresh_token)
       return { success: true, data: response }
     } catch (error: any) {
       return {
@@ -96,14 +121,14 @@ export const useAuthStore = defineStore('auth', () => {
       if (referralCode) {
         body.referralCode = referralCode
       }
-      const response = await $fetch<{ access_token: string; user: User }>(
+      const response = await $fetch<{ access_token: string; refresh_token?: string; user: User }>(
         `${API_BASE_URL}/auth/register`,
         {
           method: 'POST',
           body,
         }
       )
-      setAuth(response.access_token, response.user)
+      setAuth(response.access_token, response.user, response.refresh_token)
       return { success: true, data: response }
     } catch (error: any) {
       return {
@@ -180,7 +205,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const facebookLogin = async (facebookId: string, email: string, accessToken: string) => {
     try {
-      const response = await $fetch<{ access_token: string; user: User }>(
+      const response = await $fetch<{ access_token: string; refresh_token?: string; user: User }>(
         `${API_BASE_URL}/auth/facebook`,
         {
           method: 'POST',
@@ -191,7 +216,7 @@ export const useAuthStore = defineStore('auth', () => {
           },
         }
       )
-      setAuth(response.access_token, response.user)
+      setAuth(response.access_token, response.user, response.refresh_token)
       return { success: true, data: response }
     } catch (error: any) {
       return {
@@ -201,7 +226,45 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const logout = () => {
+  const refreshAccessToken = async () => {
+    if (!refreshToken.value) {
+      throw new Error('No refresh token available')
+    }
+
+    try {
+      const response = await $fetch<{ access_token: string; refresh_token?: string; user: User }>(
+        `${API_BASE_URL}/auth/refresh`,
+        {
+          method: 'POST',
+          body: {
+            refresh_token: refreshToken.value,
+          },
+        }
+      )
+      setAuth(response.access_token, response.user, response.refresh_token)
+      return { success: true, data: response }
+    } catch (error: any) {
+      // Si le refresh token est invalide, nettoyer l'authentification
+      clearAuth()
+      throw error
+    }
+  }
+
+  const logout = async () => {
+    // Appeler l'endpoint de logout pour révoquer les refresh tokens côté serveur
+    if (accessToken.value) {
+      try {
+        await $fetch(`${API_BASE_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken.value}`,
+          },
+        })
+      } catch (error) {
+        // Ignorer les erreurs de logout (peut être que le token est déjà expiré)
+        console.warn('Erreur lors du logout côté serveur:', error)
+      }
+    }
     clearAuth()
   }
 
@@ -229,6 +292,17 @@ export const useAuthStore = defineStore('auth', () => {
     firstName?: string
     lastName?: string
     avatarImage?: string
+    phoneNumber?: string
+    commune?: string
+    contactPreferences?: {
+      order: string[]
+      accounts: {
+        messenger?: string
+        telegram?: string
+        whatsapp?: string
+      }
+    }
+    tradingPreferences?: string[]
   }) => {
     try {
       const response = await $fetch<User>(`${API_BASE_URL}/auth/profile`, {
@@ -288,6 +362,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     accessToken,
+    refreshToken,
     isAuthenticated,
     initialize,
     login,
@@ -297,6 +372,7 @@ export const useAuthStore = defineStore('auth', () => {
     changePassword,
     facebookLogin,
     logout,
+    refreshAccessToken,
     fetchProfile,
     updateProfile,
     uploadAvatar,

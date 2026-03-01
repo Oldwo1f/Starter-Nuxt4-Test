@@ -15,6 +15,8 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <ProfileIncompleteBanner />
+    
     <div class="mb-12 text-center">
       <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Goodies</h1>
       <p class="mx-auto max-w-2xl text-lg text-white/70">

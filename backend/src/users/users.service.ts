@@ -262,12 +262,27 @@ export class UsersService {
       lastName?: string;
       avatarImage?: string;
       email?: string;
+      phoneNumber?: string;
+      commune?: string;
+      contactPreferences?: {
+        order: string[];
+        accounts: {
+          messenger?: string;
+          telegram?: string;
+          whatsapp?: string;
+        };
+      };
+      tradingPreferences?: string[];
     },
   ): Promise<User> {
     const updateData: any = {};
     if (updates.firstName !== undefined) updateData.firstName = updates.firstName;
     if (updates.lastName !== undefined) updateData.lastName = updates.lastName;
     if (updates.avatarImage !== undefined) updateData.avatarImage = updates.avatarImage;
+    if (updates.phoneNumber !== undefined) updateData.phoneNumber = updates.phoneNumber;
+    if (updates.commune !== undefined) updateData.commune = updates.commune;
+    if (updates.contactPreferences !== undefined) updateData.contactPreferences = updates.contactPreferences;
+    if (updates.tradingPreferences !== undefined) updateData.tradingPreferences = updates.tradingPreferences;
     if (updates.email !== undefined) {
       updateData.email = updates.email;
       updateData.emailVerified = false; // Email change requires re-verification

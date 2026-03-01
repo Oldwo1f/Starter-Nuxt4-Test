@@ -16,6 +16,8 @@ import { CultureModule } from './culture/culture.module';
 import { AcademyModule } from './academy/academy.module';
 import { ReferralModule } from './referral/referral.module';
 import { BillingModule } from './billing/billing.module';
+import { StripeModule } from './stripe/stripe.module';
+import { TodosModule } from './todos/todos.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { BillingModule } from './billing/billing.module';
     AcademyModule,
     ReferralModule,
     BillingModule,
+    StripeModule,
+    TodosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

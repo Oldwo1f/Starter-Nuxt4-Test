@@ -15,6 +15,10 @@ import { Video } from '../entities/video.entity';
 import { CourseProgress } from '../entities/course-progress.entity';
 import { Referral } from '../entities/referral.entity';
 import { BankTransferPayment } from '../entities/bank-transfer-payment.entity';
+import { StripePayment } from '../entities/stripe-payment.entity';
+import { LegacyPaymentVerification } from '../entities/legacy-payment-verification.entity';
+import { RefreshToken } from '../entities/refresh-token.entity';
+import { Todo } from '../entities/todo.entity';
 
 @Module({
   imports: [
@@ -25,11 +29,11 @@ import { BankTransferPayment } from '../entities/bank-transfer-payment.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'nunaheritage',
-      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment],
+      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
-    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment]),
+    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo]),
   ],
   exports: [TypeOrmModule],
 })

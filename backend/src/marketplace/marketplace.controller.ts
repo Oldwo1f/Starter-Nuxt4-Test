@@ -26,7 +26,7 @@ import {
   ApiQuery,
   ApiConsumes,
 } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsEnum, IsArray, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsEnum, IsArray, IsBoolean, Min } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { MarketplaceService, ListingFilters } from './marketplace.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -93,6 +93,17 @@ export class CreateListingDto {
   @Transform(({ value }) => parseInt(value, 10))
   @IsNumber()
   locationId: number;
+
+  @ApiProperty({
+    description: 'Is this a "Je recherche" listing (expressing a need)',
+    example: false,
+    required: false,
+    default: false,
+  })
+  @Transform(({ value }) => value === 'true' || value === true || value === '1' || value === 1)
+  @IsBoolean()
+  @IsOptional()
+  isSearching?: boolean;
 }
 
 export class UpdateListingDto {
@@ -173,6 +184,15 @@ export class UpdateListingDto {
   @IsString({ each: true })
   @IsOptional()
   images?: string[];
+
+  @ApiProperty({
+    description: 'Is this a "Je recherche" listing (expressing a need)',
+    required: false,
+  })
+  @Transform(({ value }) => value === 'true' || value === true || value === '1' || value === 1)
+  @IsBoolean()
+  @IsOptional()
+  isSearching?: boolean;
 }
 
 @ApiTags('marketplace')
@@ -240,6 +260,7 @@ export class MarketplaceController {
         req.user.id,
         [],
         createListingDto.priceUnit,
+        createListingDto.isSearching || false,
       );
       
       // Save images
@@ -261,6 +282,7 @@ export class MarketplaceController {
       req.user.id,
       imageUrls,
       createListingDto.priceUnit,
+      createListingDto.isSearching || false,
     );
   }
 

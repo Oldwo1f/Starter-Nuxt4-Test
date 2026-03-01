@@ -2,6 +2,7 @@
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useWalletStore } from '~/stores/useWalletStore'
 import { useMarketplaceStore } from '~/stores/useMarketplaceStore'
+import { useProfileValidation } from '~/composables/useProfileValidation'
 
 definePageMeta({
   layout: 'account',
@@ -13,6 +14,7 @@ const walletStore = useWalletStore()
 const marketplaceStore = useMarketplaceStore()
 const toast = useToast()
 const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
+const { isProfileComplete } = useProfileValidation()
 
 // Stats
 const stats = ref({
@@ -102,6 +104,8 @@ onMounted(() => {
 
 <template>
   <div class="space-y-6">
+    <ProfileIncompleteBanner />
+    
     <div class="space-y-2">
       <h1 class="text-3xl font-bold">Dashboard</h1>
       <p class="text-white/60">Vue d'ensemble de votre activité</p>
@@ -165,10 +169,21 @@ onMounted(() => {
           <h2 class="text-xl font-semibold">Actions rapides</h2>
         </template>
         <div class="flex flex-wrap gap-3">
-          <UButton to="/marketplace/create" color="primary" icon="i-heroicons-plus-circle">
+          <UButton 
+            to="/marketplace/create" 
+            color="primary" 
+            icon="i-heroicons-plus-circle"
+            :disabled="!isProfileComplete"
+          >
             Créer une annonce
           </UButton>
-          <UButton to="/account/wallet/transfer" color="primary" variant="outline" icon="i-heroicons-arrow-path">
+          <UButton 
+            to="/account/wallet/transfer" 
+            color="primary" 
+            variant="outline" 
+            icon="i-heroicons-arrow-path"
+            :disabled="!isProfileComplete"
+          >
             Transférer des Pūpū
           </UButton>
           <UButton to="/account/listings" variant="outline" icon="i-heroicons-rectangle-stack">

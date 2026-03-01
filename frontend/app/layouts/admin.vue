@@ -150,6 +150,11 @@ const adminMenuItems = [
     icon: 'i-heroicons-academic-cap',
     to: '/admin/academy',
   },
+  {
+    label: 'Todo',
+    icon: 'i-heroicons-clipboard-document-list',
+    to: '/admin/todo',
+  },
 ]
 
 const isActive = (path: string) => {

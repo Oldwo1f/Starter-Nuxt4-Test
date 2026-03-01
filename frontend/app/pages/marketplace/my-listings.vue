@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useMarketplaceStore } from '~/stores/useMarketplaceStore'
+import { useProfileValidation } from '~/composables/useProfileValidation'
 
 definePageMeta({
   layout: 'default',
@@ -9,6 +10,7 @@ definePageMeta({
 
 const marketplaceStore = useMarketplaceStore()
 const authStore = useAuthStore()
+const { isProfileComplete } = useProfileValidation()
 
 // Helper function to format image URL
 const { getImageUrl: getImageUrlHelper } = useApi()
@@ -56,6 +58,8 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <ProfileIncompleteBanner />
+    
     <div class="mb-6">
       <h1 class="text-3xl font-bold">Mes annonces</h1>
       <p class="text-white/60">Gérez vos annonces publiées</p>
@@ -100,19 +104,22 @@ onMounted(() => {
       <UCard
         v-for="listing in marketplaceStore.listings"
         :key="listing.id"
-        class="transition-transform hover:scale-[1.02]"
+        :class="['transition-transform hover:scale-[1.02]', listing.isSearching ? 'border-2 border-orange-400/50' : '']"
       >
         <div class="flex flex-col gap-4 sm:flex-row">
           <!-- Image -->
           <div class="aspect-square w-full shrink-0 overflow-hidden rounded-lg sm:w-32">
             <img
-              v-if="listing.images && listing.images.length > 0"
+              v-if="listing.images && listing.images.length > 0 && !listing.isSearching"
               :src="getImageUrl(listing.images[0])"
               :alt="listing.title"
               class="h-full w-full object-cover"
             />
             <div v-else class="flex h-full items-center justify-center bg-white/10">
-              <UIcon name="i-heroicons-photo" class="h-8 w-8 text-white/40" />
+              <UIcon 
+                :name="listing.isSearching ? 'i-heroicons-magnifying-glass' : 'i-heroicons-photo'" 
+                :class="listing.isSearching ? 'h-[70%] w-[70%] text-orange-400' : 'h-8 w-8 text-white/40'" 
+              />
             </div>
           </div>
 
@@ -185,9 +192,21 @@ onMounted(() => {
     <div v-else class="py-12 text-center text-white/60">
       <UIcon name="i-heroicons-inbox" class="mx-auto mb-4 h-12 w-12" />
       <p>Aucune annonce trouvée</p>
-      <UButton to="/marketplace/create" color="primary" class="mt-4">
+      <UButton 
+        to="/marketplace/create" 
+        color="primary" 
+        class="mt-4"
+        :disabled="!isProfileComplete"
+      >
         Créer une annonce
       </UButton>
     </div>
   </div>
 </template>
+
+<style scoped>
+:deep(.i-heroicons\:magnifying-glass) {
+  width: 4em !important;
+  height: 4em !important;
+}
+</style>

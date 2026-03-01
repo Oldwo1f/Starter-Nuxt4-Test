@@ -14,6 +14,7 @@ export interface Listing {
   sellerId: number
   images: string[]
   viewCount: number
+  isSearching?: boolean
   createdAt: string
   updatedAt: string
   seller?: any
@@ -142,6 +143,7 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
       categoryId: number
       locationId: number
       images?: File[]
+      isSearching?: boolean
     }
   ) => {
     if (!authStore.accessToken) {
@@ -160,6 +162,9 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
       formData.append('locationId', listingData.locationId.toString())
       if (listingData.priceUnit) {
         formData.append('priceUnit', listingData.priceUnit)
+      }
+      if (listingData.isSearching !== undefined) {
+        formData.append('isSearching', listingData.isSearching.toString())
       }
 
       if (listingData.images && listingData.images.length > 0) {
@@ -202,6 +207,7 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
       categoryId?: number
       locationId?: number
       status?: 'active' | 'sold' | 'archived'
+      isSearching?: boolean
     }
   ) => {
     if (!authStore.accessToken) {
@@ -228,7 +234,7 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
 
       // Update local state by merging to preserve existing properties (relations, etc.)
       const index = listings.value.findIndex((l) => l.id === id)
-      if (index !== -1) {
+      if (index !== -1 && listings.value[index]) {
         // Preserve images array reference if images weren't in the update
         const existingImages = listings.value[index].images
         const imagesInUpdate = 'images' in updateData
@@ -249,7 +255,7 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
           }
         }
       }
-      if (currentListing.value?.id === id) {
+      if (currentListing.value?.id === id && currentListing.value) {
         const existingImages = currentListing.value.images
         const imagesInUpdate = 'images' in updateData
         
@@ -355,7 +361,7 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
     // Restore images array reference if unchanged to avoid image reload
     if (result.success) {
       const index = listings.value.findIndex((l) => l.id === id)
-      if (index !== -1 && existingImages && existingListing) {
+      if (index !== -1 && existingImages && existingListing && listings.value[index]) {
         // Compare images arrays (check length and first image to see if they're the same)
         const newImages = listings.value[index].images || []
         const imagesUnchanged = 
@@ -367,7 +373,7 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
           listings.value[index].images = existingListing.images
         }
       }
-      if (currentListing.value?.id === id && existingCurrentImages && existingCurrentListing) {
+      if (currentListing.value?.id === id && existingCurrentImages && existingCurrentListing && currentListing.value) {
         const newImages = currentListing.value.images || []
         const imagesUnchanged = 
           newImages.length === existingCurrentImages.length &&
@@ -401,7 +407,8 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
       const updatedImages = currentImages.filter((img: string) => img !== imageUrl)
 
       // Update listing with new images array
-      const result = await updateListing(id, { images: updatedImages })
+      // Note: images is handled separately via the API endpoint, but we need to pass it here
+      const result = await updateListing(id, { images: updatedImages } as any)
       
       if (result.success) {
         // Refresh current listing

@@ -88,6 +88,25 @@ export class User {
   @Column({ type: 'varchar', nullable: true, unique: true })
   referralCode: string | null; // Code de parrainage unique
 
+  @Column({ type: 'varchar', nullable: true })
+  phoneNumber: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  commune: string | null;
+
+  @Column({ type: 'jsonb', nullable: true })
+  contactPreferences: {
+    order: string[];
+    accounts: {
+      messenger?: string;
+      telegram?: string;
+      whatsapp?: string;
+    };
+  } | null;
+
+  @Column({ type: 'jsonb', nullable: true, default: '[]' })
+  tradingPreferences: string[] | null; // Tags de préférences de troc
+
   @OneToMany(() => BlogPost, (blogPost) => blogPost.author)
   blogPosts: BlogPost[];
 

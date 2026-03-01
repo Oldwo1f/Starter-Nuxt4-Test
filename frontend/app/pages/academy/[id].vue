@@ -264,6 +264,8 @@ const overallProgress = computed(() => {
 
 <template>
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <ProfileIncompleteBanner />
+    
     <div v-if="academyStore.isLoading" class="flex justify-center py-12">
       <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-primary-500" />
     </div>

@@ -5,6 +5,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { BillingService } from './billing.service';
 import { CreateBankTransferIntentDto } from './dto/create-bank-transfer-intent.dto';
 import { BankTransferWebhookDto } from './dto/bank-transfer-webhook.dto';
+import { RequestLegacyVerificationDto } from './dto/request-legacy-verification.dto';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../entities/user.entity';
@@ -106,6 +107,91 @@ export class BillingController {
     @Param('paymentId', ParseIntPipe) paymentId: number,
   ) {
     return this.billingService.confirmVerification(paymentId, user.id);
+  }
+
+  // Legacy payment verification endpoints
+  @Post('legacy/request-verification')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Request manual verification for a legacy payment (old system)',
+    description:
+      'Creates a verification request for payments made with Naho or Tamiga on the old system. Grants optimistic Te Ohi access (member role, 1 year). Admin must confirm later to grant Pūpū.',
+  })
+  @ApiResponse({ status: 201, description: 'Verification requested successfully' })
+  async requestLegacyVerification(
+    @CurrentUser() user: any,
+    @Body() dto: RequestLegacyVerificationDto,
+  ) {
+    return this.billingService.requestLegacyVerification(user.id, dto.paidWith);
+  }
+
+  @Get('legacy/me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get current user legacy verification status',
+    description: 'Returns the pending legacy verification for the current user, if any',
+  })
+  @ApiResponse({ status: 200, description: 'Legacy verification status retrieved' })
+  async getMyLegacyVerification(@CurrentUser() user: any) {
+    return this.billingService.getMyLegacyVerification(user.id);
+  }
+
+  @Get('legacy/pending-verifications')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get all pending legacy verifications (Admin only)',
+    description: 'Returns list of legacy payment verifications that need manual admin confirmation',
+  })
+  @ApiResponse({ status: 200, description: 'Pending legacy verifications retrieved' })
+  async getPendingLegacyVerifications(@CurrentUser() user: any) {
+    return this.billingService.getPendingLegacyVerifications();
+  }
+
+  @Post('legacy/confirm-verification/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Confirm a legacy verification and grant Pūpū d\'inscription (Admin only)',
+    description:
+      'Confirms the legacy payment verification, grants Pūpū d\'inscription (50 for Te Ohi), and optionally upgrades user to premium. Can set custom expiration date with day/month.',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Verification ID to confirm' })
+  @ApiResponse({ status: 201, description: 'Verification confirmed and Pūpū granted' })
+  async confirmLegacyVerification(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) verificationId: number,
+    @Body() body: { upgradeToPremium?: boolean; expirationDay?: number; expirationMonth?: number },
+  ) {
+    return this.billingService.confirmLegacyVerification(
+      verificationId,
+      user.id,
+      body.upgradeToPremium || false,
+      body.expirationDay,
+      body.expirationMonth,
+    );
+  }
+
+  @Post('legacy/reject-verification/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Reject a legacy verification and remove user rights (Admin only)',
+    description:
+      'Rejects the legacy payment verification and removes user rights (role → user, paidAccessExpiresAt → null).',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Verification ID to reject' })
+  @ApiResponse({ status: 201, description: 'Verification rejected and rights removed' })
+  async rejectLegacyVerification(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) verificationId: number,
+  ) {
+    return this.billingService.rejectLegacyVerification(verificationId, user.id);
   }
 }
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useWalletStore } from '~/stores/useWalletStore'
+import { useProfileValidation } from '~/composables/useProfileValidation'
 
 definePageMeta({
   layout: 'account',
@@ -9,6 +10,7 @@ definePageMeta({
 
 const walletStore = useWalletStore()
 const authStore = useAuthStore()
+const { isProfileComplete } = useProfileValidation()
 
 // Fetch data
 const fetchData = async () => {
@@ -25,6 +27,8 @@ onMounted(() => {
 
 <template>
   <div class="space-y-6">
+    <ProfileIncompleteBanner />
+    
     <div class="space-y-2">
       <h1 class="text-3xl font-bold">Mon portefeuille</h1>
       <p class="text-white/60">Gérez vos Pūpū et consultez vos transactions</p>
@@ -47,6 +51,7 @@ onMounted(() => {
           size="lg"
           class="mt-6"
           icon="i-heroicons-arrow-path"
+          :disabled="!isProfileComplete"
         >
           Transférer des Pūpū
         </UButton>

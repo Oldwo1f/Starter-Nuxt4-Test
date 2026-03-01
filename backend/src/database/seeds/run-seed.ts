@@ -9,6 +9,7 @@ import { seedListings } from './listings.seed';
 import { seedCulture } from './culture.seed';
 import { seedPartners } from './partners.seed';
 import { seedGoodies } from './goodies.seed';
+import { seedTodos } from './todos.seed';
 import { User } from '../../entities/user.entity';
 import { BlogPost } from '../../entities/blog-post.entity';
 import { Location } from '../../entities/location.entity';
@@ -18,6 +19,7 @@ import { Transaction } from '../../entities/transaction.entity';
 import { Culture } from '../../entities/culture.entity';
 import { Partner } from '../../entities/partner.entity';
 import { Goodie } from '../../entities/goodie.entity';
+import { Todo } from '../../entities/todo.entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -26,7 +28,7 @@ const dataSource = new DataSource({
   username: process.env.DB_USERNAME || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'nunaheritage',
-      entities: [User, BlogPost, Location, Category, Listing, Transaction, Culture, Partner, Goodie],
+      entities: [User, BlogPost, Location, Category, Listing, Transaction, Culture, Partner, Goodie, Todo],
       synchronize: true, // Create tables if they don't exist
     });
 
@@ -179,6 +181,10 @@ async function runSeed() {
     // Seed goodies
     console.log('\n🎁 Seeding goodies...');
     await seedGoodies(dataSource);
+    
+    // Seed todos
+    console.log('\n✅ Seeding todos...');
+    await seedTodos(dataSource);
     
     await dataSource.destroy();
     console.log('\n✅ All seeding completed successfully!');

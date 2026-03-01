@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/useAuthStore'
+import teohiImage from '~/assets/images/pictopack/teohi.jpeg'
+import umeteImage from '~/assets/images/pictopack/umete.jpeg'
+import arataiImage from '~/assets/images/pictopack/aratai.jpeg'
+import fenuaImage from '~/assets/images/pictopack/fenua.jpeg'
+import toaImage from '~/assets/images/pictopack/toa.jpeg'
+import fetiaImage from '~/assets/images/pictopack/fetia.jpeg'
 
 definePageMeta({
   layout: 'default',
@@ -67,6 +73,19 @@ const formatPrice = (price: number) => {
   return new Intl.NumberFormat('fr-FR').format(price)
 }
 
+// Fonction pour obtenir l'image du pack
+const getPackImage = (packName: string) => {
+  const imageMap: Record<string, string> = {
+    'Te Ohi': teohiImage,
+    'Umete': umeteImage,
+    'Aratai': arataiImage,
+    'Fenua': fenuaImage,
+    'Toa': toaImage,
+    'Fetia': fetiaImage,
+  }
+  return imageMap[packName] || ''
+}
+
 // Pack Te Ohi - 5000 XPF/an
 const teOhiPack = {
   name: 'Te Ohi',
@@ -80,7 +99,6 @@ const teOhiPack = {
     'Accès à Nuna\'a Troc',
     '🐚 50 Pūpū offerts',
     'Te Natira\'a à prix membre',
-    'Liste Cryptos expertisées #1',
   ],
   buttonLabel: authStore.isAuthenticated ? 'Déjà membre' : 'Choisir ce pack',
   buttonAction: () => {
@@ -102,8 +120,7 @@ const umetePack = {
     '+ 🐚 50 Pūpū offerts (100 au total)',
     'Cours avancés de l\'Academy débloqués',
     'Goodies premium débloqués',
-    'Te Natira\'a offert pour 2 personnes',
-    'Liste Crypto expertisées #2',
+    'Liste Crypto expertisées #1',
   ],
   buttonLabel: authStore.isAuthenticated ? 'Passer Premium' : 'Choisir ce pack',
   buttonAction: () => {
@@ -259,13 +276,20 @@ const vipInvestPacks = [
             <template #header>
               <div class="space-y-4">
                 <div class="flex items-start justify-between">
-                  <div>
-                    <h3 class="text-2xl font-bold text-white">
-                      {{ teOhiPack.name }}
-                    </h3>
-                    <p class="mt-1 text-sm text-white/60">
-                      {{ teOhiPack.description }}
-                    </p>
+                  <div class="flex items-center gap-3">
+                    <img
+                      :src="getPackImage(teOhiPack.name)"
+                      :alt="teOhiPack.name"
+                      class="h-12 w-12 shrink-0 rounded-lg object-cover"
+                    >
+                    <div>
+                      <h3 class="text-2xl font-bold text-white">
+                        {{ teOhiPack.name }}
+                      </h3>
+                      <p class="mt-1 text-sm text-white/60">
+                        {{ teOhiPack.description }}
+                      </p>
+                    </div>
                   </div>
                   <span
                     v-if="teOhiPack.badge"
@@ -324,13 +348,20 @@ const vipInvestPacks = [
             <template #header>
               <div class="space-y-4">
                 <div class="flex items-start justify-between">
-                  <div>
-                    <h3 class="text-2xl font-bold text-white">
-                      {{ umetePack.name }}
-                    </h3>
-                    <p class="mt-1 text-sm text-white/60">
-                      {{ umetePack.description }}
-                    </p>
+                  <div class="flex items-center gap-3">
+                    <img
+                      :src="getPackImage(umetePack.name)"
+                      :alt="umetePack.name"
+                      class="h-12 w-12 shrink-0 rounded-lg object-cover"
+                    >
+                    <div>
+                      <h3 class="text-2xl font-bold text-white">
+                        {{ umetePack.name }}
+                      </h3>
+                      <p class="mt-1 text-sm text-white/60">
+                        {{ umetePack.description }}
+                      </p>
+                    </div>
                   </div>
                   <span
                     v-if="umetePack.badge"
@@ -405,13 +436,20 @@ const vipInvestPacks = [
           >
             <template #header>
               <div class="space-y-4">
-                <div>
-                  <h3 class="text-xl font-bold text-white">
-                    {{ pack.name }}
-                  </h3>
-                  <p class="mt-1 text-sm text-white/60">
-                    {{ pack.description }}
-                  </p>
+                <div class="flex items-center gap-3">
+                  <img
+                    :src="getPackImage(pack.name)"
+                    :alt="pack.name"
+                    class="h-10 w-10 shrink-0 rounded-lg object-cover"
+                  >
+                  <div>
+                    <h3 class="text-xl font-bold text-white">
+                      {{ pack.name }}
+                    </h3>
+                    <p class="mt-1 text-sm text-white/60">
+                      {{ pack.description }}
+                    </p>
+                  </div>
                 </div>
                 <div class="flex flex-wrap items-baseline gap-2">
                   <span class="text-3xl font-bold text-primary-400">

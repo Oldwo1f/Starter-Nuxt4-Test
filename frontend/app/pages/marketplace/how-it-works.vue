@@ -41,16 +41,17 @@ definePageMeta({
           <div class="space-y-4">
             <div class="flex gap-3">
               <UIcon name="i-heroicons-check-circle" class="h-5 w-5 shrink-0 text-primary-500 mt-0.5" />
-              <p class="text-white/80">
-                On peut très bien troquer sans utiliser les Pūpū 🐚
+              <p class="text-white/80 font-bold">
+                Il n'y a pas de prix. Le Pūpū 🐚 ne sert qu'à exprimer une valeur approximative.
               </p>
             </div>
             <div class="flex gap-3">
               <UIcon name="i-heroicons-check-circle" class="h-5 w-5 shrink-0 text-primary-500 mt-0.5" />
               <p class="text-white/80">
-                Il n'y a pas de prix. Le Pūpū 🐚 ne sert qu'à exprimer une valeur.
+                On peut très bien troquer sans utiliser les Pūpū 🐚
               </p>
             </div>
+           
             <div class="flex gap-3">
               <UIcon name="i-heroicons-check-circle" class="h-5 w-5 shrink-0 text-primary-500 mt-0.5" />
               <p class="text-white/80">
@@ -88,20 +89,65 @@ definePageMeta({
           </p>
           <div class="grid gap-4 sm:grid-cols-3">
             <div class="rounded-lg bg-primary-500/20 p-4">
-              <div class="mb-2 text-2xl font-bold">1h</div>
-              <div class="text-sm text-white/60">de travail</div>
-              <div class="mt-2 text-lg font-semibold text-primary-500">= 10 🐚</div>
+              <div class="mb-2 text-2xl font-bold">1 🐚</div>
+              <div class="text-sm text-white/60">Pūpū</div>
+              <div class="mt-2 text-lg font-semibold text-primary-500">≈ 100 XPF</div>
             </div>
             <div class="rounded-lg bg-primary-500/20 p-4">
               <div class="mb-2 text-2xl font-bold">1000 XPF</div>
               <div class="text-sm text-white/60">(monnaie locale)</div>
-              <div class="mt-2 text-lg font-semibold text-primary-500">= 10 🐚</div>
+              <div class="mt-2 text-lg font-semibold text-primary-500">≈ 10 🐚</div>
             </div>
             <div class="rounded-lg bg-primary-500/20 p-4">
-              <div class="mb-2 text-2xl font-bold">1 🐚</div>
-              <div class="text-sm text-white/60">Pūpū</div>
-              <div class="mt-2 text-lg font-semibold text-primary-500">= 100 XPF</div>
+              <div class="mb-2 text-2xl font-bold">1h</div>
+              <div class="text-sm text-white/60">de travail</div>
+              <div class="mt-2 text-lg font-semibold text-primary-500">≈ 10-20 🐚</div>
             </div>
+          </div>
+
+          <!-- Comment obtenir des Pupu -->
+          <div class="mt-8">
+            <h3 class="mb-4 text-xl font-semibold">Comment obtenir des Pūpū 🐚 ?</h3>
+            <ul class="space-y-3 text-white/80">
+              <li class="flex items-start gap-2">
+                <span class="mt-1 text-primary-500">•</span>
+                <span>Le meilleur moyen d'obtenir des Pūpū 🐚 est de troquer des produits ou des services contre des Pūpū 🐚.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="mt-1 text-primary-500">•</span>
+                <span>50 Pūpū 🐚 sont offerts à l'inscription Te Ohi. (100 Pūpū 🐚 pour les membres Umete)</span>
+              </li>
+            </ul>
+            <hr style="border-color: #374151; border-width: 1px; margin:20px 0;">
+            <ul class="space-y-3 text-white/80">
+              
+              <li class="flex items-start gap-2">
+                <span class="mt-1 text-primary-500">•</span>
+                <span>Nuna'a Heritage vous offre aussi la possibilité de gagner des Pūpū 🐚 supplémentaires :</span>
+              </li>
+            </ul>
+            <ul class="ml-6 mt-3 space-y-2">
+              <li class="flex items-start gap-2">
+                <span class="mt-1 text-primary-400">-</span>
+                <span><strong>Parrainage :</strong> Recevez 50 Pūpū 🐚 pour chaque filleul.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="mt-1 text-primary-400">-</span>
+                <span><strong>Vidéo Témoignage :</strong> Recevez 10 Pūpū 🐚 pour une vidéo témoignage entre 60 et 90 secondes.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="mt-1 text-primary-400">-</span>
+                <span><strong>Jeux :</strong> Différents jeux seront organisés soit sur Facebook soit sur le site pour faire gagner des Pūpū 🐚. <br> <small> Le jeu en cours concerne le parrainage. Il prendra fin à la date du Te Natira'a. <br> ( Au total plus de 500 Pūpū 🐚 seront distribués pour ce jeu. )</small></span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="mt-1 text-primary-400">-</span>
+                <span><strong>La participation auTe Natira'a </strong>Vous fait automatiquement gagner 10 Pūpū 🐚</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="mt-1 text-primary-400">-</span>
+                <span><strong>Te Natira'a :</strong> Lors du Te Natira'a, des jeux surprise seront aussi organisés.</span>
+              </li>
+            </ul>
           </div>
         </div>
       </UCard>

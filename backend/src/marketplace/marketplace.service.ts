@@ -41,6 +41,7 @@ export class MarketplaceService {
     sellerId: number,
     images: string[] = [],
     priceUnit?: string,
+    isSearching: boolean = false,
   ): Promise<Listing> {
     // Verify location exists
     const location = await this.locationRepository.findOne({
@@ -78,6 +79,7 @@ export class MarketplaceService {
       images,
       status: ListingStatus.ACTIVE,
       viewCount: 0,
+      isSearching: isSearching || false,
     });
 
     return this.listingRepository.save(listing);
@@ -106,6 +108,7 @@ export class MarketplaceService {
       'listing.status',
       'listing.images',
       'listing.viewCount',
+      'listing.isSearching',
       'listing.createdAt',
       'listing.updatedAt',
       'seller.id',
@@ -216,6 +219,9 @@ export class MarketplaceService {
           firstName: true,
           lastName: true,
           avatarImage: true,
+          phoneNumber: true,
+          contactPreferences: true,
+          tradingPreferences: true,
         },
       },
     });
@@ -245,6 +251,7 @@ export class MarketplaceService {
       locationId?: number;
       images?: string[];
       status?: ListingStatus;
+      isSearching?: boolean;
     },
     userRole?: string,
   ): Promise<Listing> {

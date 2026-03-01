@@ -2,6 +2,7 @@
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useWalletStore } from '~/stores/useWalletStore'
 import { useDate } from '~/composables/useDate'
+import { useProfileValidation } from '~/composables/useProfileValidation'
 
 definePageMeta({
   layout: 'marketplace',
@@ -13,12 +14,14 @@ const { apiBaseUrl } = useApi()
 const authStore = useAuthStore()
 const walletStore = useWalletStore()
 const { fromNow } = useDate()
+const { isProfileComplete } = useProfileValidation()
 
 const listingId = computed(() => parseInt(route.params.id as string, 10))
 const listing = ref<any>(null)
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const currentImageIndex = ref(0)
+const isContactModalOpen = ref(false)
 
 // Fetch listing
 const fetchListing = async () => {
@@ -34,10 +37,103 @@ const fetchListing = async () => {
   }
 }
 
-// Contact seller handler (to be implemented - Messenger integration)
+// Contact seller handler - Open contact modal
 const handleContactSeller = () => {
-  // TODO: Implement Messenger conversation opening
-  alert('Fonctionnalité de contact à venir - Intégration Messenger')
+  isContactModalOpen.value = true
+}
+
+// Get available contact methods in user-defined order
+const availableContactMethods = computed(() => {
+  if (!listing.value?.seller) return []
+  
+  const seller = listing.value.seller
+  const order = seller.contactPreferences?.order || ['phone', 'messenger', 'telegram', 'whatsapp']
+  const accounts = seller.contactPreferences?.accounts || {}
+  
+  return order
+    .map((method: string) => {
+      // Check if method has a value
+      let hasValue = false
+      let value = ''
+      let actionUrl = ''
+      
+      if (method === 'phone') {
+        hasValue = !!(seller.phoneNumber && seller.phoneNumber.trim())
+        value = seller.phoneNumber || ''
+        actionUrl = hasValue ? `tel:${value}` : ''
+      } else if (method === 'messenger') {
+        hasValue = !!(accounts.messenger && accounts.messenger.trim())
+        value = accounts.messenger || ''
+        actionUrl = hasValue ? `https://m.me/${value.replace(/^@/, '')}` : ''
+      } else if (method === 'telegram') {
+        hasValue = !!(accounts.telegram && accounts.telegram.trim())
+        value = accounts.telegram || ''
+        actionUrl = hasValue ? `https://t.me/${value.replace(/^@/, '')}` : ''
+      } else if (method === 'whatsapp') {
+        hasValue = !!(accounts.whatsapp && accounts.whatsapp.trim())
+        value = accounts.whatsapp || ''
+        // Format phone number for WhatsApp (remove spaces and special chars)
+        const phoneNumber = value.replace(/[^\d+]/g, '')
+        actionUrl = hasValue ? `https://wa.me/${phoneNumber}` : ''
+      }
+      
+      return hasValue ? { method, value, actionUrl } : null
+    })
+    .filter((item: { method: string; value: string; actionUrl: string } | null): item is { method: string; value: string; actionUrl: string } => item !== null)
+})
+
+// Get contact method label
+const getContactMethodLabel = (method: string) => {
+  const labels: Record<string, string> = {
+    phone: 'Téléphone',
+    messenger: 'Messenger',
+    telegram: 'Telegram',
+    whatsapp: 'WhatsApp',
+  }
+  return labels[method] || method
+}
+
+// Get contact method icon
+const getContactMethodIcon = (method: string) => {
+  const icons: Record<string, string> = {
+    phone: 'i-heroicons-phone',
+    messenger: 'i-heroicons-chat-bubble-left-right',
+    telegram: 'i-heroicons-paper-airplane',
+    whatsapp: 'i-heroicons-chat-bubble-oval-left',
+  }
+  return icons[method] || 'i-heroicons-circle-stack'
+}
+
+// Trading tags avec icônes (même structure que dans profile.vue)
+const tradingTags = [
+  { id: 'poisson', type: 'product', label: 'Poisson', icon: 'ph:fish-simple-fill' },
+  { id: 'fruit', type: 'product', label: 'Fruit', icon: 'streamline-ultimate:fruit-banana-bold' },
+  { id: 'legumes', type: 'product', label: 'Légumes', icon: 'fluent:food-carrot-20-regular' },
+  { id: 'maa', type: 'product', label: 'Maa', icon: 'streamline:food-pizza-drink-cook-fast-cooking-nutrition-pizza-food' },
+  { id: 'seefood', type: 'product', label: 'Produit de la mer', icon: 'maki:restaurant-seafood' },
+  { id: 'electronique', type: 'product', label: 'Électronique', icon: 'i-material-symbols-devices-outline' },
+  { id: 'jouet-vetement-bebe', type: 'product', label: 'Jouet/Vêtement bébé', icon: 'streamline:shopping-catergories-baby-botlle-bottle-milk-family-children-formula-care-child-kid-baby' },
+  { id: 'jouet-vetement-enfants', type: 'product', label: 'Jouet/Vêtement enfants', icon: 'fa7-solid:children' },
+  { id: 'service-jardin', type: 'service', label: 'Service jardin', icon: 'ph:tree-duotone' },
+  { id: 'service-batiment', type: 'service', label: 'Service bâtiment', icon: 'material-symbols:tools-power-drill-outline-sharp' },
+  { id: 'service-transport', type: 'service', label: 'Service transport', icon: 'i-material-symbols-local-shipping-outline' },
+  { id: 'service-informatique', type: 'service', label: 'Service informatique', icon: 'i-material-symbols-computer-outline' },
+]
+
+// Get trading tag info
+const getTradingTag = (tagId: string) => {
+  return tradingTags.find(t => t.id === tagId)
+}
+
+// Handle contact action
+const handleContactAction = (method: string, value: string, actionUrl: string) => {
+  if (method === 'phone') {
+    // For phone, open tel: link
+    window.location.href = actionUrl
+  } else {
+    // For other methods, open the URL
+    window.open(actionUrl, '_blank')
+  }
 }
 
 // Transfer Pūpū handler
@@ -104,6 +200,8 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
+    <ProfileIncompleteBanner />
+    
     <div v-if="isLoading" class="text-center">
       <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
     </div>
@@ -123,9 +221,9 @@ onMounted(() => {
       <div class="grid gap-6 lg:grid-cols-3">
         <!-- Left column (2/3) -->
         <div class="lg:col-span-2 space-y-6">
-          <!-- Images Gallery -->
-          <UCard v-if="imageUrls.length > 0">
-            <div class="space-y-4">
+          <!-- Images Gallery (hidden for "Je recherche" listings) -->
+          <UCard v-if="!listing.isSearching">
+            <div v-if="imageUrls.length > 0" class="space-y-4">
               <!-- Main image -->
               <div class="relative aspect-square w-full overflow-hidden rounded-lg">
                 <img
@@ -151,12 +249,28 @@ onMounted(() => {
                   :key="index"
                   :class="[
                     'h-20 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition-all',
-                    currentImageIndex === index ? 'border-primary-500' : 'border-transparent opacity-60 hover:opacity-100'
+                    currentImageIndex === Number(index) ? 'border-primary-500' : 'border-transparent opacity-60 hover:opacity-100'
                   ]"
-                  @click="currentImageIndex = index"
+                  @click="currentImageIndex = Number(index)"
                 >
-                  <img :src="url" :alt="`Image ${index + 1}`" class="h-full w-full object-cover" />
+                  <img :src="url" :alt="`Image ${Number(index) + 1}`" class="h-full w-full object-cover" />
                 </button>
+              </div>
+            </div>
+            <!-- No images fallback -->
+            <div v-else class="space-y-4">
+              <div class="relative aspect-square w-full overflow-hidden rounded-lg bg-white/10 flex items-center justify-center">
+                <UIcon name="i-heroicons-photo" class="h-24 w-24 text-white/40" />
+                <!-- Category label floating -->
+                <div
+                  v-if="listing.category?.name"
+                  :style="getCategoryColorStyle(listing.category.color)"
+                  class="absolute top-2 left-2 rounded-full px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm"
+                >
+                  <span class="flex items-center gap-1.5">
+                    <span>{{ listing.category.name }}</span>
+                  </span>
+                </div>
               </div>
             </div>
           </UCard>
@@ -186,8 +300,8 @@ onMounted(() => {
 
         <!-- Right column (1/3) - Sidebar -->
         <div class="space-y-6">
-          <!-- Price card -->
-          <UCard>
+          <!-- Price card (hidden for "Je recherche" listings) -->
+          <UCard v-if="!listing.isSearching">
             <template #header>
               <h2 class="text-xl font-semibold">Valeur</h2>
             </template>
@@ -198,6 +312,19 @@ onMounted(() => {
                 <span class="text-lg text-white/60">Pūpū</span>
               </div>
               <span v-if="listing.priceUnit" class="text-sm text-white/60">{{ listing.priceUnit }}</span>
+            </div>
+          </UCard>
+          
+          <!-- "Je recherche" badge -->
+          <UCard v-if="listing.isSearching" class="border-2 border-orange-400/50">
+            <template #header>
+              <h2 class="text-xl font-semibold flex items-center gap-2">
+                <UIcon name="i-heroicons-magnifying-glass" class="search-icon-small text-orange-400" />
+                Je recherche
+              </h2>
+            </template>
+            <div class="text-sm text-white/80">
+              Cette annonce exprime un besoin. Contactez le troqueur pour lui proposer votre offre.
             </div>
           </UCard>
 
@@ -227,6 +354,26 @@ onMounted(() => {
                   <div class="text-sm text-white/60">{{ listing.seller?.email }}</div>
                 </div>
               </div>
+              
+              <!-- Trading preferences tags -->
+              <div v-if="listing.seller?.tradingPreferences && listing.seller.tradingPreferences.length > 0" class="pt-2 border-t border-white/10">
+                <p class="mb-2 text-xs font-medium text-white/60">Préférences de troc</p>
+                <div class="flex flex-wrap gap-1.5">
+                  <UBadge
+                    v-for="tagId in listing.seller.tradingPreferences"
+                    :key="tagId"
+                    color="primary"
+                    variant="soft"
+                    size="sm"
+                  >
+                    <UIcon 
+                      :name="getTradingTag(tagId)?.icon || 'i-heroicons-tag'" 
+                      class="mr-1 h-3 w-3"
+                    />
+                    {{ getTradingTag(tagId)?.label || tagId }}
+                  </UBadge>
+                </div>
+              </div>
               <div v-if="authStore.isAuthenticated && authStore.user?.id !== listing.sellerId" class="space-y-2">
                 <UButton
                   color="primary"
@@ -240,6 +387,7 @@ onMounted(() => {
                   variant="outline"
                   block
                   icon="i-heroicons-arrow-path"
+                  :disabled="!isProfileComplete"
                   @click="handleTransferPupu"
                 >
                   Transférer des Pūpū à ce troqueur
@@ -266,5 +414,63 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- Contact Modal -->
+    <UModal v-model:open="isContactModalOpen" :ui="{ wrapper: 'max-w-md' }">
+      <template #header>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <UIcon name="i-heroicons-chat-bubble-left-right" class="w-5 h-5" />
+            <span class="font-medium">Contacter le troqueur</span>
+          </div>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-heroicons-x-mark"
+            class="ml-auto"
+            @click="isContactModalOpen = false"
+          />
+        </div>
+      </template>
+
+      <template #body>
+        <div class="p-6 space-y-3">
+          <div v-if="availableContactMethods.length === 0" class="text-center py-4">
+            <p class="text-white/60">Aucun moyen de contact disponible</p>
+          </div>
+          <div v-else class="space-y-2">
+            <div
+              v-for="contact in availableContactMethods"
+              :key="contact.method"
+              class="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-3 hover:bg-white/10 transition-colors cursor-pointer"
+              @click="handleContactAction(contact.method, contact.value, contact.actionUrl)"
+            >
+              <UIcon :name="getContactMethodIcon(contact.method)" class="w-5 h-5 text-primary-500 shrink-0" />
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-white/90">
+                  {{ getContactMethodLabel(contact.method) }}
+                </div>
+                <div class="text-sm text-white/60 truncate">
+                  {{ contact.value }}
+                </div>
+              </div>
+              <UIcon name="i-heroicons-arrow-top-right-on-square" class="w-4 h-4 text-white/40 shrink-0" />
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
+
+<style scoped>
+:deep(.i-heroicons\:magnifying-glass) {
+  width: 4em !important;
+  height: 4em !important;
+}
+
+:deep(.search-icon-small.i-heroicons\:magnifying-glass) {
+  width: 2em !important;
+  height: 2em !important;
+}
+</style>

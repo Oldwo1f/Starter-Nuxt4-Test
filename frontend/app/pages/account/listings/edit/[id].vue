@@ -255,6 +255,8 @@ onMounted(() => {
 
 <template>
   <div class="space-y-6">
+    <ProfileIncompleteBanner />
+    
     <div v-if="isLoading" class="text-center py-12">
       <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
     </div>

@@ -131,6 +131,8 @@ const getStatusIcon = (status: string) => {
 
 <template>
   <div class="space-y-6">
+    <ProfileIncompleteBanner />
+    
     <div class="space-y-2">
       <h1 class="text-3xl font-bold">Parrainage</h1>
       <p class="text-white/60">Partagez votre lien de parrainage et gagnez des Pūpū</p>

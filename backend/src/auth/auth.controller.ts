@@ -169,6 +169,50 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   avatarImage?: string;
+
+  @ApiProperty({
+    description: 'User phone number',
+    example: '+689 87 12 34 56',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @ApiProperty({
+    description: 'User commune (municipality)',
+    example: 'Papeete',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  commune?: string;
+
+  @ApiProperty({
+    description: 'User contact preferences with order and accounts',
+    example: {
+      order: ['phone', 'messenger', 'telegram', 'whatsapp'],
+      accounts: {
+        messenger: 'username',
+        telegram: '@username',
+        whatsapp: '+689 87 12 34 56',
+      },
+    },
+    required: false,
+  })
+  @IsOptional()
+  contactPreferences?: {
+    order: string[];
+    accounts: {
+      messenger?: string;
+      telegram?: string;
+      whatsapp?: string;
+    };
+  };
+
+  @ApiProperty({ description: 'User trading preferences (tags)', required: false, type: [String] })
+  @IsOptional()
+  tradingPreferences?: string[];
 }
 
 @ApiTags('auth')
@@ -404,6 +448,10 @@ export class AuthController {
       firstName: updateProfileDto.firstName,
       lastName: updateProfileDto.lastName,
       avatarImage: updateProfileDto.avatarImage,
+      phoneNumber: updateProfileDto.phoneNumber,
+      commune: updateProfileDto.commune,
+      contactPreferences: updateProfileDto.contactPreferences,
+      tradingPreferences: updateProfileDto.tradingPreferences,
     });
     const { password, resetToken, resetTokenExpiry, emailVerificationToken, emailVerificationTokenExpiry, ...profile } = updatedUser;
     return profile;
@@ -508,6 +556,79 @@ export class AuthController {
       facebookLoginDto.email,
       facebookLoginDto.accessToken,
     );
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description: 'Get a new access token using a refresh token',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        refresh_token: {
+          type: 'string',
+          description: 'Refresh token received during login',
+          example: 'abc123def456...',
+        },
+      },
+      required: ['refresh_token'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Token refreshed successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        access_token: {
+          type: 'string',
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        },
+        refresh_token: {
+          type: 'string',
+          example: 'abc123def456...',
+        },
+        user: {
+          type: 'object',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
+  async refreshToken(@Body() body: { refresh_token: string }) {
+    return this.authService.refreshAccessToken(body.refresh_token);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Logout user',
+    description: 'Revoke all refresh tokens for the authenticated user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Logout successful',
+    schema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          example: 'Logged out successfully',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async logout(@CurrentUser() user: any) {
+    await this.authService.revokeAllUserRefreshTokens(user.id);
+    return {
+      message: 'Logged out successfully',
+    };
   }
 }
 

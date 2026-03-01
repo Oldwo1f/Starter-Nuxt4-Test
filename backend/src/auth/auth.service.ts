@@ -1,8 +1,11 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { ReferralService } from '../referral/referral.service';
 import { User } from '../entities/user.entity';
+import { RefreshToken } from '../entities/refresh-token.entity';
 import * as crypto from 'crypto';
 import axios from 'axios';
 
@@ -12,6 +15,8 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private referralService: ReferralService,
+    @InjectRepository(RefreshToken)
+    private refreshTokenRepository: Repository<RefreshToken>,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -31,8 +36,14 @@ export class AuthService {
 
   async login(user: User) {
     const payload = { email: user.email, sub: user.id, role: user.role };
+    const access_token = this.jwtService.sign(payload);
+    
+    // Générer un refresh token
+    const refreshToken = await this.generateRefreshToken(user.id);
+    
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token,
+      refresh_token: refreshToken.token,
       user: {
         id: user.id,
         email: user.email,
@@ -45,6 +56,100 @@ export class AuthService {
         paidAccessExpiresAt: user.paidAccessExpiresAt,
       },
     };
+  }
+
+  async generateRefreshToken(userId: number): Promise<RefreshToken> {
+    // Révoquer tous les refresh tokens existants pour cet utilisateur (rotation)
+    // Cela garantit qu'un seul refresh token actif existe à la fois par utilisateur
+    await this.refreshTokenRepository.update(
+      { userId, revoked: false },
+      { revoked: true },
+    );
+
+    // Générer un nouveau refresh token
+    const token = crypto.randomBytes(64).toString('hex');
+    const expiresAt = new Date();
+    
+    // Expiration configurable via variable d'environnement (défaut: 30 jours)
+    // 30 jours est un bon compromis entre sécurité et UX
+    // Pour une sécurité maximale, garder 7 jours
+    // Pour une UX optimale, on peut aller jusqu'à 90 jours
+    const refreshTokenExpiryDays = parseInt(process.env.REFRESH_TOKEN_EXPIRY_DAYS || '30', 10);
+    expiresAt.setDate(expiresAt.getDate() + refreshTokenExpiryDays);
+
+    const refreshToken = this.refreshTokenRepository.create({
+      token,
+      userId,
+      expiresAt,
+      revoked: false,
+    });
+
+    return this.refreshTokenRepository.save(refreshToken);
+  }
+
+  async refreshAccessToken(refreshTokenString: string) {
+    // Trouver le refresh token
+    const refreshToken = await this.refreshTokenRepository.findOne({
+      where: { token: refreshTokenString },
+      relations: ['user'],
+    });
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Vérifier si le token est révoqué
+    if (refreshToken.revoked) {
+      throw new UnauthorizedException('Refresh token has been revoked');
+    }
+
+    // Vérifier si le token est expiré
+    if (refreshToken.expiresAt < new Date()) {
+      throw new UnauthorizedException('Refresh token has expired');
+    }
+
+    // Vérifier si l'utilisateur existe et est actif
+    const user = await this.usersService.findById(refreshToken.userId);
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('User not found or inactive');
+    }
+
+    // Générer un nouveau access token
+    const payload = { email: user.email, sub: user.id, role: user.role };
+    const access_token = this.jwtService.sign(payload);
+
+    // Optionnel : générer un nouveau refresh token (rotation)
+    const newRefreshToken = await this.generateRefreshToken(user.id);
+
+    return {
+      access_token,
+      refresh_token: newRefreshToken.token,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarImage: user.avatarImage,
+        role: user.role,
+        emailVerified: user.emailVerified,
+        isActive: user.isActive,
+        paidAccessExpiresAt: user.paidAccessExpiresAt,
+      },
+    };
+  }
+
+  async revokeRefreshToken(refreshTokenString: string): Promise<void> {
+    await this.refreshTokenRepository.update(
+      { token: refreshTokenString },
+      { revoked: true },
+    );
+  }
+
+  async revokeAllUserRefreshTokens(userId: number): Promise<void> {
+    await this.refreshTokenRepository.update(
+      { userId, revoked: false },
+      { revoked: true },
+    );
   }
 
   async register(
@@ -157,6 +262,9 @@ export class AuthService {
 
     // Update to new password
     await this.usersService.updatePassword(userId, newPassword);
+    
+    // Révoquer tous les refresh tokens pour sécurité (forcer reconnexion)
+    await this.revokeAllUserRefreshTokens(userId);
   }
 
   async requestEmailVerification(email: string): Promise<void> {

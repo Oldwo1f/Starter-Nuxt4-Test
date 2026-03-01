@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useDate } from '~/composables/useDate'
+import { useProfileValidation } from '~/composables/useProfileValidation'
 
 definePageMeta({
   layout: 'marketplace',
@@ -9,6 +10,7 @@ definePageMeta({
 const { fromNow } = useDate()
 const { apiBaseUrl } = useApi()
 const authStore = useAuthStore()
+const { isProfileComplete } = useProfileValidation()
 
 // View mode: 'list' or 'grid'
 const viewMode = ref<'list' | 'grid'>('list')
@@ -248,12 +250,16 @@ const getSellerAvatar = (listing: any) => {
   return null
 }
 
-// Get border class based on listing type
-const getBorderClass = (type: string) => {
-  if (type === 'service') {
+// Get border class based on listing type and isSearching flag
+const getBorderClass = (listing: any) => {
+  // Priority: isSearching > type
+  if (listing.isSearching) {
+    return 'border-2 border-orange-400/50'
+  }
+  if (listing.type === 'service') {
     return 'border border-blue-400/30'
   }
-  if (type === 'bien') {
+  if (listing.type === 'bien') {
     return 'border border-green-400/30'
   }
   return ''
@@ -291,6 +297,8 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
 
 <template>
   <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <ProfileIncompleteBanner />
+    
     <!-- Header -->
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -318,6 +326,7 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
           to="/marketplace/create"
           color="primary"
           icon="i-heroicons-plus-circle"
+          :disabled="!isProfileComplete"
         >
           <span class="hidden sm:inline">Créer une annonce</span>
           <span class="sm:hidden">Créer</span>
@@ -375,20 +384,23 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
         <UCard
           v-for="listing in listings"
           :key="listing.id"
-          :class="['cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-transform hover:scale-[1.02]', getBorderClass(listing.type)]"
+          :class="['cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-transform hover:scale-[1.02]', getBorderClass(listing)]"
           @click="navigateTo(`/marketplace/${listing.id}`)"
         >
           <div class="flex gap-4">
             <!-- Image -->
             <div class="relative aspect-square w-32 shrink-0 overflow-hidden rounded-lg">
               <img
-                v-if="getImageUrl(listing)"
+                v-if="getImageUrl(listing) && !listing.isSearching"
                 :src="getImageUrl(listing)"
                 :alt="listing.title"
                 class="h-full w-full object-cover"
               />
               <div v-else class="flex h-full items-center justify-center bg-white/10">
-                <UIcon name="i-heroicons-photo" class="h-12 w-12 text-white/40" />
+                <UIcon 
+                  :name="listing.isSearching ? 'i-heroicons-magnifying-glass' : 'i-heroicons-photo'" 
+                  :class="listing.isSearching ? 'h-[70%] w-[70%] text-orange-400' : 'h-12 w-12 text-white/40'" 
+                />
               </div>
               <!-- Category label floating -->
               <div
@@ -457,19 +469,22 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
         <UCard
           v-for="listing in listings"
           :key="listing.id"
-          :class="['cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-transform hover:scale-105', getBorderClass(listing.type)]"
+          :class="['cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-transform hover:scale-105', getBorderClass(listing)]"
           @click="navigateTo(`/marketplace/${listing.id}`)"
         >
           <template #header>
             <div class="relative aspect-square w-full overflow-hidden rounded-lg">
               <img
-                v-if="getImageUrl(listing)"
+                v-if="getImageUrl(listing) && !listing.isSearching"
                 :src="getImageUrl(listing)"
                 :alt="listing.title"
                 class="h-full w-full object-cover"
               />
               <div v-else class="flex h-full items-center justify-center bg-white/10">
-                <UIcon name="i-heroicons-photo" class="h-12 w-12 text-white/40" />
+                <UIcon 
+                  :name="listing.isSearching ? 'i-heroicons-magnifying-glass' : 'i-heroicons-photo'" 
+                  :class="listing.isSearching ? 'h-[70%] w-[70%] text-orange-400' : 'h-12 w-12 text-white/40'" 
+                />
               </div>
               <!-- Category label floating -->
               <div
@@ -565,3 +580,10 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
 
   </div>
 </template>
+
+<style scoped>
+:deep(.i-heroicons\:magnifying-glass) {
+  width: 4em !important;
+  height: 4em !important;
+}
+</style>

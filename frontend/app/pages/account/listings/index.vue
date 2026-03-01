@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useMarketplaceStore } from '~/stores/useMarketplaceStore'
+import { useProfileValidation } from '~/composables/useProfileValidation'
 
 definePageMeta({
   layout: 'account',
@@ -10,6 +11,7 @@ definePageMeta({
 const marketplaceStore = useMarketplaceStore()
 const authStore = useAuthStore()
 const toast = useToast()
+const { isProfileComplete } = useProfileValidation()
 
 // Helper function to format image URL
 const { getImageUrl: getImageUrlHelper } = useApi()
@@ -115,6 +117,8 @@ onMounted(() => {
 
 <template>
   <div class="space-y-6">
+    <ProfileIncompleteBanner />
+    
     <!-- Confirmation Alert -->
     <UAlert
       v-if="confirmAlert.show"
@@ -148,6 +152,7 @@ onMounted(() => {
         to="/marketplace/create"
         color="primary"
         icon="i-heroicons-plus-circle"
+        :disabled="!isProfileComplete"
       >
         Créer une annonce
       </UButton>
@@ -278,7 +283,12 @@ onMounted(() => {
     <div v-else class="py-12 text-center text-white/60">
       <UIcon name="i-heroicons-inbox" class="mx-auto mb-4 h-12 w-12" />
       <p>Aucune annonce trouvée</p>
-      <UButton to="/marketplace/create" color="primary" class="mt-4">
+      <UButton 
+        to="/marketplace/create" 
+        color="primary" 
+        class="mt-4"
+        :disabled="!isProfileComplete"
+      >
         Créer une annonce
       </UButton>
     </div>

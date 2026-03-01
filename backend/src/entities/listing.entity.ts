@@ -79,6 +79,9 @@ export class Listing {
   @Column({ type: 'int', default: 0 })
   viewCount: number;
 
+  @Column({ type: 'boolean', default: false })
+  isSearching: boolean; // Flag pour les annonces "Je recherche"
+
   @CreateDateColumn()
   createdAt: Date;
 

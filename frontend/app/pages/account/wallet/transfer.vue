@@ -340,6 +340,8 @@ const handleSubmit = async () => {
 
 <template>
   <div class="space-y-6">
+    <ProfileIncompleteBanner />
+    
     <div class="space-y-2">
       <UButton to="/account/wallet" variant="ghost" icon="i-heroicons-arrow-left">
         Retour

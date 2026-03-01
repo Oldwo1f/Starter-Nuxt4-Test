@@ -20,6 +20,7 @@ const form = ref({
   type: 'bien' as 'bien' | 'service',
   categoryId: undefined as number | undefined,
   locationId: undefined as number | undefined,
+  isSearching: false,
 })
 
 // Price unit options - separated by type
@@ -178,14 +179,21 @@ const removeImage = (index: number) => {
 
 // Submit form
 const handleSubmit = async () => {
-  if (!form.value.title || !form.value.description || !form.value.price || !form.value.categoryId || !form.value.locationId) {
+  if (!form.value.title || !form.value.description || !form.value.categoryId || !form.value.locationId) {
     alert('Veuillez remplir tous les champs obligatoires')
     return
   }
 
-  if (images.value.length === 0) {
-    alert('Veuillez ajouter au moins une image')
-    return
+  // For normal listings, require price and images
+  if (!form.value.isSearching) {
+    if (!form.value.price) {
+      alert('Veuillez remplir tous les champs obligatoires')
+      return
+    }
+    if (images.value.length === 0) {
+      alert('Veuillez ajouter au moins une image')
+      return
+    }
   }
 
   if (!confirm('Publier cette annonce ?')) {
@@ -204,7 +212,10 @@ const handleSubmit = async () => {
       ...form.value,
       categoryId: form.value.categoryId,
       locationId: form.value.locationId,
-      images: images.value,
+      images: form.value.isSearching ? [] : images.value,
+      price: form.value.isSearching ? 0 : form.value.price,
+      priceUnit: form.value.isSearching ? undefined : form.value.priceUnit,
+      isSearching: form.value.isSearching,
     })
 
     if (result.success) {
@@ -228,6 +239,8 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
+    <ProfileIncompleteBanner />
+    
     <div class="mb-6">
       <UButton to="/marketplace" variant="ghost" icon="i-heroicons-arrow-left">
         Retour
@@ -238,6 +251,34 @@ onMounted(() => {
 
     <UCard>
       <form @submit.prevent="handleSubmit" class="w-full space-y-6">
+        <!-- Je recherche flag -->
+        <div>
+          <label class="mb-2 block text-sm font-medium">Type d'annonce *</label>
+          <div class="flex gap-2">
+            <UButton
+              :variant="!form.isSearching ? 'solid' : 'outline'"
+              color="primary"
+              size="xl"
+              class="flex-1"
+              @click="form.isSearching = false"
+            >
+              Annonce normale
+            </UButton>
+            <UButton
+              :variant="form.isSearching ? 'solid' : 'outline'"
+              color="warning"
+              size="xl"
+              class="flex-1"
+              @click="form.isSearching = true"
+            >
+              Je recherche
+            </UButton>
+          </div>
+          <p v-if="form.isSearching" class="mt-2 text-xs text-white/60">
+            Cette annonce exprime un besoin. Un autre troqueur pourra y répondre.
+          </p>
+        </div>
+
         <!-- Type -->
         <div>
           <label class="mb-2 block text-sm font-medium">Type *</label>
@@ -280,7 +321,9 @@ onMounted(() => {
           <label class="mb-2 block text-sm font-medium">Description *</label>
           <UTextarea
             v-model="form.description"
-            placeholder="Décrivez votre produit ou service en détail..."
+            :placeholder="form.isSearching 
+              ? 'Je recherche du poisson en quantité pour ce weekend.\nJ\'ai beaucoup de fruits pour ceux qui sont intéréssé, sinon je peux rendre des services transports ou payer en cash.'
+              : 'Décrivez votre produit ou service en détail...'"
             :rows="6"
             size="lg"
             class="w-full"
@@ -290,7 +333,7 @@ onMounted(() => {
         </div>
 
         <!-- Images -->
-        <div>
+        <div v-if="!form.isSearching">
           <label class="mb-2 block text-sm font-medium">Images * (format carré requis)</label>
           <div class="space-y-4">
             <!-- Preview grid -->
@@ -363,7 +406,7 @@ onMounted(() => {
         </div>
 
         <!-- Price -->
-        <div class="w-full">
+        <div v-if="!form.isSearching" class="w-full">
           <label class="mb-2 block text-sm font-medium">Valeur en Pūpū *</label>
           
           <!-- Slider -->
