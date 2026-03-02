@@ -39,6 +39,10 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-https://nunaaheritage.aito-flow.com}
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
       FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_TEOHI_PRICE_ID: ${STRIPE_TEOHI_PRICE_ID}
+      STRIPE_UMETE_PRICE_ID: ${STRIPE_UMETE_PRICE_ID}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
       UPLOAD_DEST: uploads
       # 0 = unlimited at app-level (still limited by infra/timeouts/disk)
       MAX_VIDEO_FILE_SIZE: 0
