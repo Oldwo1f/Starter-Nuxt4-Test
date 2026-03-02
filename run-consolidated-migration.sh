@@ -66,17 +66,23 @@ echo ""
 echo -e "${BLUE}🔄 Exécution de la migration...${NC}"
 echo ""
 
-# Exécuter la migration
-if docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
-    psql -U "$DB_USERNAME" -d "$DB_NAME" -f - < "$MIGRATION_FILE"; then
-    echo ""
-    echo -e "${GREEN}✅ Migration consolidée exécutée avec succès!${NC}"
-    echo ""
+# Exécuter la migration et capturer la sortie complète
+echo -e "${BLUE}Exécution de la migration SQL...${NC}"
+OUTPUT=$(docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
+    psql -U "$DB_USERNAME" -d "$DB_NAME" -v ON_ERROR_STOP=1 -f - < "$MIGRATION_FILE" 2>&1)
+EXIT_CODE=$?
+
+# Afficher la sortie
+echo "$OUTPUT"
+echo ""
+
+# Vérifier le code de sortie ET la présence des tables
+if [ $EXIT_CODE -eq 0 ]; then
     echo -e "${BLUE}📊 Vérification des tables créées:${NC}"
     
     # Vérifier les tables
-    docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
-        psql -U "$DB_USERNAME" -d "$DB_NAME" -c "
+    VERIFICATION_OUTPUT=$(docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
+        psql -U "$DB_USERNAME" -d "$DB_NAME" -t -c "
         SELECT 
             CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'todos') 
                 THEN '✅' ELSE '❌' END || ' todos' AS status
@@ -92,14 +98,27 @@ if docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
         SELECT 
             CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'isSearching') 
                 THEN '✅' ELSE '❌' END || ' listings.isSearching' AS status;
-    " 2>/dev/null || echo -e "${YELLOW}⚠️  Impossible de vérifier les tables${NC}"
+    " 2>&1)
     
+    echo "$VERIFICATION_OUTPUT"
     echo ""
-    echo -e "${GREEN}✅ Toutes les migrations ont été appliquées!${NC}"
-    exit 0
+    
+    # Vérifier si toutes les tables existent
+    if echo "$VERIFICATION_OUTPUT" | grep -q "❌"; then
+        echo -e "${RED}❌ Erreur: Certaines tables/colonnes n'ont pas été créées${NC}"
+        echo -e "${YELLOW}⚠️  La migration a peut-être échoué silencieusement${NC}"
+        echo ""
+        echo -e "${BLUE}💡 Essayez d'exécuter la migration en mode debug:${NC}"
+        echo "   ./run-consolidated-migration-debug.sh"
+        exit 1
+    else
+        echo -e "${GREEN}✅ Migration consolidée exécutée avec succès!${NC}"
+        echo -e "${GREEN}✅ Toutes les tables et colonnes ont été créées!${NC}"
+        exit 0
+    fi
 else
     echo ""
-    echo -e "${RED}❌ Erreur lors de l'exécution de la migration${NC}"
-    echo -e "${YELLOW}⚠️  Vérifiez les logs ci-dessus pour plus de détails${NC}"
+    echo -e "${RED}❌ Erreur lors de l'exécution de la migration (code: $EXIT_CODE)${NC}"
+    echo -e "${YELLOW}⚠️  Vérifiez les messages d'erreur ci-dessus${NC}"
     exit 1
 fi

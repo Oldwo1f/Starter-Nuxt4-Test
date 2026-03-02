@@ -220,10 +220,18 @@ END $$;
 -- Description: Add isSearching column to allow marking listings as "Je recherche" (expressing a need).
 --              These listings don't require images or price in Pūpū.
 
-ALTER TABLE listings ADD COLUMN IF NOT EXISTS "isSearching" BOOLEAN NOT NULL DEFAULT false;
-
--- Add comment to explain the purpose
-COMMENT ON COLUMN listings."isSearching" IS 'Flag pour les annonces "Je recherche" qui expriment un besoin. Ces annonces n''ont pas besoin d''images ni de valeur en Pūpū.';
+-- Vérifier que la table listings existe avant d'ajouter la colonne
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'listings') THEN
+    ALTER TABLE listings ADD COLUMN IF NOT EXISTS "isSearching" BOOLEAN NOT NULL DEFAULT false;
+    
+    -- Add comment to explain the purpose
+    COMMENT ON COLUMN listings."isSearching" IS 'Flag pour les annonces "Je recherche" qui expriment un besoin. Ces annonces n''ont pas besoin d''images ni de valeur en Pūpū.';
+  ELSE
+    RAISE NOTICE 'Table listings n''existe pas encore, colonne isSearching sera ajoutée lors de la création de la table';
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 5. Migration: Restore superadmin role
@@ -234,44 +242,14 @@ UPDATE users
 SET role = 'superadmin'
 WHERE email = 'alexismomcilovic@gmail.com';
 
--- ============================================================================
--- Vérification finale
--- ============================================================================
-
--- Vérifier que toutes les tables ont été créées
-DO $$
-DECLARE
-  missing_tables TEXT[] := ARRAY[]::TEXT[];
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'todos') THEN
-    missing_tables := array_append(missing_tables, 'todos');
-  END IF;
-  
-  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'stripe_payments') THEN
-    missing_tables := array_append(missing_tables, 'stripe_payments');
-  END IF;
-  
-  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'legacy_payment_verifications') THEN
-    missing_tables := array_append(missing_tables, 'legacy_payment_verifications');
-  END IF;
-  
-  IF array_length(missing_tables, 1) > 0 THEN
-    RAISE EXCEPTION 'Tables manquantes après migration: %', array_to_string(missing_tables, ', ');
-  END IF;
-END $$;
-
--- Vérifier que la colonne isSearching existe
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'listings' AND column_name = 'isSearching'
-  ) THEN
-    RAISE EXCEPTION 'Colonne isSearching manquante dans la table listings';
-  END IF;
-END $$;
-
 COMMIT;
+
+-- ============================================================================
+-- Vérification finale (après COMMIT pour ne pas annuler la transaction)
+-- ============================================================================
+
+-- Note: Les vérifications sont faites par le script shell, pas ici
+-- pour éviter d'annuler la transaction en cas d'erreur
 
 -- ============================================================================
 -- Migration terminée avec succès!
