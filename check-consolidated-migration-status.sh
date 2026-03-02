@@ -139,6 +139,49 @@ else
 fi
 echo ""
 
+# Migration 5: Colonnes de profil utilisateur (phoneNumber, commune, contactPreferences, tradingPreferences)
+echo -e "${YELLOW}5. Migration: Colonnes de profil utilisateur${NC}"
+TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+PHONE_OK=false
+COMMUNE_OK=false
+CONTACT_PREFS_OK=false
+TRADING_PREFS_OK=false
+
+if check_column "users" "phoneNumber" > /dev/null 2>&1; then
+    PHONE_OK=true
+    echo -e "  ${GREEN}✅${NC} Colonne users.phoneNumber existe"
+else
+    echo -e "  ${RED}❌${NC} Colonne users.phoneNumber MANQUANTE"
+fi
+
+if check_column "users" "commune" > /dev/null 2>&1; then
+    COMMUNE_OK=true
+    echo -e "  ${GREEN}✅${NC} Colonne users.commune existe"
+else
+    echo -e "  ${RED}❌${NC} Colonne users.commune MANQUANTE"
+fi
+
+if check_column "users" "contactPreferences" > /dev/null 2>&1; then
+    CONTACT_PREFS_OK=true
+    echo -e "  ${GREEN}✅${NC} Colonne users.contactPreferences existe"
+else
+    echo -e "  ${RED}❌${NC} Colonne users.contactPreferences MANQUANTE"
+fi
+
+if check_column "users" "tradingPreferences" > /dev/null 2>&1; then
+    TRADING_PREFS_OK=true
+    echo -e "  ${GREEN}✅${NC} Colonne users.tradingPreferences existe"
+else
+    echo -e "  ${RED}❌${NC} Colonne users.tradingPreferences MANQUANTE"
+fi
+
+if [ "$PHONE_OK" = true ] && [ "$COMMUNE_OK" = true ] && [ "$CONTACT_PREFS_OK" = true ] && [ "$TRADING_PREFS_OK" = true ]; then
+    PASSED_CHECKS=$((PASSED_CHECKS + 1))
+else
+    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+fi
+echo ""
+
 # Résumé
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}📊 Résumé des migrations de ce commit:${NC}"

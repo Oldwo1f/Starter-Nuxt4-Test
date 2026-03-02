@@ -114,7 +114,7 @@ fi
 docker exec "$CONTAINER_NAME" rm -f /tmp/migration.sql 2>/dev/null || true
 
 echo ""
-echo -e "${BLUE}🔍 Vérification des tables...${NC}"
+echo -e "${BLUE}🔍 Vérification des tables et colonnes...${NC}"
 docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
     psql -U "$DB_USERNAME" -d "$DB_NAME" -c "
 SELECT 
@@ -131,5 +131,21 @@ SELECT
 UNION ALL
 SELECT 
     CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'isSearching') 
-        THEN '✅' ELSE '❌' END || ' listings.isSearching' AS status;
+        THEN '✅' ELSE '❌' END || ' listings.isSearching' AS status
+UNION ALL
+SELECT 
+    CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'phoneNumber') 
+        THEN '✅' ELSE '❌' END || ' users.phoneNumber' AS status
+UNION ALL
+SELECT 
+    CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'commune') 
+        THEN '✅' ELSE '❌' END || ' users.commune' AS status
+UNION ALL
+SELECT 
+    CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'contactPreferences') 
+        THEN '✅' ELSE '❌' END || ' users.contactPreferences' AS status
+UNION ALL
+SELECT 
+    CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'tradingPreferences') 
+        THEN '✅' ELSE '❌' END || ' users.tradingPreferences' AS status;
 " 2>&1

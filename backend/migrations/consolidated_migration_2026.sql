@@ -11,7 +11,8 @@
 -- 2. Création de la table stripe_payments
 -- 3. Création de la table legacy_payment_verifications
 -- 4. Ajout de la colonne isSearching à la table listings
--- 5. Restauration du rôle superadmin pour alexismomcilovic@gmail.com
+-- 5. Ajout des colonnes phoneNumber, commune, contactPreferences, tradingPreferences à la table users
+-- 6. Restauration du rôle superadmin pour alexismomcilovic@gmail.com
 -- ============================================================================
 
 BEGIN;
@@ -234,7 +235,60 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- 5. Migration: Restore superadmin role
+-- 5. Migration: Add user profile columns (phoneNumber, commune, contactPreferences, tradingPreferences)
+-- ============================================================================
+-- Description: Add columns to users table for enhanced user profile information
+
+-- Add phoneNumber column
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'phoneNumber'
+  ) THEN
+    ALTER TABLE users ADD COLUMN "phoneNumber" VARCHAR NULL;
+    COMMENT ON COLUMN users."phoneNumber" IS 'Numéro de téléphone de l''utilisateur';
+  END IF;
+END $$;
+
+-- Add commune column
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'commune'
+  ) THEN
+    ALTER TABLE users ADD COLUMN "commune" VARCHAR NULL;
+    COMMENT ON COLUMN users."commune" IS 'Commune de résidence de l''utilisateur';
+  END IF;
+END $$;
+
+-- Add contactPreferences column (JSONB)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'contactPreferences'
+  ) THEN
+    ALTER TABLE users ADD COLUMN "contactPreferences" JSONB NULL;
+    COMMENT ON COLUMN users."contactPreferences" IS 'Préférences de contact de l''utilisateur (ordre et comptes sociaux)';
+  END IF;
+END $$;
+
+-- Add tradingPreferences column (JSONB)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'tradingPreferences'
+  ) THEN
+    ALTER TABLE users ADD COLUMN "tradingPreferences" JSONB NULL DEFAULT '[]';
+    COMMENT ON COLUMN users."tradingPreferences" IS 'Tags de préférences de troc de l''utilisateur';
+  END IF;
+END $$;
+
+-- ============================================================================
+-- 6. Migration: Restore superadmin role
 -- ============================================================================
 -- Description: Restore superadmin role for user alexismomcilovic@gmail.com
 
@@ -260,6 +314,10 @@ COMMIT;
 --   ✅ legacy_payment_verifications
 -- Colonnes ajoutées:
 --   ✅ listings.isSearching
+--   ✅ users.phoneNumber
+--   ✅ users.commune
+--   ✅ users.contactPreferences
+--   ✅ users.tradingPreferences
 -- Rôle restauré:
 --   ✅ superadmin pour alexismomcilovic@gmail.com
 -- ============================================================================
