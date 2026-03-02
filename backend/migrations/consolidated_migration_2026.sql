@@ -10,9 +10,10 @@
 -- 1. Création de la table todos
 -- 2. Création de la table stripe_payments
 -- 3. Création de la table legacy_payment_verifications
--- 4. Ajout de la colonne isSearching à la table listings
--- 5. Ajout des colonnes phoneNumber, commune, contactPreferences, tradingPreferences à la table users
--- 6. Restauration du rôle superadmin pour alexismomcilovic@gmail.com
+-- 4. Création de la table refresh_tokens
+-- 5. Ajout de la colonne isSearching à la table listings
+-- 6. Ajout des colonnes phoneNumber, commune, contactPreferences, tradingPreferences à la table users
+-- 7. Restauration du rôle superadmin pour alexismomcilovic@gmail.com
 -- ============================================================================
 
 BEGIN;
@@ -216,7 +217,69 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- 4. Migration: Add isSearching column to listings table
+-- 4. Migration: Create refresh_tokens table
+-- ============================================================================
+-- Description: Creates the refresh_tokens table for JWT refresh token management
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id SERIAL PRIMARY KEY,
+  token VARCHAR(255) NOT NULL UNIQUE,
+  "userId" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  "expiresAt" TIMESTAMP NOT NULL,
+  revoked BOOLEAN NOT NULL DEFAULT false,
+  "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Create index on userId for faster lookups
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE tablename = 'refresh_tokens'
+      AND indexname = 'IDX_refresh_tokens_userId'
+  ) THEN
+    CREATE INDEX "IDX_refresh_tokens_userId" ON refresh_tokens("userId");
+  END IF;
+END $$;
+
+-- Create index on token for faster lookups (already unique, but explicit index for performance)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE tablename = 'refresh_tokens'
+      AND indexname = 'IDX_refresh_tokens_token'
+  ) THEN
+    CREATE UNIQUE INDEX "IDX_refresh_tokens_token" ON refresh_tokens(token);
+  END IF;
+END $$;
+
+-- Create index on expiresAt for cleanup queries
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE tablename = 'refresh_tokens'
+      AND indexname = 'IDX_refresh_tokens_expiresAt'
+  ) THEN
+    CREATE INDEX "IDX_refresh_tokens_expiresAt" ON refresh_tokens("expiresAt");
+  END IF;
+END $$;
+
+-- Create index on revoked for filtering active tokens
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_indexes
+    WHERE tablename = 'refresh_tokens'
+      AND indexname = 'IDX_refresh_tokens_revoked'
+  ) THEN
+    CREATE INDEX "IDX_refresh_tokens_revoked" ON refresh_tokens(revoked);
+  END IF;
+END $$;
+
+-- ============================================================================
+-- 5. Migration: Add isSearching column to listings table
 -- ============================================================================
 -- Description: Add isSearching column to allow marking listings as "Je recherche" (expressing a need).
 --              These listings don't require images or price in Pūpū.
@@ -235,7 +298,7 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- 5. Migration: Add user profile columns (phoneNumber, commune, contactPreferences, tradingPreferences)
+-- 6. Migration: Add user profile columns (phoneNumber, commune, contactPreferences, tradingPreferences)
 -- ============================================================================
 -- Description: Add columns to users table for enhanced user profile information
 
@@ -288,7 +351,7 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- 6. Migration: Restore superadmin role
+-- 7. Migration: Restore superadmin role
 -- ============================================================================
 -- Description: Restore superadmin role for user alexismomcilovic@gmail.com
 
@@ -312,6 +375,7 @@ COMMIT;
 --   ✅ todos
 --   ✅ stripe_payments
 --   ✅ legacy_payment_verifications
+--   ✅ refresh_tokens
 -- Colonnes ajoutées:
 --   ✅ listings.isSearching
 --   ✅ users.phoneNumber

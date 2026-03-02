@@ -50,6 +50,7 @@ echo -e "${YELLOW}📋 Contenu de la migration:${NC}"
 echo "   - Création de la table todos"
 echo "   - Création de la table stripe_payments"
 echo "   - Création de la table legacy_payment_verifications"
+echo "   - Création de la table refresh_tokens"
 echo "   - Ajout de la colonne isSearching à listings"
 echo "   - Ajout des colonnes phoneNumber, commune, contactPreferences, tradingPreferences à users"
 echo "   - Restauration du rôle superadmin"
@@ -106,6 +107,10 @@ if [ $EXIT_CODE -eq 0 ]; then
         SELECT 
             CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'legacy_payment_verifications') 
                 THEN '✅' ELSE '❌' END || ' legacy_payment_verifications' AS status
+        UNION ALL
+        SELECT 
+            CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'refresh_tokens') 
+                THEN '✅' ELSE '❌' END || ' refresh_tokens' AS status
         UNION ALL
         SELECT 
             CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'isSearching') 

@@ -130,6 +130,10 @@ SELECT
         THEN '✅' ELSE '❌' END || ' legacy_payment_verifications' AS status
 UNION ALL
 SELECT 
+    CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'refresh_tokens') 
+        THEN '✅' ELSE '❌' END || ' refresh_tokens' AS status
+UNION ALL
+SELECT 
     CASE WHEN EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'listings' AND column_name = 'isSearching') 
         THEN '✅' ELSE '❌' END || ' listings.isSearching' AS status
 UNION ALL

@@ -129,7 +129,30 @@ else
 fi
 echo ""
 
-# Migration 4: Colonne isSearching dans listings
+# Migration 4: Table refresh_tokens
+echo -e "${YELLOW}4. Migration: Table refresh_tokens${NC}"
+TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+if check_table "refresh_tokens"; then
+    PASSED_CHECKS=$((PASSED_CHECKS + 1))
+    # Vérifier les colonnes importantes
+    check_column "refresh_tokens" "token" > /dev/null 2>&1 && \
+        echo -e "  ${GREEN}✅${NC} Colonne token existe" || \
+        echo -e "  ${YELLOW}⚠️${NC}  Colonne token manquante"
+    check_column "refresh_tokens" "userId" > /dev/null 2>&1 && \
+        echo -e "  ${GREEN}✅${NC} Colonne userId existe" || \
+        echo -e "  ${YELLOW}⚠️${NC}  Colonne userId manquante"
+    check_column "refresh_tokens" "expiresAt" > /dev/null 2>&1 && \
+        echo -e "  ${GREEN}✅${NC} Colonne expiresAt existe" || \
+        echo -e "  ${YELLOW}⚠️${NC}  Colonne expiresAt manquante"
+    check_column "refresh_tokens" "revoked" > /dev/null 2>&1 && \
+        echo -e "  ${GREEN}✅${NC} Colonne revoked existe" || \
+        echo -e "  ${YELLOW}⚠️${NC}  Colonne revoked manquante"
+else
+    FAILED_CHECKS=$((FAILED_CHECKS + 1))
+fi
+echo ""
+
+# Migration 5: Colonne isSearching dans listings
 echo -e "${YELLOW}4. Migration: Colonne isSearching dans listings${NC}"
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 if check_column "listings" "isSearching"; then
@@ -139,8 +162,8 @@ else
 fi
 echo ""
 
-# Migration 5: Colonnes de profil utilisateur (phoneNumber, commune, contactPreferences, tradingPreferences)
-echo -e "${YELLOW}5. Migration: Colonnes de profil utilisateur${NC}"
+# Migration 6: Colonnes de profil utilisateur (phoneNumber, commune, contactPreferences, tradingPreferences)
+echo -e "${YELLOW}6. Migration: Colonnes de profil utilisateur${NC}"
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 PHONE_OK=false
 COMMUNE_OK=false
