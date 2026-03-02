@@ -59,16 +59,49 @@ echo -e "${BLUE}📄 Contenu du fichier SQL (premières 10 lignes):${NC}"
 head -10 "$MIGRATION_FILE"
 echo ""
 
-# Exécuter la migration avec affichage des erreurs
-echo -e "${BLUE}🔄 Exécution de la migration...${NC}"
+# Vérifier que le fichier peut être lu
+echo -e "${BLUE}📄 Vérification du fichier SQL...${NC}"
+if [ ! -f "$MIGRATION_FILE" ]; then
+    echo -e "${RED}❌ Fichier non trouvé: $MIGRATION_FILE${NC}"
+    exit 1
+fi
+FILE_SIZE=$(wc -c < "$MIGRATION_FILE")
+echo "  Taille du fichier: $FILE_SIZE octets"
+echo "  Lignes: $(wc -l < "$MIGRATION_FILE")"
 echo ""
 
-# Exécuter et capturer la sortie complète
+# Vérifier que le fichier contient BEGIN et COMMIT
+if grep -q "BEGIN;" "$MIGRATION_FILE" && grep -q "COMMIT;" "$MIGRATION_FILE"; then
+    echo -e "${GREEN}✅ Fichier SQL valide (contient BEGIN et COMMIT)${NC}"
+else
+    echo -e "${RED}❌ Fichier SQL invalide (manque BEGIN ou COMMIT)${NC}"
+fi
+echo ""
+
+# Exécuter la migration avec affichage des erreurs et mode verbose
+echo -e "${BLUE}🔄 Exécution de la migration...${NC}"
+echo -e "${YELLOW}Mode verbose activé pour voir tous les messages SQL${NC}"
+echo ""
+
+# Copier le fichier dans le conteneur d'abord pour éviter les problèmes de stdin
+docker cp "$MIGRATION_FILE" "$CONTAINER_NAME:/tmp/migration.sql" 2>&1
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Erreur lors de la copie du fichier dans le conteneur${NC}"
+    exit 1
+fi
+
+# Exécuter depuis le fichier dans le conteneur avec mode verbose
+echo -e "${BLUE}Exécution SQL...${NC}"
 OUTPUT=$(docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
-    psql -U "$DB_USERNAME" -d "$DB_NAME" -f - < "$MIGRATION_FILE" 2>&1)
+    psql -U "$DB_USERNAME" -d "$DB_NAME" -v ON_ERROR_STOP=1 -a -f /tmp/migration.sql 2>&1)
 EXIT_CODE=$?
 
+# Afficher TOUTE la sortie
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}Sortie complète de psql:${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo "$OUTPUT"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
 if [ $EXIT_CODE -eq 0 ]; then
@@ -76,6 +109,9 @@ if [ $EXIT_CODE -eq 0 ]; then
 else
     echo -e "${RED}❌ Erreur lors de l'exécution (code: $EXIT_CODE)${NC}"
 fi
+
+# Nettoyer le fichier temporaire
+docker exec "$CONTAINER_NAME" rm -f /tmp/migration.sql 2>/dev/null || true
 
 echo ""
 echo -e "${BLUE}🔍 Vérification des tables...${NC}"

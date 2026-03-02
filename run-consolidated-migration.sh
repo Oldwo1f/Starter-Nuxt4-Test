@@ -66,15 +66,26 @@ echo ""
 echo -e "${BLUE}🔄 Exécution de la migration...${NC}"
 echo ""
 
+# Copier le fichier dans le conteneur pour éviter les problèmes de stdin
+echo -e "${BLUE}📋 Copie du fichier de migration dans le conteneur...${NC}"
+docker cp "$MIGRATION_FILE" "$CONTAINER_NAME:/tmp/migration.sql" 2>&1
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Erreur lors de la copie du fichier dans le conteneur${NC}"
+    exit 1
+fi
+
 # Exécuter la migration et capturer la sortie complète
-echo -e "${BLUE}Exécution de la migration SQL...${NC}"
+echo -e "${BLUE}🔄 Exécution de la migration SQL...${NC}"
 OUTPUT=$(docker exec -e PGPASSWORD="$DB_PASSWORD" "$CONTAINER_NAME" \
-    psql -U "$DB_USERNAME" -d "$DB_NAME" -v ON_ERROR_STOP=1 -f - < "$MIGRATION_FILE" 2>&1)
+    psql -U "$DB_USERNAME" -d "$DB_NAME" -v ON_ERROR_STOP=1 -a -f /tmp/migration.sql 2>&1)
 EXIT_CODE=$?
 
 # Afficher la sortie
 echo "$OUTPUT"
 echo ""
+
+# Nettoyer le fichier temporaire
+docker exec "$CONTAINER_NAME" rm -f /tmp/migration.sql 2>/dev/null || true
 
 # Vérifier le code de sortie ET la présence des tables
 if [ $EXIT_CODE -eq 0 ]; then
