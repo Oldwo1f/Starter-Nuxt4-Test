@@ -154,6 +154,8 @@ const handleConfirmDelete = (culture: Culture) => {
 
 // Options pour le type de vidéo
 const typeOptions = [
+  { label: 'Reportage', value: 'reportage' },
+  { label: 'Documentaire', value: 'documentaire' },
   { label: 'Interview', value: 'interview' },
 ]
 

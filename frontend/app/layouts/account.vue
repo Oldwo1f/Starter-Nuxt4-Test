@@ -64,10 +64,10 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
     },
   ]
 
-  // Ajouter le lien Dashboard si l'utilisateur est staff ou admin
+  // Ajouter le lien Administration si l'utilisateur est staff ou admin
   if (isStaffOrAdmin.value) {
     profileItems.push({
-      label: 'Dashboard',
+      label: 'Administration',
       icon: 'i-heroicons-squares-2x2',
       to: '/admin/dashboard',
     })

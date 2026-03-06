@@ -1,7 +1,6 @@
 <script setup lang="ts">
 definePageMeta({
   layout: 'default',
-  middleware: 'auth',
 })
 
 import { useAcademyStore } from '~/stores/useAcademyStore'
@@ -38,6 +37,31 @@ const getAccessMessage = computed(() => {
   if (!academyStore.currentCourse) return ''
   return academyStore.getAccessMessage(academyStore.currentCourse)
 })
+
+// Check if user has partial access (first module only)
+const hasPartialAccess = computed(() => {
+  if (!academyStore.currentCourse) return false
+  return academyStore.hasPartialAccess(academyStore.currentCourse)
+})
+
+// Get first module (lowest order)
+const firstModule = computed(() => {
+  if (!academyStore.currentCourse?.modules) return null
+  const sortedModules = [...academyStore.currentCourse.modules].sort((a, b) => a.order - b.order)
+  return sortedModules[0] || null
+})
+
+// Check if a module is accessible
+const canAccessModule = (module: any) => {
+  if (!academyStore.currentCourse) return false
+  return academyStore.canAccessModule(module, academyStore.currentCourse)
+}
+
+// Check if a video is accessible
+const canAccessVideo = (video: any, module: any) => {
+  if (!academyStore.currentCourse) return false
+  return academyStore.canAccessVideo(video, module, academyStore.currentCourse)
+}
 
 // Get all videos from course
 const allVideos = computed(() => {
@@ -117,6 +141,14 @@ const getVideoUrl = (video: any) => {
   return ''
 }
 
+// Detect video type (YouTube, Vimeo, or file)
+const getVideoType = (url: string | null | undefined): 'youtube' | 'vimeo' | 'file' => {
+  if (!url) return 'file'
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube'
+  if (url.includes('vimeo.com')) return 'vimeo'
+  return 'file'
+}
+
 // Convert YouTube URL to embed URL
 const getYouTubeEmbedUrl = (url: string) => {
   if (!url) return ''
@@ -148,28 +180,58 @@ const getYouTubeEmbedUrl = (url: string) => {
   return url
 }
 
+// Convert Vimeo URL to embed URL
+const getVimeoEmbedUrl = (url: string) => {
+  if (!url) return ''
+  
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/)
+  if (vimeoMatch) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`
+  }
+  
+  return ''
+}
+
+// Generic function to get embed URL for YouTube or Vimeo
+const getVideoEmbedUrl = (url: string | null | undefined) => {
+  if (!url) return null
+  
+  const type = getVideoType(url)
+  if (type === 'youtube') return getYouTubeEmbedUrl(url)
+  if (type === 'vimeo') return getVimeoEmbedUrl(url)
+  return null
+}
+
 // Load course
 onMounted(async () => {
-  if (!authStore.isAuthenticated) {
-    router.push('/login')
-    return
-  }
   try {
     await academyStore.fetchCourse(courseId.value)
     
     // Set initial video (last watched or first)
     if (academyStore.currentCourse) {
-      const lastWatchedId = academyStore.currentCourse.progress?.lastVideoWatchedId
-      if (lastWatchedId) {
-        const lastWatched = allVideos.value.find((v) => v.video.id === lastWatchedId)
-        if (lastWatched) {
-          currentVideo.value = lastWatched.video
-          return
+      // Only set last watched if user is authenticated
+      if (authStore.isAuthenticated) {
+        const lastWatchedId = academyStore.currentCourse.progress?.lastVideoWatchedId
+        if (lastWatchedId) {
+          const lastWatched = allVideos.value.find((v) => v.video.id === lastWatchedId)
+          if (lastWatched) {
+            currentVideo.value = lastWatched.video
+            return
+          }
         }
       }
-      // Otherwise, set first video
+      // Otherwise, set first accessible video
       if (allVideos.value.length > 0) {
-        currentVideo.value = allVideos.value[0].video
+        // Find first accessible video
+        const firstAccessible = allVideos.value.find((v) => {
+          return canAccessVideo(v.video, v.module)
+        })
+        if (firstAccessible) {
+          currentVideo.value = firstAccessible.video
+        } else if (allVideos.value.length > 0) {
+          // Fallback to first video if none accessible
+          currentVideo.value = allVideos.value[0].video
+        }
       }
     }
   } catch (error) {
@@ -187,9 +249,10 @@ watch(currentVideo, () => {
 
 // Handle video ended
 const handleVideoEnded = async () => {
-  if (currentVideo.value) {
-    // Ne pas tracker la fin pour les vidéos YouTube (nécessite l'API YouTube)
-    if (!currentVideo.value.videoUrl || (!currentVideo.value.videoUrl.includes('youtube.com') && !currentVideo.value.videoUrl.includes('youtu.be'))) {
+  if (currentVideo.value && authStore.isAuthenticated) {
+    // Ne pas tracker la fin pour les vidéos YouTube/Vimeo (nécessite l'API respective)
+    const videoType = getVideoType(currentVideo.value.videoUrl)
+    if (!currentVideo.value.videoUrl || (videoType !== 'youtube' && videoType !== 'vimeo')) {
       // Mark as completed
       await academyStore.updateProgress(courseId.value, currentVideo.value.id, currentVideo.value.id, true)
     }
@@ -198,14 +261,27 @@ const handleVideoEnded = async () => {
     if (nextVideo.value) {
       currentVideo.value = nextVideo.value.video
     }
+  } else if (currentVideo.value && !authStore.isAuthenticated) {
+    // Auto-play next video if available (even if not authenticated)
+    if (nextVideo.value) {
+      currentVideo.value = nextVideo.value.video
+    }
   }
 }
 
 // Handle video time update (mark as completed at 80%)
 const handleTimeUpdate = async () => {
-  // Ne pas tracker la progression pour les vidéos YouTube (nécessite l'API YouTube)
-  if (currentVideo.value?.videoUrl && (currentVideo.value.videoUrl.includes('youtube.com') || currentVideo.value.videoUrl.includes('youtu.be'))) {
+  // Ne pas tracker si l'utilisateur n'est pas connecté
+  if (!authStore.isAuthenticated) {
     return
+  }
+  
+  // Ne pas tracker la progression pour les vidéos YouTube/Vimeo (nécessite l'API respective)
+  if (currentVideo.value?.videoUrl) {
+    const videoType = getVideoType(currentVideo.value.videoUrl)
+    if (videoType === 'youtube' || videoType === 'vimeo') {
+      return
+    }
   }
   
   if (!videoPlayer.value || !currentVideo.value) return
@@ -230,13 +306,20 @@ const handleTimeUpdate = async () => {
 
 // Select video
 const selectVideo = async (video: any) => {
-  // Vérifier l'accès avant de permettre la sélection
-  if (!canAccessCourse.value) {
+  // Trouver le module parent de la vidéo
+  const videoWithModule = allVideos.value.find((v) => v.video.id === video.id)
+  if (!videoWithModule) {
     return
   }
+
+  // Vérifier l'accès à la vidéo spécifique
+  if (!canAccessVideo(video, videoWithModule.module)) {
+    return
+  }
+
   currentVideo.value = video
-  // Update last watched when selecting a video
-  if (video) {
+  // Update last watched when selecting a video (only if authenticated)
+  if (video && authStore.isAuthenticated) {
     await academyStore.updateProgress(courseId.value, video.id, video.id, false)
     lastProgressUpdate = Date.now()
   }
@@ -354,9 +437,9 @@ const overallProgress = computed(() => {
           <div v-if="currentVideo" class="space-y-4">
             <!-- Video player -->
             <div class="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
-              <!-- Lock overlay for restricted courses -->
+              <!-- Lock overlay for restricted courses (only if no partial access) -->
               <div
-                v-if="!canAccessCourse"
+                v-if="!canAccessCourse && !hasPartialAccess"
                 class="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-sm"
               >
                 <div class="text-center">
@@ -374,19 +457,33 @@ const overallProgress = computed(() => {
                 </div>
               </div>
               
-              <!-- YouTube video -->
-              <iframe
-                v-if="canAccessCourse && currentVideo.videoUrl && (currentVideo.videoUrl.includes('youtube.com') || currentVideo.videoUrl.includes('youtu.be'))"
-                :src="getYouTubeEmbedUrl(currentVideo.videoUrl)"
-                class="h-full w-full"
-                frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-                @load="isVideoLoading = false"
-              />
-              <!-- Uploaded video file -->
-              <video
-                v-else-if="canAccessCourse"
+              <!-- Check if current video is accessible -->
+              <template v-if="currentVideo">
+                <!-- Find the module for current video -->
+                <template v-if="allVideos.find(v => v.video.id === currentVideo.id)">
+                  <!-- YouTube video -->
+                  <iframe
+                    v-if="canAccessVideo(currentVideo, allVideos.find(v => v.video.id === currentVideo.id)!.module) && currentVideo.videoUrl && getVideoType(currentVideo.videoUrl) === 'youtube'"
+                    :src="getVideoEmbedUrl(currentVideo.videoUrl)"
+                    class="h-full w-full"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                    @load="isVideoLoading = false"
+                  />
+                  <!-- Vimeo video -->
+                  <iframe
+                    v-else-if="canAccessVideo(currentVideo, allVideos.find(v => v.video.id === currentVideo.id)!.module) && currentVideo.videoUrl && getVideoType(currentVideo.videoUrl) === 'vimeo'"
+                    :src="getVideoEmbedUrl(currentVideo.videoUrl)"
+                    class="h-full w-full"
+                    frameborder="0"
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowfullscreen
+                    @load="isVideoLoading = false"
+                  />
+                  <!-- Uploaded video file -->
+                  <video
+                    v-else-if="canAccessVideo(currentVideo, allVideos.find(v => v.video.id === currentVideo.id)!.module)"
                 ref="videoPlayer"
                 :src="getVideoUrl(currentVideo)"
                 controls
@@ -423,9 +520,31 @@ const overallProgress = computed(() => {
                     videoHeight: video.videoHeight,
                   })
                 }"
-              />
+                  />
+                  <!-- Lock overlay for non-accessible videos -->
+                  <div
+                    v-else
+                    class="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                  >
+                    <div class="text-center">
+                      <UIcon name="i-heroicons-lock-closed" class="mx-auto mb-2 h-12 w-12 text-white/80" />
+                      <p class="text-sm font-medium text-white">Cette vidéo nécessite un abonnement premium</p>
+                      <UButton
+                        to="/pricing"
+                        size="sm"
+                        color="primary"
+                        class="mt-3"
+                        icon="i-heroicons-arrow-up-right"
+                      >
+                        Voir les tarifs
+                      </UButton>
+                    </div>
+                  </div>
+                </template>
+              </template>
+              
               <div
-                v-if="isVideoLoading && canAccessCourse"
+                v-if="isVideoLoading && (canAccessCourse || hasPartialAccess)"
                 class="absolute inset-0 flex items-center justify-center bg-black/50"
               >
                 <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-white" />
@@ -487,17 +606,35 @@ const overallProgress = computed(() => {
               <div
                 v-for="module in academyStore.currentCourse.modules"
                 :key="module.id"
-                class="space-y-2"
+                :class="[
+                  'space-y-2',
+                  !canAccessModule(module) && 'opacity-60'
+                ]"
               >
                 <!-- Module header -->
                 <div class="flex items-center justify-between">
-                  <h4 class="font-medium">{{ module.title }}</h4>
+                  <div class="flex items-center gap-2">
+                    <h4 class="font-medium">{{ module.title }}</h4>
+                    <UIcon
+                      v-if="!canAccessModule(module)"
+                      name="i-heroicons-lock-closed"
+                      class="h-4 w-4 text-white/60"
+                    />
+                  </div>
                   <span
                     v-if="academyStore.currentCourse.progress"
                     class="text-xs text-white/60"
                   >
                     {{ getModuleProgress(module) }}%
                   </span>
+                </div>
+                
+                <!-- Message for locked modules -->
+                <div
+                  v-if="!canAccessModule(module)"
+                  class="rounded-lg bg-white/5 px-3 py-2 text-xs text-white/70"
+                >
+                  <p>Ce module nécessite un abonnement premium. <NuxtLink to="/pricing" class="text-primary-400 hover:underline">Upgradez</NuxtLink> pour accéder à tout le contenu.</p>
                 </div>
                 
                 <!-- Module progress bar -->
@@ -522,15 +659,15 @@ const overallProgress = computed(() => {
                         ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
                         : 'hover:bg-white/10 text-white/70',
                       isVideoCompleted(video.id) && 'text-primary-300',
-                      !canAccessCourse && 'opacity-50 cursor-not-allowed',
+                      !canAccessVideo(video, module) && 'opacity-50 cursor-not-allowed',
                     ]"
-                    :disabled="!canAccessCourse"
+                    :disabled="!canAccessVideo(video, module)"
                     @click="selectVideo(video)"
                   >
                     <div class="flex items-center justify-between">
                       <span class="flex items-center gap-2">
                         <UIcon
-                          v-if="!canAccessCourse"
+                          v-if="!canAccessVideo(video, module)"
                           name="i-heroicons-lock-closed"
                           class="h-4 w-4 text-white/60"
                         />

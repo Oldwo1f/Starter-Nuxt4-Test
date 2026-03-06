@@ -8,6 +8,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { UploadModule } from '../upload/upload.module';
 import { ReferralModule } from '../referral/referral.module';
+import { EmailModule } from '../email/email.module';
 import { RefreshToken } from '../entities/refresh-token.entity';
 
 @Module({
@@ -15,6 +16,7 @@ import { RefreshToken } from '../entities/refresh-token.entity';
     UsersModule,
     UploadModule,
     ReferralModule,
+    EmailModule,
     PassportModule,
     TypeOrmModule.forFeature([RefreshToken]),
     JwtModule.register({

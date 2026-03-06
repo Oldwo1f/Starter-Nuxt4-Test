@@ -1,7 +1,6 @@
 <script setup lang="ts">
 definePageMeta({
   layout: 'default',
-  middleware: 'auth',
 })
 
 import { useAcademyStore } from '~/stores/useAcademyStore'
@@ -15,10 +14,6 @@ const router = useRouter()
 
 // Fetch courses on mount
 onMounted(async () => {
-  if (!authStore.isAuthenticated) {
-    router.push('/login')
-    return
-  }
   try {
     await academyStore.fetchCourses()
   } catch (error) {
@@ -43,6 +38,11 @@ const canAccess = (course: Course) => {
   return academyStore.canAccessCourse(course)
 }
 
+// Check if user has partial access (first module only)
+const hasPartialAccess = (course: Course) => {
+  return academyStore.hasPartialAccess(course)
+}
+
 // Get access message for a course
 const getAccessMessage = (course: Course) => {
   return academyStore.getAccessMessage(course)
@@ -50,7 +50,7 @@ const getAccessMessage = (course: Course) => {
 
 // Handle course click
 const handleCourseClick = (course: Course) => {
-  if (canAccess(course)) {
+  if (canAccess(course) || hasPartialAccess(course)) {
     router.push(`/academy/${course.id}`)
   }
 }
@@ -76,7 +76,7 @@ const handleCourseClick = (course: Course) => {
         v-for="course in academyStore.courses"
         :key="course.id"
         class="relative bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-transform hover:scale-105"
-        :class="{ 'cursor-pointer hover:border-primary-500/50': canAccess(course) }"
+        :class="{ 'cursor-pointer hover:border-primary-500/50': canAccess(course) || hasPartialAccess(course) }"
         @click="handleCourseClick(course)"
       >
         <template #header>
@@ -98,6 +98,14 @@ const handleCourseClick = (course: Course) => {
               class="absolute top-2 right-2 rounded-full bg-primary-500/90 px-3 py-1 text-xs font-semibold text-white"
             >
               {{ formatProgress(course.progress) }}%
+            </div>
+            
+            <!-- Partial access badge -->
+            <div
+              v-if="hasPartialAccess(course)"
+              class="absolute top-2 left-2 rounded-full bg-green-500/90 px-3 py-1 text-xs font-semibold text-white"
+            >
+              Premier module gratuit
             </div>
           </div>
         </template>
@@ -165,7 +173,7 @@ const handleCourseClick = (course: Course) => {
             
             <!-- Bouton avec cadenas si le cours est restreint et l'utilisateur n'a pas accès -->
             <UButton
-              v-if="!canAccess(course)"
+              v-if="!canAccess(course) && !hasPartialAccess(course)"
               disabled
               size="sm"
               color="neutral"
@@ -175,6 +183,30 @@ const handleCourseClick = (course: Course) => {
               @click.stop
             >
               {{ getAccessMessage(course) }}
+            </UButton>
+            
+            <!-- Bouton pour accès partiel -->
+            <UButton
+              v-else-if="hasPartialAccess(course)"
+              size="sm"
+              color="primary"
+              variant="outline"
+              icon="i-heroicons-play"
+              @click.stop="handleCourseClick(course)"
+            >
+              Accéder au premier module
+            </UButton>
+            
+            <!-- Bouton pour accès complet -->
+            <UButton
+              v-else-if="canAccess(course)"
+              size="sm"
+              color="primary"
+              variant="solid"
+              icon="i-heroicons-play"
+              @click.stop="handleCourseClick(course)"
+            >
+              Accéder à la formation
             </UButton>
           </div>
         </div>

@@ -43,6 +43,9 @@ services:
       STRIPE_TEOHI_PRICE_ID: ${STRIPE_TEOHI_PRICE_ID}
       STRIPE_UMETE_PRICE_ID: ${STRIPE_UMETE_PRICE_ID}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      BREVO_API_KEY: ${BREVO_API_KEY}
+      BREVO_FROM_EMAIL: ${BREVO_FROM_EMAIL:-noreply@nunaheritage.com}
+      BREVO_FROM_NAME: ${BREVO_FROM_NAME:-Nuna Heritage}
       UPLOAD_DEST: uploads
       # 0 = unlimited at app-level (still limited by infra/timeouts/disk)
       MAX_VIDEO_FILE_SIZE: 0

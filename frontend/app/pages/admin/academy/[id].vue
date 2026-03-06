@@ -398,11 +398,11 @@ const saveVideo = async () => {
       uploadProgress.value = 100
     }
 
-    // Vérifier qu'au moins une source vidéo est fournie (YouTube ou fichier)
+    // Vérifier qu'au moins une source vidéo est fournie (YouTube/Vimeo ou fichier)
     if (!videoForm.value.videoUrl && !videoFileUrl) {
       toast.add({
         title: 'Erreur',
-        description: 'Veuillez fournir une URL YouTube ou sélectionner une vidéo à uploader',
+        description: 'Veuillez fournir une URL YouTube/Vimeo ou sélectionner une vidéo à uploader',
         color: 'error',
       })
       return
@@ -500,7 +500,7 @@ const getVideoUrl = (video: any) => {
     return `${apiBaseUrlHelper}${path}`
   }
   // Nouveau format avec objet video
-  // Priorité à YouTube si présent
+  // Priorité à YouTube/Vimeo si présent
   if (video?.videoUrl) {
     return video.videoUrl
   }
@@ -511,6 +511,14 @@ const getVideoUrl = (video: any) => {
     return `${apiBaseUrlHelper}${path}`
   }
   return ''
+}
+
+// Detect video type (YouTube, Vimeo, or file)
+const getVideoType = (url: string | null | undefined): 'youtube' | 'vimeo' | 'file' => {
+  if (!url) return 'file'
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube'
+  if (url.includes('vimeo.com')) return 'vimeo'
+  return 'file'
 }
 
 // Convert YouTube URL to embed URL
@@ -542,6 +550,28 @@ const getYouTubeEmbedUrl = (url: string) => {
   }
   
   return url
+}
+
+// Convert Vimeo URL to embed URL
+const getVimeoEmbedUrl = (url: string) => {
+  if (!url) return ''
+  
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/)
+  if (vimeoMatch) {
+    return `https://player.vimeo.com/video/${vimeoMatch[1]}`
+  }
+  
+  return ''
+}
+
+// Generic function to get embed URL for YouTube or Vimeo
+const getVideoEmbedUrl = (url: string | null | undefined) => {
+  if (!url) return null
+  
+  const type = getVideoType(url)
+  if (type === 'youtube') return getYouTubeEmbedUrl(url)
+  if (type === 'vimeo') return getVimeoEmbedUrl(url)
+  return null
 }
 
 // Get instructor avatar preview
@@ -926,27 +956,36 @@ const removeThumbnail = () => {
             />
           </UFormGroup>
 
-          <UFormGroup label="URL YouTube (optionnel)">
+          <UFormGroup label="URL vidéo (YouTube ou Vimeo, optionnel)">
             <UInput
               v-model="videoForm.videoUrl"
-              placeholder="https://www.youtube.com/watch?v=..."
+              placeholder="https://www.youtube.com/watch?v=... ou https://vimeo.com/..."
               type="url"
             />
             <p class="mt-1 text-xs text-white/60">
-              Si vous fournissez une URL YouTube, elle sera utilisée en priorité. Sinon, utilisez le fichier vidéo ci-dessous.
+              Si vous fournissez une URL YouTube ou Vimeo, elle sera utilisée en priorité. Sinon, utilisez le fichier vidéo ci-dessous.
             </p>
           </UFormGroup>
 
-          <UFormGroup label="Fichier vidéo (optionnel si URL YouTube fournie)">
+          <UFormGroup label="Fichier vidéo (optionnel si URL vidéo fournie)">
             <div class="space-y-2">
               <div v-if="(videoForm.existingVideoFile || videoForm.videoUrl) && !isUploadingVideo" class="space-y-2">
                 <!-- YouTube video -->
                 <iframe
-                  v-if="videoForm.videoUrl && (videoForm.videoUrl.includes('youtube.com') || videoForm.videoUrl.includes('youtu.be'))"
-                  :src="getYouTubeEmbedUrl(videoForm.videoUrl)"
+                  v-if="videoForm.videoUrl && getVideoType(videoForm.videoUrl) === 'youtube'"
+                  :src="getVideoEmbedUrl(videoForm.videoUrl)"
                   class="h-48 w-full rounded"
                   frameborder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                />
+                <!-- Vimeo video -->
+                <iframe
+                  v-else-if="videoForm.videoUrl && getVideoType(videoForm.videoUrl) === 'vimeo'"
+                  :src="getVideoEmbedUrl(videoForm.videoUrl)"
+                  class="h-48 w-full rounded"
+                  frameborder="0"
+                  allow="autoplay; fullscreen; picture-in-picture"
                   allowfullscreen
                 />
                 <!-- Uploaded video file -->
@@ -1015,8 +1054,11 @@ const removeThumbnail = () => {
                 <p v-if="!videoForm.videoUrl" class="text-xs text-white/60">
                   Si la vidéo ne s'affiche pas, vérifiez que le format est MP4 avec codec H.264
                 </p>
-                <p v-else class="text-xs text-primary-400">
+                <p v-else-if="getVideoType(videoForm.videoUrl) === 'youtube'" class="text-xs text-primary-400">
                   Vidéo YouTube détectée - elle sera utilisée en priorité
+                </p>
+                <p v-else-if="getVideoType(videoForm.videoUrl) === 'vimeo'" class="text-xs text-primary-400">
+                  Vidéo Vimeo détectée - elle sera utilisée en priorité
                 </p>
               </div>
               

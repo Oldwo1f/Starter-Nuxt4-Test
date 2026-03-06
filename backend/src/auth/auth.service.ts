@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { ReferralService } from '../referral/referral.service';
+import { EmailService } from '../email/email.service';
 import { User } from '../entities/user.entity';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import * as crypto from 'crypto';
@@ -15,6 +16,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private referralService: ReferralService,
+    private emailService: EmailService,
     @InjectRepository(RefreshToken)
     private refreshTokenRepository: Repository<RefreshToken>,
   ) {}
@@ -186,12 +188,17 @@ export class AuthService {
       }
     }
 
-    // TODO: Send verification email
-    // For now, we'll just log it (in production, send email)
-    console.log(`Email verification token for ${email}: ${verificationToken}`);
-    console.log(
-      `Verification link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`,
-    );
+    // Envoyer l'email de vérification
+    try {
+      await this.emailService.sendEmailVerification(
+        user.email,
+        user.firstName,
+        verificationToken,
+      );
+    } catch (error) {
+      // Ne pas bloquer l'inscription si l'email échoue, juste logger
+      console.error(`Failed to send verification email to ${email}:`, error);
+    }
 
     return this.login(user);
   }
@@ -213,12 +220,17 @@ export class AuthService {
 
     await this.usersService.setResetToken(email, resetToken, resetTokenExpiry);
 
-    // TODO: Send email with reset link
-    // For now, we'll just log it (in production, send email)
-    console.log(`Password reset token for ${email}: ${resetToken}`);
-    console.log(
-      `Reset link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`,
-    );
+    // Envoyer l'email de réinitialisation de mot de passe
+    try {
+      await this.emailService.sendPasswordReset(
+        user.email,
+        user.firstName,
+        resetToken,
+      );
+    } catch (error) {
+      // Ne pas révéler si l'email existe, juste logger l'erreur
+      console.error(`Failed to send password reset email to ${email}:`, error);
+    }
   }
 
   async validateResetToken(token: string): Promise<User | null> {
@@ -289,12 +301,17 @@ export class AuthService {
       verificationTokenExpiry,
     );
 
-    // TODO: Send verification email
-    // For now, we'll just log it (in production, send email)
-    console.log(`Email verification token for ${email}: ${verificationToken}`);
-    console.log(
-      `Verification link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`,
-    );
+    // Envoyer l'email de vérification
+    try {
+      await this.emailService.sendEmailVerification(
+        user.email,
+        user.firstName,
+        verificationToken,
+      );
+    } catch (error) {
+      // Ne pas révéler si l'email existe, juste logger l'erreur
+      console.error(`Failed to send verification email to ${email}:`, error);
+    }
   }
 
   async verifyEmail(token: string): Promise<void> {

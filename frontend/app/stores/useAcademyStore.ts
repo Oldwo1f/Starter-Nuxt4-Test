@@ -71,10 +71,14 @@ export const useAcademyStore = defineStore('academy', () => {
     isLoading.value = true
     error.value = ''
     try {
+      const headers: Record<string, string> = {}
+      // Only add authorization header if user is authenticated
+      if (authStore.isAuthenticated && authStore.accessToken) {
+        headers.Authorization = `Bearer ${authStore.accessToken}`
+      }
+      
       const response = await $fetch<Course[]>(`${API_BASE_URL}/academy`, {
-        headers: {
-          Authorization: `Bearer ${authStore.accessToken}`,
-        },
+        headers,
       })
       courses.value = response
     } catch (err: any) {
@@ -91,10 +95,14 @@ export const useAcademyStore = defineStore('academy', () => {
     isLoading.value = true
     error.value = ''
     try {
+      const headers: Record<string, string> = {}
+      // Only add authorization header if user is authenticated
+      if (authStore.isAuthenticated && authStore.accessToken) {
+        headers.Authorization = `Bearer ${authStore.accessToken}`
+      }
+      
       const response = await $fetch<Course>(`${API_BASE_URL}/academy/${id}`, {
-        headers: {
-          Authorization: `Bearer ${authStore.accessToken}`,
-        },
+        headers,
       })
       currentCourse.value = response
       return response
@@ -484,6 +492,62 @@ export const useAcademyStore = defineStore('academy', () => {
     }
   }
 
+  // Vérifier si l'utilisateur a accès partiel (premier module seulement)
+  const hasPartialAccess = (course: Course): boolean => {
+    // Si l'utilisateur a accès complet, pas d'accès partiel
+    if (canAccessCourse(course)) {
+      return false
+    }
+
+    // Si le cours est member, permettre l'accès partiel même si l'utilisateur n'est pas connecté ou est user
+    if (course.accessLevel === 'member') {
+      return true
+    }
+
+    // Si le cours est premium/vip, permettre l'accès partiel à tous (même non connectés)
+    if (course.accessLevel === 'premium' || course.accessLevel === 'vip') {
+      // Si l'utilisateur n'est pas connecté, permettre l'accès partiel
+      if (!authStore.isAuthenticated || !authStore.user) {
+        return true
+      }
+      // Si l'utilisateur est connecté mais pas premium/vip/admin
+      const userRole = authStore.user.role?.toLowerCase()
+      if (userRole === 'member' || userRole === 'user') {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  // Vérifier si un module est accessible
+  const canAccessModule = (module: AcademyModule, course: Course): boolean => {
+    // Si l'utilisateur a accès complet au cours
+    if (canAccessCourse(course)) {
+      return true
+    }
+
+    // Si le cours est member/premium/vip et l'utilisateur n'a pas accès complet
+    if (course.accessLevel === 'member' || course.accessLevel === 'premium' || course.accessLevel === 'vip') {
+      // Trouver le premier module (order le plus petit)
+      const sortedModules = course.modules?.sort((a, b) => a.order - b.order) || []
+      const firstModule = sortedModules[0]
+
+      // Permettre l'accès à tous les modules ayant le même order que le premier module
+      if (firstModule && module.order === firstModule.order) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  // Vérifier si une vidéo est accessible
+  const canAccessVideo = (video: any, module: AcademyModule, course: Course): boolean => {
+    // L'accès à la vidéo dépend de l'accès au module parent
+    return canAccessModule(module, course)
+  }
+
   return {
     // States
     courses: readonly(courses),
@@ -498,6 +562,9 @@ export const useAcademyStore = defineStore('academy', () => {
     updateProgress,
     canAccessCourse,
     getAccessMessage,
+    hasPartialAccess,
+    canAccessModule,
+    canAccessVideo,
 
     // Admin methods
     createCourse,
