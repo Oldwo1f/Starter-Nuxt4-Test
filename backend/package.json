@@ -37,7 +37,8 @@
     "migrate:legacy-verifications": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-legacy-verifications.ts",
     "restore:superadmin": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-restore-superadmin.ts",
     "generate:todos-seed": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/generate-todos-seed.ts",
-    "seed:todos-safe": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-seed-safe.ts"
+    "seed:todos-safe": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-seed-safe.ts",
+    "reset:users": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/scripts/reset-users.ts"
   },
   "dependencies": {
     "@getbrevo/brevo": "^4.0.1",
