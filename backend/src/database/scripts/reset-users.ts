@@ -12,6 +12,13 @@ import { BankTransferPayment } from '../../entities/bank-transfer-payment.entity
 import { StripePayment } from '../../entities/stripe-payment.entity';
 import { RefreshToken } from '../../entities/refresh-token.entity';
 import { LegacyPaymentVerification } from '../../entities/legacy-payment-verification.entity';
+import { Location } from '../../entities/location.entity';
+import { Category } from '../../entities/category.entity';
+import { Course } from '../../entities/course.entity';
+import { AcademyModule } from '../../entities/module.entity';
+import { Video } from '../../entities/video.entity';
+import { Goodie } from '../../entities/goodie.entity';
+import { Culture } from '../../entities/culture.entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -24,13 +31,20 @@ const dataSource = new DataSource({
     User,
     Transaction,
     Listing,
+    Location,
+    Category,
     BlogPost,
     Referral,
     CourseProgress,
+    Course,
+    AcademyModule,
+    Video,
     BankTransferPayment,
     StripePayment,
     RefreshToken,
     LegacyPaymentVerification,
+    Goodie,
+    Culture,
   ],
   synchronize: false,
 });
@@ -38,26 +52,30 @@ const dataSource = new DataSource({
 /**
  * Script pour réinitialiser tous les utilisateurs et leurs données associées
  * 
- * Ce script supprime :
- * - Toutes les transactions
- * - Toutes les annonces du marketplace (listings)
- * - Tous les articles de blog
- * - Toutes les progressions de cours (course_progress)
- * - Tous les parrainages (referrals)
- * - Tous les paiements (bank_transfer_payments, stripe_payments, legacy_payment_verifications)
- * - Tous les refresh tokens
- * - Tous les utilisateurs
+ * Ce script :
+ * 1. Crée/met à jour un utilisateur superadmin
+ * 2. Réassigner les goodies et cultures au superadmin (pour éviter les violations de contraintes)
+ * 3. Supprime :
+ *    - Toutes les transactions
+ *    - Toutes les annonces du marketplace (listings)
+ *    - Tous les articles de blog
+ *    - Toutes les progressions de cours (course_progress)
+ *    - Tous les parrainages (referrals)
+ *    - Tous les paiements (bank_transfer_payments, stripe_payments, legacy_payment_verifications)
+ *    - Tous les refresh tokens
+ *    - Tous les utilisateurs (sauf le superadmin)
  * 
- * Puis crée un utilisateur superadmin :
+ * Superadmin créé :
  * - Email: alexismomcilovic@gmail.com
  * - Password: Alexis09
  * - Role: SUPERADMIN
+ * - Solde: 50 Pūpū
  * 
  * ATTENTION: Ce script ne touche PAS aux données suivantes :
  * - Partenaires (partners)
  * - Academy (courses, academy_modules, videos) - seulement les progressions sont supprimées
- * - Goodies
- * - Vidéos culture (cultures)
+ * - Goodies (réassignés au superadmin, pas supprimés)
+ * - Vidéos culture (cultures) (réassignées au superadmin, pas supprimées)
  * - Todos
  */
 async function resetUsers() {
@@ -76,6 +94,8 @@ async function resetUsers() {
     const stripePaymentRepository = dataSource.getRepository(StripePayment);
     const refreshTokenRepository = dataSource.getRepository(RefreshToken);
     const legacyPaymentVerificationRepository = dataSource.getRepository(LegacyPaymentVerification);
+    const goodieRepository = dataSource.getRepository(Goodie);
+    const cultureRepository = dataSource.getRepository(Culture);
     const userRepository = dataSource.getRepository(User);
 
     // Configuration du superadmin
@@ -95,6 +115,8 @@ async function resetUsers() {
     const stripePaymentCount = await stripePaymentRepository.count();
     const legacyPaymentVerificationCount = await legacyPaymentVerificationRepository.count();
     const refreshTokenCount = await refreshTokenRepository.count();
+    const goodieCount = await goodieRepository.count();
+    const cultureCount = await cultureRepository.count();
     const userCount = await userRepository.count();
 
     console.log(`   Transactions: ${transactionCount}`);
@@ -106,83 +128,122 @@ async function resetUsers() {
     console.log(`   Paiements Stripe: ${stripePaymentCount}`);
     console.log(`   Vérifications paiements legacy: ${legacyPaymentVerificationCount}`);
     console.log(`   Refresh tokens: ${refreshTokenCount}`);
+    console.log(`   Goodies: ${goodieCount}`);
+    console.log(`   Vidéos culture: ${cultureCount}`);
     console.log(`   Utilisateurs: ${userCount}\n`);
 
-    console.log('🗑️  Suppression des données...\n');
-
-    // 1. Supprimer les transactions (référence User et Listing)
-    console.log('1️⃣  Suppression des transactions...');
-    await transactionRepository.delete({});
-    console.log(`   ✅ ${transactionCount} transaction(s) supprimée(s)\n`);
-
-    // 2. Supprimer les annonces du marketplace (référence User)
-    console.log('2️⃣  Suppression des annonces du marketplace...');
-    await listingRepository.delete({});
-    console.log(`   ✅ ${listingCount} annonce(s) supprimée(s)\n`);
-
-    // 3. Supprimer les articles de blog (référence User)
-    console.log('3️⃣  Suppression des articles de blog...');
-    await blogPostRepository.delete({});
-    console.log(`   ✅ ${blogPostCount} article(s) supprimé(s)\n`);
-
-    // 4. Supprimer les progressions de cours (référence User, mais on garde les cours/modules/vidéos)
-    console.log('4️⃣  Suppression des progressions de cours...');
-    await courseProgressRepository.delete({});
-    console.log(`   ✅ ${courseProgressCount} progression(s) supprimée(s)\n`);
-
-    // 5. Supprimer les parrainages (référence User)
-    console.log('5️⃣  Suppression des parrainages...');
-    await referralRepository.delete({});
-    console.log(`   ✅ ${referralCount} parrainage(s) supprimé(s)\n`);
-
-    // 6. Supprimer les paiements par virement (référence User)
-    console.log('6️⃣  Suppression des paiements par virement...');
-    await bankTransferPaymentRepository.delete({});
-    console.log(`   ✅ ${bankTransferPaymentCount} paiement(s) supprimé(s)\n`);
-
-    // 7. Supprimer les paiements Stripe (référence User)
-    console.log('7️⃣  Suppression des paiements Stripe...');
-    await stripePaymentRepository.delete({});
-    console.log(`   ✅ ${stripePaymentCount} paiement(s) supprimé(s)\n`);
-
-    // 8. Supprimer les vérifications de paiements legacy (référence User)
-    console.log('8️⃣  Suppression des vérifications de paiements legacy...');
-    await legacyPaymentVerificationRepository.delete({});
-    console.log(`   ✅ ${legacyPaymentVerificationCount} vérification(s) supprimée(s)\n`);
-
-    // 9. Supprimer les refresh tokens (référence User)
-    console.log('9️⃣  Suppression des refresh tokens...');
-    await refreshTokenRepository.delete({});
-    console.log(`   ✅ ${refreshTokenCount} refresh token(s) supprimé(s)\n`);
-
-    // 10. Supprimer tous les utilisateurs
-    console.log('🔟 Suppression de tous les utilisateurs...');
-    await userRepository.delete({});
-    console.log(`   ✅ ${userCount} utilisateur(s) supprimé(s)\n`);
-
-    // 11. Créer le superadmin
-    console.log('1️⃣1️⃣ Création du superadmin...');
+    // ÉTAPE 0: Créer le superadmin en premier
+    console.log('0️⃣  Création du superadmin...');
     const hashedPassword = await bcrypt.hash(SUPERADMIN_PASSWORD, 10);
     
     // Générer un code de parrainage unique
     const referralCode = `SUPER${Date.now().toString(36).toUpperCase()}`;
 
-    const superadmin = userRepository.create({
-      email: SUPERADMIN_EMAIL,
-      password: hashedPassword,
-      role: UserRole.SUPERADMIN,
-      walletBalance: DEFAULT_BALANCE,
-      emailVerified: true,
-      isActive: true,
-      referralCode: referralCode,
-    });
+    // Vérifier si le superadmin existe déjà
+    let superadmin = await userRepository.findOne({ where: { email: SUPERADMIN_EMAIL } });
+    
+    if (superadmin) {
+      // Mettre à jour l'utilisateur existant
+      superadmin.password = hashedPassword;
+      superadmin.role = UserRole.SUPERADMIN;
+      superadmin.walletBalance = DEFAULT_BALANCE;
+      superadmin.emailVerified = true;
+      superadmin.isActive = true;
+      superadmin.referralCode = referralCode;
+      superadmin = await userRepository.save(superadmin);
+      console.log(`   ✅ Superadmin mis à jour:`);
+    } else {
+      // Créer le superadmin
+      superadmin = userRepository.create({
+        email: SUPERADMIN_EMAIL,
+        password: hashedPassword,
+        role: UserRole.SUPERADMIN,
+        walletBalance: DEFAULT_BALANCE,
+        emailVerified: true,
+        isActive: true,
+        referralCode: referralCode,
+      });
+      superadmin = await userRepository.save(superadmin);
+      console.log(`   ✅ Superadmin créé:`);
+    }
+    console.log(`      Email: ${superadmin.email}`);
+    console.log(`      Role: ${superadmin.role}`);
+    console.log(`      Solde: ${superadmin.walletBalance} 🐚`);
+    console.log(`      Code de parrainage: ${superadmin.referralCode}\n`);
 
-    const savedSuperadmin = await userRepository.save(superadmin);
-    console.log(`   ✅ Superadmin créé:`);
-    console.log(`      Email: ${savedSuperadmin.email}`);
-    console.log(`      Role: ${savedSuperadmin.role}`);
-    console.log(`      Solde: ${savedSuperadmin.walletBalance} 🐚`);
-    console.log(`      Code de parrainage: ${savedSuperadmin.referralCode}\n`);
+    // ÉTAPE 0.5: Réassigner les goodies et cultures au superadmin
+    console.log('0️⃣.5️⃣ Réassignation des goodies et cultures au superadmin...');
+    const goodiesUpdated = await goodieRepository
+      .createQueryBuilder()
+      .update(Goodie)
+      .set({ createdById: superadmin.id })
+      .where('createdById IS NOT NULL')
+      .execute();
+    console.log(`   ✅ ${goodiesUpdated.affected || 0} goodie(s) réassigné(s) au superadmin`);
+
+    const culturesUpdated = await cultureRepository
+      .createQueryBuilder()
+      .update(Culture)
+      .set({ createdById: superadmin.id })
+      .where('createdById IS NOT NULL')
+      .execute();
+    console.log(`   ✅ ${culturesUpdated.affected || 0} vidéo(s) culture réassignée(s) au superadmin\n`);
+
+    console.log('🗑️  Suppression des données...\n');
+
+    // 1. Supprimer les transactions (référence User et Listing)
+    console.log('1️⃣  Suppression des transactions...');
+    await transactionRepository.createQueryBuilder().delete().execute();
+    console.log(`   ✅ ${transactionCount} transaction(s) supprimée(s)\n`);
+
+    // 2. Supprimer les annonces du marketplace (référence User)
+    console.log('2️⃣  Suppression des annonces du marketplace...');
+    await listingRepository.createQueryBuilder().delete().execute();
+    console.log(`   ✅ ${listingCount} annonce(s) supprimée(s)\n`);
+
+    // 3. Supprimer les articles de blog (référence User)
+    console.log('3️⃣  Suppression des articles de blog...');
+    await blogPostRepository.createQueryBuilder().delete().execute();
+    console.log(`   ✅ ${blogPostCount} article(s) supprimé(s)\n`);
+
+    // 4. Supprimer les progressions de cours (référence User, mais on garde les cours/modules/vidéos)
+    console.log('4️⃣  Suppression des progressions de cours...');
+    await courseProgressRepository.createQueryBuilder().delete().execute();
+    console.log(`   ✅ ${courseProgressCount} progression(s) supprimée(s)\n`);
+
+    // 5. Supprimer les parrainages (référence User)
+    console.log('5️⃣  Suppression des parrainages...');
+    await referralRepository.createQueryBuilder().delete().execute();
+    console.log(`   ✅ ${referralCount} parrainage(s) supprimé(s)\n`);
+
+    // 6. Supprimer les paiements par virement (référence User)
+    console.log('6️⃣  Suppression des paiements par virement...');
+    await bankTransferPaymentRepository.createQueryBuilder().delete().execute();
+    console.log(`   ✅ ${bankTransferPaymentCount} paiement(s) supprimé(s)\n`);
+
+    // 7. Supprimer les paiements Stripe (référence User)
+    console.log('7️⃣  Suppression des paiements Stripe...');
+    await stripePaymentRepository.createQueryBuilder().delete().execute();
+    console.log(`   ✅ ${stripePaymentCount} paiement(s) supprimé(s)\n`);
+
+    // 8. Supprimer les vérifications de paiements legacy (référence User)
+    console.log('8️⃣  Suppression des vérifications de paiements legacy...');
+    await legacyPaymentVerificationRepository.createQueryBuilder().delete().execute();
+    console.log(`   ✅ ${legacyPaymentVerificationCount} vérification(s) supprimée(s)\n`);
+
+    // 9. Supprimer les refresh tokens (référence User)
+    console.log('9️⃣  Suppression des refresh tokens...');
+    await refreshTokenRepository.createQueryBuilder().delete().execute();
+    console.log(`   ✅ ${refreshTokenCount} refresh token(s) supprimé(s)\n`);
+
+    // 10. Supprimer tous les utilisateurs SAUF le superadmin
+    console.log('🔟 Suppression de tous les utilisateurs (sauf superadmin)...');
+    const deletedUsers = await userRepository
+      .createQueryBuilder()
+      .delete()
+      .where('id != :superadminId', { superadminId: superadmin.id })
+      .execute();
+    console.log(`   ✅ ${deletedUsers.affected || 0} utilisateur(s) supprimé(s)\n`);
 
     console.log('='.repeat(60));
     console.log('\n✅ Réinitialisation terminée avec succès!');
@@ -196,8 +257,10 @@ async function resetUsers() {
     console.log(`   • ${stripePaymentCount} paiement(s) Stripe supprimé(s)`);
     console.log(`   • ${legacyPaymentVerificationCount} vérification(s) paiement legacy supprimée(s)`);
     console.log(`   • ${refreshTokenCount} refresh token(s) supprimé(s)`);
-    console.log(`   • ${userCount} utilisateur(s) supprimé(s)`);
-    console.log(`   • 1 superadmin créé\n`);
+    console.log(`   • ${goodiesUpdated.affected || 0} goodie(s) réassigné(s) au superadmin`);
+    console.log(`   • ${culturesUpdated.affected || 0} vidéo(s) culture réassignée(s) au superadmin`);
+    console.log(`   • ${deletedUsers.affected || 0} utilisateur(s) supprimé(s)`);
+    console.log(`   • 1 superadmin créé/mis à jour\n`);
 
     await dataSource.destroy();
     process.exit(0);
