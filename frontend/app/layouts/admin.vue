@@ -16,6 +16,18 @@ const isStaffOrAdmin = computed(() => {
   return role === 'superadmin' || role === 'admin' || role === 'staff' || role === 'moderator'
 })
 
+// Vérifier si l'utilisateur est modérateur (pas admin/superadmin)
+const isModerator = computed(() => {
+  const role = authStore.user?.role?.toLowerCase()
+  return role === 'moderator'
+})
+
+// Vérifier si l'utilisateur est admin ou superadmin
+const isAdminOrSuperAdmin = computed(() => {
+  const role = authStore.user?.role?.toLowerCase()
+  return role === 'superadmin' || role === 'admin'
+})
+
 // Obtenir le texte pour l'avatar (initiales)
 const getAvatarText = computed(() => {
   if (!authStore.user) return 'U'
@@ -104,58 +116,78 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
   ]
 })
 
-const adminMenuItems = [
+const allAdminMenuItems = [
   {
     label: 'Dashboard',
     icon: 'i-heroicons-squares-2x2',
     to: '/admin/dashboard',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible à tous les staff
   },
   {
     label: 'Gestion des utilisateurs',
     icon: 'i-heroicons-users',
     to: '/admin/users',
+    roles: ['admin', 'superadmin'], // Admin uniquement
   },
   {
     label: 'Vérification',
     icon: 'i-heroicons-shield-check',
     to: '/admin/verification',
+    roles: ['admin', 'superadmin'], // Admin uniquement
   },
   {
     label: 'Gestion du blog',
     icon: 'i-heroicons-document-text',
     to: '/admin/blog',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
     label: 'Gestion des partenaires',
     icon: 'i-heroicons-building-office',
     to: '/admin/partners',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
     label: 'Gestion des goodies',
     icon: 'i-heroicons-gift',
     to: '/admin/goodies',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
     label: 'Gestion des vidéos Culture',
     icon: 'i-heroicons-video-camera',
     to: '/admin/culture',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
     label: 'Gestion des annonces',
     icon: 'i-heroicons-shopping-bag',
     to: '/admin/marketplace',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
     label: 'Gestion de l\'Academy',
     icon: 'i-heroicons-academic-cap',
     to: '/admin/academy',
+    roles: ['admin', 'superadmin'], // Admin uniquement
   },
   {
     label: 'Todo',
     icon: 'i-heroicons-clipboard-document-list',
     to: '/admin/todo',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
 ]
+
+// Filtrer le menu selon le rôle de l'utilisateur
+const adminMenuItems = computed(() => {
+  const userRole = authStore.user?.role?.toLowerCase()
+  if (!userRole) return []
+  
+  return allAdminMenuItems.filter(item => {
+    return item.roles.includes(userRole)
+  })
+})
 
 const isActive = (path: string) => {
   return route.path === path || route.path.startsWith(path + '/')

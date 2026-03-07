@@ -14,8 +14,25 @@ const { getImageUrl } = useApi()
 const router = useRouter()
 const toast = useToast()
 
-// Fetch courses on mount
-onMounted(async () => {
+// Vérifier l'accès - rediriger les modérateurs
+onMounted(() => {
+  const role = authStore.user?.role?.toLowerCase()
+  if (role === 'moderator') {
+    router.push('/admin/dashboard')
+    toast.add({
+      title: 'Accès refusé',
+      description: 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.',
+      color: 'error',
+      icon: 'i-heroicons-shield-exclamation',
+    })
+    return
+  }
+  
+  // Continuer le chargement normal si autorisé
+  loadCourses()
+})
+
+const loadCourses = async () => {
   try {
     await academyStore.fetchCourses()
   } catch (error: any) {
@@ -25,7 +42,7 @@ onMounted(async () => {
       color: 'error',
     })
   }
-})
+}
 
 // Delete course
 const handleDelete = async (courseId: number, courseTitle: string) => {

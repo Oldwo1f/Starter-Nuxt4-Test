@@ -37,7 +37,7 @@ export class Listing {
   price: number; // Prix en Pūpū (entier uniquement)
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  priceUnit: string | null; // Unité de prix (par heure, par jour, le paquet, l'unité, le kilo, etc.)
+  priceUnit: string | null; // Unité de prix (par heure, par jour, la séance, le paquet, l'unité, le kilo, etc.)
 
   @Column({
     type: 'enum',

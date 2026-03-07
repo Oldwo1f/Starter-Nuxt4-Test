@@ -27,6 +27,9 @@ import {
 import { IsString, IsNotEmpty, IsOptional, IsArray } from 'class-validator';
 import { BlogService } from './blog.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { UserRole } from '../entities/user.entity';
 import { BlogPaginationQueryDto } from './dto/pagination-query.dto';
 import { PaginatedBlogPostsResponseDto } from './dto/paginated-response.dto';
 import { UploadService } from '../upload/upload.service';
@@ -123,14 +126,16 @@ export class BlogController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR)
   @UseInterceptors(FilesInterceptor('images', 10)) // Max 10 images
   @ApiBearerAuth('JWT-auth')
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Create a new blog post', description: 'Create a new blog post with images (requires authentication)' })
+  @ApiOperation({ summary: 'Create a new blog post', description: 'Create a new blog post with images (admin/staff only)' })
   @ApiBody({ type: CreateBlogDto })
   @ApiResponse({ status: 201, description: 'Blog post successfully created' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin/Staff only' })
   async create(
     @Body() createBlogDto: CreateBlogDto,
     @Request() req,
@@ -193,15 +198,17 @@ export class BlogController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR)
   @UseInterceptors(FilesInterceptor('images', 10)) // Max 10 images
   @ApiBearerAuth('JWT-auth')
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Update a blog post', description: 'Update an existing blog post with images (requires authentication)' })
+  @ApiOperation({ summary: 'Update a blog post', description: 'Update an existing blog post with images (admin/staff only)' })
   @ApiParam({ name: 'id', description: 'Blog post ID', type: 'number' })
   @ApiBody({ type: UpdateBlogDto })
   @ApiResponse({ status: 200, description: 'Blog post successfully updated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin/Staff only' })
   @ApiResponse({ status: 404, description: 'Blog post not found' })
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -239,12 +246,14 @@ export class BlogController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Delete a blog post', description: 'Delete a blog post by ID (requires authentication)' })
+  @ApiOperation({ summary: 'Delete a blog post', description: 'Delete a blog post by ID (admin/staff only)' })
   @ApiParam({ name: 'id', description: 'Blog post ID', type: 'number' })
   @ApiResponse({ status: 200, description: 'Blog post successfully deleted' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin/Staff only' })
   @ApiResponse({ status: 404, description: 'Blog post not found' })
   remove(@Param('id') id: string) {
     return this.blogService.remove(+id);

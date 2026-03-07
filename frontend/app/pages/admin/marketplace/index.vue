@@ -121,6 +121,7 @@ const servicePriceUnitOptions = [
   { label: 'par heure', value: 'par heure' },
   { label: 'par jour', value: 'par jour' },
   { label: 'demi-journée', value: 'demi-journée' },
+  { label: 'la séance', value: 'la séance' },
 ]
 
 const priceUnitOptions = computed(() => {

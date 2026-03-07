@@ -58,8 +58,6 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-    <ProfileIncompleteBanner />
-    
     <div class="mb-6">
       <h1 class="text-3xl font-bold">Mes annonces</h1>
       <p class="text-white/60">Gérez vos annonces publiées</p>

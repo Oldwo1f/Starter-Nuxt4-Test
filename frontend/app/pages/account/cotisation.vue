@@ -247,8 +247,6 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-6">
-    <ProfileIncompleteBanner />
-    
     <!-- Bouton temporaire pour traiter manuellement un paiement en attente -->
     <UCard
       v-if="hasPendingStripePayment"

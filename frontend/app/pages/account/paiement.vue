@@ -74,8 +74,6 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-6">
-    <ProfileIncompleteBanner />
-    
     <div class="space-y-2">
       <h1 class="text-3xl font-bold">Paiement (virement)</h1>
       <p class="text-white/60">

@@ -7,9 +7,24 @@ definePageMeta({
 import { useAuthStore } from '~/stores/useAuthStore'
 
 const authStore = useAuthStore()
+const router = useRouter()
 const toast = useToast()
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
+
+// Vérifier l'accès - rediriger les modérateurs
+onMounted(() => {
+  const role = authStore.user?.role?.toLowerCase()
+  if (role === 'moderator') {
+    router.push('/admin/dashboard')
+    toast.add({
+      title: 'Accès refusé',
+      description: 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.',
+      color: 'error',
+      icon: 'i-heroicons-shield-exclamation',
+    })
+  }
+})
 
 interface PendingVerification {
   id: number

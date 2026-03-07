@@ -10,9 +10,24 @@ import type { User } from '~/stores/useUserStore'
 
 const userStore = useUserStore()
 const authStore = useAuthStore()
+const router = useRouter()
 const toast = useToast()
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
+
+// Vérifier l'accès - rediriger les modérateurs
+onMounted(() => {
+  const role = authStore.user?.role?.toLowerCase()
+  if (role === 'moderator') {
+    router.push('/admin/dashboard')
+    toast.add({
+      title: 'Accès refusé',
+      description: 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.',
+      color: 'error',
+      icon: 'i-heroicons-shield-exclamation',
+    })
+  }
+})
 
 // État pour les données de parrainage
 const referralData = ref<{
@@ -106,6 +121,13 @@ const handleDeleteUser = async () => {
       icon: 'i-heroicons-exclamation-circle',
     })
   }
+}
+
+// Fonction pour supprimer un utilisateur directement depuis le tableau
+const handleDeleteUserFromTable = (user: User) => {
+  // Sélectionner l'utilisateur et ouvrir directement le modal de confirmation
+  userStore.selectedUser = user
+  userStore.confirmDelete()
 }
 
 // Wrapper pour selectedRole avec gestion des toasts
@@ -493,13 +515,25 @@ onUnmounted(() => {
           </template>
 
           <template #actions-cell="{ row }">
-            <UButton
-              label="Voir"
-              icon="i-heroicons-eye"
-              color="neutral"
-              variant="subtle"
-              @click="userStore.openUserDetails(row.original)"
-            />
+            <div class="flex items-center gap-2">
+              <UButton
+                label="Voir"
+                icon="i-heroicons-eye"
+                color="neutral"
+                variant="subtle"
+                size="xs"
+                @click="userStore.openUserDetails(row.original)"
+              />
+              <UButton
+                v-if="canModifyRoles"
+                icon="i-heroicons-trash"
+                color="error"
+                variant="subtle"
+                size="xs"
+                @click="handleDeleteUserFromTable(row.original)"
+                :title="`Supprimer ${row.original.email}`"
+              />
+            </div>
           </template>
           </UTable>
         </div>
@@ -946,7 +980,12 @@ onUnmounted(() => {
           <UButton
             color="neutral"
             variant="ghost"
-            @click="userStore.isDeleteConfirmOpen = false"
+            @click="() => {
+              userStore.isDeleteConfirmOpen = false
+              if (!userStore.isUserModalOpen) {
+                userStore.selectedUser = null
+              }
+            }"
             :disabled="userStore.isDeleting"
           >
             Annuler

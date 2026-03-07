@@ -38,6 +38,7 @@ const servicePriceUnitOptions = [
   { label: 'par heure', value: 'par heure' },
   { label: 'par jour', value: 'par jour' },
   { label: 'demi-journée', value: 'demi-journée' },
+  { label: 'la séance', value: 'la séance' },
 ]
 
 // Computed property to get the right options based on type
@@ -184,8 +185,6 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto max-w-2xl px-4 py-6 sm:px-6 lg:px-8">
-    <ProfileIncompleteBanner />
-    
     <div v-if="isLoading" class="text-center">
       <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
     </div>

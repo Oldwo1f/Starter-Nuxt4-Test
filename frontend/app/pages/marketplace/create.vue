@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMarketplaceStore } from '~/stores/useMarketplaceStore'
+import { useAuthStore } from '~/stores/useAuthStore'
 
 definePageMeta({
   layout: 'default',
@@ -8,6 +9,7 @@ definePageMeta({
 
 const { apiBaseUrl } = useApi()
 const marketplaceStore = useMarketplaceStore()
+const authStore = useAuthStore()
 const router = useRouter()
 const toast = useToast()
 
@@ -36,6 +38,7 @@ const servicePriceUnitOptions = [
   { label: 'par heure', value: 'par heure' },
   { label: 'par jour', value: 'par jour' },
   { label: 'demi-journée', value: 'demi-journée' },
+  { label: 'la séance', value: 'la séance' },
 ]
 
 // Computed property to get the right options based on type
@@ -71,6 +74,19 @@ const fetchOptions = async () => {
     allCategories.value = Array.isArray(cats) ? cats : [] // Store all categories
     console.log('Locations loaded:', locations.value.length)
     console.log('Categories loaded:', allCategories.value.length)
+    
+    // Auto-select location based on user's commune
+    if (authStore.user?.commune && locations.value.length > 0 && !form.value.locationId) {
+      const userCommune = authStore.user.commune
+      // Find first location matching the user's commune
+      const matchingLocation = locations.value.find((loc: any) => 
+        loc.commune?.toLowerCase() === userCommune.toLowerCase()
+      )
+      if (matchingLocation) {
+        form.value.locationId = matchingLocation.id
+        console.log('Auto-selected location:', matchingLocation.commune, '-', matchingLocation.ile)
+      }
+    }
   } catch (error) {
     console.error('Error fetching options:', error)
     locations.value = []
@@ -239,8 +255,6 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
-    <ProfileIncompleteBanner />
-    
     <div class="mb-6">
       <UButton to="/marketplace" variant="ghost" icon="i-heroicons-arrow-left">
         Retour

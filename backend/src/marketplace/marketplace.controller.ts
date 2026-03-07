@@ -62,7 +62,7 @@ export class CreateListingDto {
   price: number;
 
   @ApiProperty({
-    description: 'Price unit (par heure, par jour, le paquet, l\'unité, le kilo, etc.)',
+    description: 'Price unit (par heure, par jour, la séance, le paquet, l\'unité, le kilo, etc.)',
     example: 'l\'unité',
     required: false,
   })
