@@ -15,6 +15,7 @@ export class EmailService {
       this.logger.warn('BREVO_API_KEY not configured. Email sending will be disabled.');
       this.brevoClient = null;
     } else {
+      this.logger.log(`Brevo API initialized with API key: ${apiKey.substring(0, 8)}...`);
       this.brevoClient = new BrevoClient({
         apiKey: apiKey,
       });
@@ -23,6 +24,8 @@ export class EmailService {
     this.fromEmail = process.env.BREVO_FROM_EMAIL || 'noreply@nunaheritage.com';
     this.fromName = process.env.BREVO_FROM_NAME || 'Nuna Heritage';
     this.frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    
+    this.logger.log(`Email service configured - FROM: ${this.fromEmail} (${this.fromName}), Frontend URL: ${this.frontendUrl}`);
   }
 
   private async sendEmail(
@@ -38,6 +41,8 @@ export class EmailService {
     }
 
     try {
+      this.logger.log(`Attempting to send email to ${to} from ${this.fromEmail} (${this.fromName})`);
+      
       const result = await this.brevoClient.transactionalEmails.sendTransacEmail({
         subject: subject,
         htmlContent: htmlContent,
@@ -48,7 +53,13 @@ export class EmailService {
 
       this.logger.log(`Email sent successfully to ${to}. Message ID: ${result.messageId}`);
     } catch (error: any) {
-      this.logger.error(`Failed to send email to ${to}:`, error);
+      this.logger.error(`Failed to send email to ${to}:`, {
+        message: error.message,
+        statusCode: error.statusCode,
+        body: error.body,
+        response: error.response?.data || error.response,
+        stack: error.stack,
+      });
       throw error;
     }
   }

@@ -270,7 +270,7 @@ export class AuthController {
       properties: {
         message: {
           type: 'string',
-          example: 'If an account with that email exists, a password reset link has been sent.',
+          example: 'Si un compte avec cet email existe, un lien de réinitialisation de mot de passe a été envoyé.',
         },
       },
     },
@@ -278,7 +278,7 @@ export class AuthController {
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     await this.authService.requestPasswordReset(forgotPasswordDto.email);
     return {
-      message: 'If an account with that email exists, a password reset link has been sent.',
+      message: 'Si un compte avec cet email existe, un lien de réinitialisation de mot de passe a été envoyé.',
     };
   }
 
@@ -297,7 +297,7 @@ export class AuthController {
       properties: {
         message: {
           type: 'string',
-          example: 'Password has been successfully reset.',
+          example: 'Le mot de passe a été réinitialisé avec succès.',
         },
       },
     },
@@ -309,7 +309,7 @@ export class AuthController {
       resetPasswordDto.newPassword,
     );
     return {
-      message: 'Password has been successfully reset.',
+      message: 'Le mot de passe a été réinitialisé avec succès.',
     };
   }
 
@@ -330,7 +330,7 @@ export class AuthController {
       properties: {
         message: {
           type: 'string',
-          example: 'Password has been successfully changed.',
+          example: 'Le mot de passe a été modifié avec succès.',
         },
       },
     },
@@ -344,7 +344,7 @@ export class AuthController {
       changePasswordDto.newPassword,
     );
     return {
-      message: 'Password has been successfully changed.',
+      message: 'Le mot de passe a été modifié avec succès.',
     };
   }
 
@@ -375,7 +375,7 @@ export class AuthController {
       properties: {
         message: {
           type: 'string',
-          example: 'Email has been successfully verified.',
+          example: 'L\'email a été vérifié avec succès.',
         },
       },
     },
@@ -384,7 +384,7 @@ export class AuthController {
   async verifyEmail(@Body() body: { token: string }) {
     await this.authService.verifyEmail(body.token);
     return {
-      message: 'Email has been successfully verified.',
+      message: 'L\'email a été vérifié avec succès.',
     };
   }
 
@@ -403,7 +403,7 @@ export class AuthController {
       properties: {
         message: {
           type: 'string',
-          example: 'If an account with that email exists and is not verified, a verification link has been sent.',
+          example: 'Si un compte avec cet email existe et n\'est pas vérifié, un lien de vérification a été envoyé.',
         },
       },
     },
@@ -411,7 +411,7 @@ export class AuthController {
   async resendVerification(@Body() forgotPasswordDto: ForgotPasswordDto) {
     await this.authService.requestEmailVerification(forgotPasswordDto.email);
     return {
-      message: 'If an account with that email exists and is not verified, a verification link has been sent.',
+      message: 'Si un compte avec cet email existe et n\'est pas vérifié, un lien de vérification a été envoyé.',
     };
   }
 
@@ -490,7 +490,7 @@ export class AuthController {
         },
         message: {
           type: 'string',
-          example: 'Avatar uploaded successfully',
+          example: 'Avatar téléchargé avec succès',
         },
       },
     },
@@ -526,7 +526,7 @@ export class AuthController {
 
     return {
       avatarUrl,
-      message: 'Avatar uploaded successfully',
+      message: 'Avatar téléchargé avec succès',
       user: {
         id: updatedUser.id,
         email: updatedUser.email,
@@ -618,7 +618,7 @@ export class AuthController {
       properties: {
         message: {
           type: 'string',
-          example: 'Logged out successfully',
+          example: 'Déconnexion réussie',
         },
       },
     },
@@ -627,7 +627,7 @@ export class AuthController {
   async logout(@CurrentUser() user: any) {
     await this.authService.revokeAllUserRefreshTokens(user.id);
     return {
-      message: 'Logged out successfully',
+      message: 'Déconnexion réussie',
     };
   }
 }
