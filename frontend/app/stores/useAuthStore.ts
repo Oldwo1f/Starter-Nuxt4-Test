@@ -9,6 +9,7 @@ interface User {
   role: string
   emailVerified: boolean
   isActive: boolean
+  isCertified?: boolean
   paidAccessExpiresAt?: string | null
   phoneNumber?: string | null
   commune?: string | null

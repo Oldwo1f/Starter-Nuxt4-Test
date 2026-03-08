@@ -284,6 +284,39 @@ const canModifyRoles = computed(() => {
   return role === 'admin' || role === 'superadmin'
 })
 
+// État pour suivre les mises à jour en cours
+const updatingCertified = ref<number | null>(null)
+
+// Fonction pour toggle rapidement le statut certifié
+const handleToggleCertified = async (user: User) => {
+  if (updatingCertified.value === user.id) return // Éviter les doubles clics
+
+  const newCertifiedStatus = !user.isCertified
+  updatingCertified.value = user.id
+
+  const result = await userStore.updateUserCertified(user.id, newCertifiedStatus)
+
+  if (result.success) {
+    toast.add({
+      title: newCertifiedStatus ? 'Membre certifié' : 'Certification retirée',
+      description: newCertifiedStatus 
+        ? `${user.email} a été certifié`
+        : `${user.email} n'est plus certifié`,
+      color: 'success',
+      icon: 'i-heroicons-check-circle',
+    })
+  } else {
+    toast.add({
+      title: 'Erreur',
+      description: result.error || 'Erreur lors de la mise à jour',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+  }
+
+  updatingCertified.value = null
+}
+
 // Configuration des colonnes pour UTable
 const columns = [
   {
@@ -477,17 +510,12 @@ onUnmounted(() => {
           >
           <template #avatar-cell="{ row }">
             <div class="flex items-center gap-3">
-              <UAvatar
-                v-if="userStore.getAvatarUrl(row.original)"
+              <CertifiedAvatar
                 :src="userStore.getAvatarUrl(row.original)"
-                :alt="userStore.getDisplayName(row.original)"
-                size="sm"
-              />
-              <UAvatar
-                v-else
                 :alt="userStore.getDisplayName(row.original)"
                 :text="userStore.getAvatarText(row.original)"
                 size="sm"
+                :is-certified="row.original.isCertified === true"
               />
               <div class="flex items-center gap-1 text-primary-500 font-semibold">
                 <span>🐚</span>
@@ -505,13 +533,21 @@ onUnmounted(() => {
           </template>
 
           <template #role-cell="{ row }">
-            <UBadge
-              :color="getRoleColor(row.original.role)"
-              variant="soft"
-              class="capitalize"
-            >
-              {{ getRoleLabel(row.original.role) }}
-            </UBadge>
+            <div class="flex items-center gap-2">
+              <UBadge
+                :color="getRoleColor(row.original.role)"
+                variant="soft"
+                class="capitalize"
+              >
+                {{ getRoleLabel(row.original.role) }}
+              </UBadge>
+              <UIcon
+                v-if="row.original.isCertified"
+                name="i-heroicons-star"
+                class="h-4 w-4 text-amber-400"
+                title="Membre certifié"
+              />
+            </div>
           </template>
 
           <template #actions-cell="{ row }">
@@ -523,6 +559,17 @@ onUnmounted(() => {
                 variant="subtle"
                 size="xs"
                 @click="userStore.openUserDetails(row.original)"
+              />
+              <UButton
+                v-if="canModifyRoles"
+                :icon="row.original.isCertified ? 'i-heroicons-star-solid' : 'i-heroicons-star'"
+                :color="row.original.isCertified ? 'amber' : 'neutral'"
+                variant="subtle"
+                size="xs"
+                :loading="updatingCertified === row.original.id"
+                :disabled="updatingCertified === row.original.id"
+                @click="handleToggleCertified(row.original)"
+                :title="row.original.isCertified ? 'Retirer la certification' : 'Certifier ce membre'"
               />
               <UButton
                 v-if="canModifyRoles"
@@ -605,17 +652,12 @@ onUnmounted(() => {
         <div v-if="userStore.selectedUser" class="space-y-6">
           <!-- Avatar et informations principales -->
           <div class="flex items-center gap-4">
-            <UAvatar
-              v-if="userStore.selectedUser.avatarImage"
+            <CertifiedAvatar
               :src="userStore.getAvatarUrl(userStore.selectedUser)"
-              :alt="userStore.getDisplayName(userStore.selectedUser)"
-              size="xl"
-            />
-            <UAvatar
-              v-else
               :alt="userStore.getDisplayName(userStore.selectedUser)"
               :text="userStore.getAvatarText(userStore.selectedUser)"
               size="xl"
+              :is-certified="userStore.selectedUser.isCertified === true"
             />
             <div>
               <h3 class="text-lg font-semibold">{{ userStore.getDisplayName(userStore.selectedUser) }}</h3>
@@ -679,6 +721,15 @@ onUnmounted(() => {
                 />
               </div>
 
+              <div>
+                <label class="block text-sm font-medium text-white/70 mb-2">Badge certifié</label>
+                <UInput
+                  :value="userStore.selectedUser?.isCertified ? 'Oui' : 'Non'"
+                  disabled
+                  icon="i-heroicons-check-badge"
+                />
+              </div>
+
               <div class="sm:col-span-2">
                 <label class="block text-sm font-medium text-white/70 mb-2">Avatar (URL)</label>
                 <UInput
@@ -733,6 +784,17 @@ onUnmounted(() => {
                   />
                   <template #description>
                     Entrez l'URL complète de l'image d'avatar
+                  </template>
+                </UFormGroup>
+
+                <UFormGroup label="Badge certifié" name="isCertified" class="sm:col-span-2">
+                  <UCheckbox
+                    v-model="userStore.profileFormData.isCertified"
+                    label="Attribuer le badge certifié à cet utilisateur"
+                    icon="i-heroicons-check-badge"
+                  />
+                  <template #description>
+                    Le badge certifié apparaîtra à côté de l'avatar dans le marketplace et les annonces
                   </template>
                 </UFormGroup>
               </div>

@@ -327,19 +327,13 @@ const savePassword = async () => {
 
         <div v-if="user" class="space-y-6">
           <div class="flex items-center gap-4">
-            <UAvatar
-              v-if="user.avatarImage"
-              :src="getImageUrl(user.avatarImage)"
-              :alt="getDisplayName"
-              size="xl"
-              class="ring-2 ring-primary-500/20"
-            />
-            <UAvatar
-              v-else
+            <CertifiedAvatar
+              :src="user.avatarImage ? getImageUrl(user.avatarImage) : null"
               :alt="getDisplayName"
               :text="getAvatarText"
               size="xl"
-              class="ring-2 ring-primary-500/20"
+              :is-certified="user.isCertified === true"
+              avatar-class="ring-2 ring-primary-500/20"
             />
             <div>
               <h3 class="text-lg font-semibold">{{ getDisplayName }}</h3>
@@ -386,19 +380,13 @@ const savePassword = async () => {
 
             <UFormGroup label="Avatar" name="avatarImage">
               <div class="flex items-center gap-4">
-                <UAvatar
-                  v-if="user.avatarImage"
-                  :src="getImageUrl(user.avatarImage)"
-                  :alt="getDisplayName"
-                  size="lg"
-                  class="ring-2 ring-primary-500/20"
-                />
-                <UAvatar
-                  v-else
+                <CertifiedAvatar
+                  :src="user.avatarImage ? getImageUrl(user.avatarImage) : null"
                   :alt="getDisplayName"
                   :text="getAvatarText"
                   size="lg"
-                  class="ring-2 ring-primary-500/20"
+                  :is-certified="user.isCertified === true"
+                  avatar-class="ring-2 ring-primary-500/20"
                 />
                 <p class="text-sm text-white/60">
                   {{ user.avatarImage ? 'Avatar personnalisé' : 'Aucun avatar' }}

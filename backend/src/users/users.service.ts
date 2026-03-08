@@ -50,6 +50,7 @@ export class UsersService {
         'role',
         'emailVerified',
         'isActive',
+        'isCertified',
         'lastLogin',
         'walletBalance',
         'createdAt',
@@ -80,6 +81,7 @@ export class UsersService {
       'user.role',
       'user.emailVerified',
       'user.isActive',
+      'user.isCertified',
       'user.lastLogin',
       'user.walletBalance',
       'user.createdAt',
@@ -264,6 +266,7 @@ export class UsersService {
       email?: string;
       phoneNumber?: string;
       commune?: string;
+      isCertified?: boolean;
       contactPreferences?: {
         order: string[];
         accounts: {
@@ -281,6 +284,7 @@ export class UsersService {
     if (updates.avatarImage !== undefined) updateData.avatarImage = updates.avatarImage;
     if (updates.phoneNumber !== undefined) updateData.phoneNumber = updates.phoneNumber;
     if (updates.commune !== undefined) updateData.commune = updates.commune;
+    if (updates.isCertified !== undefined) updateData.isCertified = updates.isCertified;
     if (updates.contactPreferences !== undefined) updateData.contactPreferences = updates.contactPreferences;
     if (updates.tradingPreferences !== undefined) updateData.tradingPreferences = updates.tradingPreferences;
     if (updates.email !== undefined) {

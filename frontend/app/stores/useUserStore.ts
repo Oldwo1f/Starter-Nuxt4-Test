@@ -10,6 +10,7 @@ export interface User {
   role: string
   emailVerified?: boolean
   isActive?: boolean
+  isCertified?: boolean
   lastLogin?: string | null
   walletBalance?: number
   createdAt: string
@@ -35,6 +36,7 @@ export interface ProfileFormData {
   firstName: string
   lastName: string
   avatarImage: string
+  isCertified: boolean
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -62,6 +64,7 @@ export const useUserStore = defineStore('user', () => {
     firstName: '',
     lastName: '',
     avatarImage: '',
+    isCertified: false,
   })
 
   // États pour les filtres
@@ -199,6 +202,7 @@ export const useUserStore = defineStore('user', () => {
         firstName: selectedUser.value.firstName || '',
         lastName: selectedUser.value.lastName || '',
         avatarImage: selectedUser.value.avatarImage || '',
+        isCertified: selectedUser.value.isCertified || false,
       }
       isEditingProfile.value = true
     }
@@ -210,6 +214,7 @@ export const useUserStore = defineStore('user', () => {
         firstName: selectedUser.value.firstName || '',
         lastName: selectedUser.value.lastName || '',
         avatarImage: selectedUser.value.avatarImage || '',
+        isCertified: selectedUser.value.isCertified || false,
       }
     }
     isEditingProfile.value = false
@@ -235,6 +240,7 @@ export const useUserStore = defineStore('user', () => {
           firstName: profileFormData.value.firstName || undefined,
           lastName: profileFormData.value.lastName || undefined,
           avatarImage: profileFormData.value.avatarImage || undefined,
+          isCertified: profileFormData.value.isCertified,
         },
       })
 
@@ -290,6 +296,43 @@ export const useUserStore = defineStore('user', () => {
       }
     } catch (err: any) {
       const errorMessage = err.data?.message || err.message || 'Erreur lors de la mise à jour du rôle'
+      error.value = errorMessage
+      return {
+        success: false,
+        error: errorMessage,
+      }
+    }
+  }
+
+  const updateUserCertified = async (userId: number, isCertified: boolean) => {
+    try {
+      const updatedUser = await $fetch<User>(`${API_BASE_URL}/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${authStore.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: {
+          isCertified,
+        },
+      })
+
+      // Mettre à jour l'utilisateur dans la liste
+      const userIndex = users.value.findIndex((u) => u.id === userId)
+      if (userIndex !== -1 && users.value[userIndex]) {
+        users.value[userIndex] = { ...users.value[userIndex], isCertified: updatedUser.isCertified }
+      }
+      if (selectedUser.value && selectedUser.value.id === userId) {
+        selectedUser.value = { ...selectedUser.value, isCertified: updatedUser.isCertified }
+      }
+
+      return {
+        success: true,
+        message: isCertified ? 'L\'utilisateur a été certifié avec succès.' : 'La certification a été retirée avec succès.',
+        data: updatedUser,
+      }
+    } catch (err: any) {
+      const errorMessage = err.data?.message || err.message || 'Erreur lors de la mise à jour de la certification'
       error.value = errorMessage
       return {
         success: false,
@@ -442,6 +485,7 @@ export const useUserStore = defineStore('user', () => {
     cancelEditingProfile,
     saveProfile,
     updateUserRole,
+    updateUserCertified,
     confirmDelete,
     deleteUser,
     resetFilters,

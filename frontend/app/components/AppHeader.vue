@@ -298,19 +298,13 @@ const mobileMenuItems = computed<DropdownMenuItem[][]>(() => {
             variant="ghost"
             class="p-0 rounded-full"
           >
-            <UAvatar
-              v-if="getAvatarUrl"
+            <CertifiedAvatar
               :src="getAvatarUrl"
-              :alt="authStore.user?.email || 'User'"
-              size="md"
-              class="hover:ring-2 hover:ring-primary-500 transition-all"
-            />
-            <UAvatar
-              v-else
               :alt="authStore.user?.email || 'User'"
               :text="getAvatarText"
               size="md"
-              class="hover:ring-2 hover:ring-primary-500 transition-all"
+              :is-certified="authStore.user?.isCertified === true"
+              avatar-class="hover:ring-2 hover:ring-primary-500 transition-all"
             />
           </UButton>
         </UDropdownMenu>

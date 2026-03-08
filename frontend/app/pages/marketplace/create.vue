@@ -55,6 +55,7 @@ const locations = ref<any[]>([])
 const allCategories = ref<any[]>([]) // Store all categories
 const isLoading = ref(false)
 const isSubmitting = ref(false)
+const isConfirmOpen = ref(false)
 
 // Computed property to filter categories by type
 const categories = computed(() => {
@@ -193,34 +194,53 @@ const removeImage = (index: number) => {
   imagePreviews.value.splice(index, 1)
 }
 
-// Submit form
-const handleSubmit = async () => {
+// Submit form - validation only, opens confirmation modal
+const handleSubmit = () => {
   if (!form.value.title || !form.value.description || !form.value.categoryId || !form.value.locationId) {
-    alert('Veuillez remplir tous les champs obligatoires')
+    toast.add({
+      title: 'Champs manquants',
+      description: 'Veuillez remplir tous les champs obligatoires',
+      color: 'warning',
+    })
     return
   }
 
   // For normal listings, require price and images
   if (!form.value.isSearching) {
     if (!form.value.price) {
-      alert('Veuillez remplir tous les champs obligatoires')
+      toast.add({
+        title: 'Champs manquants',
+        description: 'Veuillez remplir tous les champs obligatoires',
+        color: 'warning',
+      })
       return
     }
     if (images.value.length === 0) {
-      alert('Veuillez ajouter au moins une image')
+      toast.add({
+        title: 'Image requise',
+        description: 'Veuillez ajouter au moins une image',
+        color: 'warning',
+      })
       return
     }
   }
 
-  if (!confirm('Publier cette annonce ?')) {
-    return
-  }
+  // Open confirmation modal
+  isConfirmOpen.value = true
+}
 
+// Confirm and submit
+const confirmAndSubmit = async () => {
+  isConfirmOpen.value = false
   isSubmitting.value = true
   try {
     // Ensure categoryId and locationId are defined (already checked above)
     if (!form.value.categoryId || !form.value.locationId) {
-      alert('Veuillez remplir tous les champs obligatoires')
+      toast.add({
+        title: 'Erreur',
+        description: 'Veuillez remplir tous les champs obligatoires',
+        color: 'error',
+      })
       return
     }
     
@@ -235,12 +255,28 @@ const handleSubmit = async () => {
     })
 
     if (result.success) {
+      toast.add({
+        title: 'Annonce publiée',
+        description: 'Votre annonce a été publiée avec succès',
+        color: 'success',
+        icon: 'i-heroicons-check-circle',
+      })
       router.push(`/marketplace/${result.data?.id}`)
     } else {
-      alert(result.error || 'Erreur lors de la création')
+      toast.add({
+        title: 'Erreur',
+        description: result.error || 'Erreur lors de la création',
+        color: 'error',
+        icon: 'i-heroicons-exclamation-circle',
+      })
     }
   } catch (error: any) {
-    alert(error.message || 'Erreur lors de la création')
+    toast.add({
+      title: 'Erreur',
+      description: error.message || 'Erreur lors de la création',
+      color: 'error',
+      icon: 'i-heroicons-exclamation-circle',
+    })
   } finally {
     isSubmitting.value = false
   }
@@ -499,5 +535,56 @@ onMounted(() => {
         </div>
       </form>
     </UCard>
+
+    <!-- Modal de confirmation de publication -->
+    <UModal v-model:open="isConfirmOpen">
+      <template #header>
+        <div class="flex items-center gap-2">
+          <UIcon
+            name="i-heroicons-check-circle"
+            class="w-5 h-5 text-primary-400"
+          />
+          <span class="font-medium">Confirmer la publication</span>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="p-6 space-y-4">
+          <UAlert
+            color="primary"
+            variant="soft"
+            icon="i-heroicons-information-circle"
+            title="Publication de l'annonce"
+            description="Votre annonce sera visible par tous les membres de la communauté après publication."
+          />
+          <p class="text-white/90">
+            Êtes-vous sûr de vouloir publier l'annonce
+            <strong class="text-white">"{{ form.title || 'sans titre' }}"</strong> ?
+          </p>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="isConfirmOpen = false"
+            :disabled="isSubmitting"
+          >
+            Annuler
+          </UButton>
+          <UButton
+            color="primary"
+            @click="confirmAndSubmit"
+            :loading="isSubmitting"
+            :disabled="isSubmitting"
+            icon="i-heroicons-check-circle"
+          >
+            Publier
+          </UButton>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

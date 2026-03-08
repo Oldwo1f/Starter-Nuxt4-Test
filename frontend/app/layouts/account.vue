@@ -389,17 +389,12 @@ const isActive = (path: string) => {
                   class="p-0 rounded-lg"
                 >
                   <div class="flex items-center gap-3 px-3 py-2">
-                    <UAvatar
-                      v-if="getAvatarUrl"
+                    <CertifiedAvatar
                       :src="getAvatarUrl"
-                      :alt="authStore.user?.email || 'User'"
-                      size="sm"
-                    />
-                    <UAvatar
-                      v-else
                       :alt="authStore.user?.email || 'User'"
                       :text="getAvatarText"
                       size="sm"
+                      :is-certified="authStore.user?.isCertified === true"
                     />
                   </div>
                 </UButton>

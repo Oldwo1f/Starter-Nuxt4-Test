@@ -437,16 +437,12 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
               <div class="flex-[1] flex flex-col justify-between items-end">
                 <!-- Seller info at top -->
                 <div class="flex items-center gap-2">
-                  <UAvatar
-                    v-if="getSellerAvatar(listing)"
+                  <CertifiedAvatar
                     :src="getSellerAvatar(listing)"
                     :alt="getSellerName(listing)"
+                    :text="getSellerName(listing)?.charAt(0).toUpperCase()"
                     size="sm"
-                  />
-                  <UAvatar
-                    v-else
-                    :alt="getSellerName(listing)"
-                    size="sm"
+                    :is-certified="listing.seller?.isCertified === true"
                   />
                   <span class="text-sm text-white/80">{{ getSellerName(listing) }}</span>
                 </div>
@@ -505,16 +501,12 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
             <div class="flex items-center justify-between gap-4">
               <!-- Seller info -->
               <div class="flex items-center gap-2">
-                <UAvatar
-                  v-if="getSellerAvatar(listing)"
+                <CertifiedAvatar
                   :src="getSellerAvatar(listing)"
                   :alt="getSellerName(listing)"
+                  :text="getSellerName(listing)?.charAt(0).toUpperCase()"
                   size="sm"
-                />
-                <UAvatar
-                  v-else
-                  :alt="getSellerName(listing)"
-                  size="sm"
+                  :is-certified="listing.seller?.isCertified === true"
                 />
                 <span class="text-sm text-white/80">{{ getSellerName(listing) }}</span>
               </div>

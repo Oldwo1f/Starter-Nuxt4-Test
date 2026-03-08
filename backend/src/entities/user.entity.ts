@@ -61,6 +61,9 @@ export class User {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  isCertified: boolean;
+
   @Column({ type: 'timestamp', nullable: true })
   lastLogin: Date | null;
 

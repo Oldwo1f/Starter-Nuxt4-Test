@@ -37,6 +37,29 @@ const fetchListing = async () => {
   }
 }
 
+// Get seller avatar URL
+const getSellerAvatar = (seller: any) => {
+  if (seller?.avatarImage) {
+    const avatarUrl = seller.avatarImage
+    if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+      return avatarUrl
+    }
+    return `${apiBaseUrl}${avatarUrl}`
+  }
+  return null
+}
+
+// Get seller name for avatar text
+const getSellerAvatarText = (seller: any) => {
+  if (seller?.firstName) {
+    return seller.firstName.charAt(0).toUpperCase()
+  }
+  if (seller?.lastName) {
+    return seller.lastName.charAt(0).toUpperCase()
+  }
+  return seller?.email?.charAt(0).toUpperCase() || 'U'
+}
+
 // Contact seller handler - Open contact modal
 const handleContactSeller = () => {
   isContactModalOpen.value = true
@@ -333,23 +356,35 @@ onMounted(() => {
             </template>
             <div class="space-y-4">
               <div class="flex items-center gap-4">
-                <UAvatar
-                  v-if="listing.seller?.avatarImage"
-                  :src="`${apiBaseUrl}${listing.seller.avatarImage}`"
-                  :alt="listing.seller.email"
+                <CertifiedAvatar
+                  :src="getSellerAvatar(listing.seller)"
+                  :alt="listing.seller?.firstName || listing.seller?.lastName || listing.seller?.email"
+                  :text="getSellerAvatarText(listing.seller)"
                   size="lg"
-                />
-                <UAvatar
-                  v-else
-                  :alt="listing.seller?.email"
-                  :text="listing.seller?.email?.charAt(0).toUpperCase()"
-                  size="lg"
+                  :is-certified="listing.seller?.isCertified === true"
                 />
                 <div>
-                  <div class="font-semibold">
-                    {{ listing.seller?.firstName || listing.seller?.lastName || listing.seller?.email }}
+                  <div class="flex items-center gap-2">
+                    <span class="font-semibold">
+                      {{ listing.seller?.firstName || listing.seller?.lastName || listing.seller?.email }}
+                    </span>
+                    <UBadge
+                      v-if="listing.seller?.isCertified"
+                      color="amber"
+                      variant="soft"
+                      size="sm"
+                      class="flex items-center gap-1"
+                    >
+                      <UIcon name="i-heroicons-shield-check" class="h-3 w-3" />
+                      Certifié
+                    </UBadge>
                   </div>
-                  <div class="text-sm text-white/60">{{ listing.seller?.email }}</div>
+                  <div v-if="listing.seller?.lastName" class="text-sm text-white/60">
+                    {{ listing.seller.lastName }}
+                  </div>
+                  <div v-else-if="listing.seller?.firstName" class="text-sm text-white/60">
+                    {{ listing.seller.firstName }}
+                  </div>
                 </div>
               </div>
               

@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Delete, Param, UseGuards, ParseIntPipe, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody, ApiProperty, ApiQuery } from '@nestjs/swagger';
-import { IsEnum, IsString, IsOptional } from 'class-validator';
+import { IsEnum, IsString, IsOptional, IsBoolean } from 'class-validator';
 import { UsersService } from './users.service';
 import { ReferralService } from '../referral/referral.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -47,6 +47,15 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   avatarImage?: string;
+
+  @ApiProperty({
+    description: 'Certified badge status',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isCertified?: boolean;
 }
 
 @ApiTags('users')
@@ -117,7 +126,7 @@ export class UsersController {
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
-  @ApiOperation({ summary: 'Update user profile', description: 'Update user profile information (firstName, lastName, avatarImage) (Admin only)' })
+  @ApiOperation({ summary: 'Update user profile', description: 'Update user profile information (firstName, lastName, avatarImage, isCertified) (Admin only)' })
   @ApiParam({ name: 'id', type: 'number', description: 'User ID' })
   @ApiBody({ type: UpdateUserDto })
   @ApiResponse({ status: 200, description: 'User profile updated successfully' })
@@ -127,6 +136,7 @@ export class UsersController {
       firstName: updateUserDto.firstName,
       lastName: updateUserDto.lastName,
       avatarImage: updateUserDto.avatarImage,
+      isCertified: updateUserDto.isCertified,
     });
   }
 
