@@ -37,6 +37,9 @@ COPY --from=builder /app/src ./src
 COPY --from=builder /app/tsconfig*.json ./
 COPY --from=builder /app/nest-cli.json ./
 
+# Copy migrations directory for migration scripts
+COPY migrations ./migrations
+
 # Create uploads directory
 RUN mkdir -p uploads && chmod 777 uploads
 
