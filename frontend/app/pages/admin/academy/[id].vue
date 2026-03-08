@@ -95,7 +95,7 @@ onMounted(async () => {
       toast.add({
         title: 'Erreur',
         description: error.message || 'Erreur lors du chargement du cours',
-        color: 'error',
+        color: 'red',
       })
     }
   }
@@ -107,7 +107,7 @@ const saveCourse = async () => {
     toast.add({
       title: 'Erreur',
       description: 'Le titre est requis',
-      color: 'error',
+      color: 'red',
     })
     return
   }
@@ -223,7 +223,7 @@ const saveCourse = async () => {
     toast.add({
       title: 'Erreur',
       description: error.message || 'Erreur lors de la sauvegarde',
-      color: 'error',
+      color: 'red',
     })
   } finally {
     isSaving.value = false
@@ -258,7 +258,7 @@ const saveModule = async () => {
     toast.add({
       title: 'Erreur',
       description: 'Le titre est requis',
-      color: 'error',
+      color: 'red',
     })
     return
   }
@@ -267,7 +267,7 @@ const saveModule = async () => {
     toast.add({
       title: 'Erreur',
       description: 'Veuillez d\'abord sauvegarder le cours',
-      color: 'error',
+      color: 'red',
     })
     return
   }
@@ -297,7 +297,7 @@ const saveModule = async () => {
     toast.add({
       title: 'Erreur',
       description: error.message || 'Erreur lors de la sauvegarde',
-      color: 'error',
+      color: 'red',
     })
   }
 }
@@ -320,7 +320,7 @@ const deleteModule = async (moduleId: number) => {
     toast.add({
       title: 'Erreur',
       description: error.message || 'Erreur lors de la suppression',
-      color: 'error',
+      color: 'red',
     })
   }
 }
@@ -365,7 +365,7 @@ const saveVideo = async () => {
     toast.add({
       title: 'Erreur',
       description: 'Le titre est requis',
-      color: 'error',
+      color: 'red',
     })
     return
   }
@@ -374,7 +374,7 @@ const saveVideo = async () => {
     toast.add({
       title: 'Erreur',
       description: 'Module non sélectionné',
-      color: 'error',
+      color: 'red',
     })
     return
   }
@@ -403,7 +403,7 @@ const saveVideo = async () => {
       toast.add({
         title: 'Erreur',
         description: 'Veuillez fournir une URL YouTube/Vimeo ou sélectionner une vidéo à uploader',
-        color: 'error',
+        color: 'red',
       })
       return
     }
@@ -413,7 +413,7 @@ const saveVideo = async () => {
         toast.add({
           title: 'Erreur',
           description: 'Vidéo non sélectionnée',
-          color: 'error',
+          color: 'red',
         })
         return
       }
@@ -461,7 +461,7 @@ const saveVideo = async () => {
     toast.add({
       title: 'Erreur',
       description: error.message || 'Erreur lors de la sauvegarde',
-      color: 'error',
+      color: 'red',
     })
   }
 }
@@ -484,7 +484,7 @@ const deleteVideo = async (videoId: number) => {
     toast.add({
       title: 'Erreur',
       description: error.message || 'Erreur lors de la suppression',
-      color: 'error',
+      color: 'red',
     })
   }
 }

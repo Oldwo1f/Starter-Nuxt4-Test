@@ -305,7 +305,7 @@ const handleSubmit = async () => {
       toast.add({
         title: 'Transfert réussi',
         description: `${form.value.amount} Pūpū ont été transférés à ${getUserDisplayName(selectedUser.value)}`,
-        color: 'green',
+        color: 'success',
       })
       // Reset form
       form.value = {

@@ -191,7 +191,7 @@ const handleFetchListings = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error || 'Erreur lors du chargement des annonces',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -203,7 +203,7 @@ const handleSaveListing = async () => {
     toast.add({
       title: 'Erreur',
       description: 'Le titre est requis',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
     return
@@ -213,7 +213,7 @@ const handleSaveListing = async () => {
     toast.add({
       title: 'Erreur',
       description: 'La description est requise',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
     return
@@ -223,7 +223,7 @@ const handleSaveListing = async () => {
     toast.add({
       title: 'Erreur',
       description: 'La catégorie est requise',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
     return
@@ -233,7 +233,7 @@ const handleSaveListing = async () => {
     toast.add({
       title: 'Erreur',
       description: 'La localisation est requise',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
     return
@@ -270,7 +270,7 @@ const handleSaveListing = async () => {
       toast.add({
         title: 'Erreur',
         description: result.error || 'Erreur lors de la mise à jour de l\'annonce',
-        color: 'error',
+        color: 'red',
         icon: 'i-heroicons-exclamation-circle',
       })
     }
@@ -300,7 +300,7 @@ const handleSaveListing = async () => {
       toast.add({
         title: 'Erreur',
         description: result.error || 'Erreur lors de la création de l\'annonce',
-        color: 'error',
+        color: 'red',
         icon: 'i-heroicons-exclamation-circle',
       })
     }
@@ -328,7 +328,7 @@ const handleDeleteListing = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error || 'Erreur lors de la suppression de l\'annonce',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -448,7 +448,7 @@ const handleImageSelect = (event: Event) => {
       toast.add({
         title: 'Erreur',
         description: 'Vous ne pouvez pas ajouter plus de 10 images',
-        color: 'error',
+        color: 'red',
         icon: 'i-heroicons-exclamation-circle',
       })
       return

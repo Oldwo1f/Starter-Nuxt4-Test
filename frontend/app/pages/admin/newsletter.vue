@@ -26,7 +26,7 @@ const generateNewsletter = async () => {
     toast.add({
       title: 'Succès',
       description: 'Newsletter générée avec succès',
-      color: 'green',
+      color: 'success',
     })
   } catch (err: any) {
     toast.add({
@@ -46,7 +46,7 @@ const copyHTML = async () => {
     toast.add({
       title: 'Succès',
       description: 'HTML copié dans le presse-papiers',
-      color: 'green',
+      color: 'success',
     })
   } catch (err) {
     toast.add({
@@ -72,7 +72,7 @@ const downloadHTML = () => {
   toast.add({
     title: 'Succès',
     description: 'Fichier HTML téléchargé',
-    color: 'green',
+    color: 'success',
   })
 }
 </script>

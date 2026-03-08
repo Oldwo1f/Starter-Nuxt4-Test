@@ -90,7 +90,7 @@ const handleDelete = (id: number) => {
         toast.add({
           title: 'Annonce supprimée',
           description: 'Votre annonce a été supprimée avec succès.',
-          color: 'green',
+          color: 'success',
         })
         await fetchMyListings()
       } else {
@@ -136,7 +136,7 @@ onMounted(() => {
         },
         {
           label: 'Confirmer',
-          color: 'error',
+          color: 'red',
           onClick: confirmAlert.onConfirm
         }
       ]"

@@ -140,7 +140,7 @@ const handleDeleteImage = async (imageUrl: string) => {
       toast.add({
         title: 'Image supprimée',
         description: 'L\'image a été supprimée avec succès',
-        color: 'green',
+        color: 'success',
       })
     } else {
       toast.add({
@@ -181,7 +181,7 @@ const handleImageCropped = async (file: File) => {
       toast.add({
         title: 'Image ajoutée',
         description: 'L\'image a été ajoutée avec succès',
-        color: 'green',
+        color: 'success',
       })
     } else {
       toast.add({
@@ -228,7 +228,7 @@ const handleSubmit = async () => {
       toast.add({
         title: 'Annonce mise à jour',
         description: 'Votre annonce a été mise à jour avec succès.',
-        color: 'green',
+        color: 'success',
       })
       router.push(`/account/listings`)
     } else {

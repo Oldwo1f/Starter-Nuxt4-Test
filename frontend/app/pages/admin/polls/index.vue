@@ -143,14 +143,14 @@ const handleSave = async () => {
       toast.add({
         title: 'Succès',
         description: 'Sondage mis à jour avec succès',
-        color: 'green',
+        color: 'success',
       })
     } else {
       await pollStore.createPoll()
       toast.add({
         title: 'Succès',
         description: 'Sondage créé avec succès',
-        color: 'green',
+        color: 'success',
       })
     }
   } catch (err: any) {
@@ -171,7 +171,7 @@ const handleDelete = async () => {
     toast.add({
       title: 'Succès',
       description: 'Sondage supprimé avec succès',
-      color: 'green',
+      color: 'success',
     })
   } catch (err: any) {
     toast.add({
@@ -291,7 +291,7 @@ const handleDeleteResponse = async () => {
     toast.add({
       title: 'Succès',
       description: 'Vote supprimé avec succès',
-      color: 'green',
+      color: 'success',
     })
   } catch (err: any) {
     toast.add({

@@ -20,7 +20,7 @@ onMounted(() => {
     toast.add({
       title: 'Accès refusé',
       description: 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-shield-exclamation',
     })
   }
@@ -135,7 +135,7 @@ const confirmVerification = async (paymentId: number) => {
     toast.add({
       title: 'Vérification confirmée',
       description: 'Le paiement a été confirmé et les Pūpū d\'inscription ont été attribués.',
-      color: 'green',
+      color: 'success',
     })
     await fetchPendingVerifications()
   } catch (err: any) {
@@ -215,7 +215,7 @@ const confirmLegacyVerification = async (verificationId: number) => {
     toast.add({
       title: 'Vérification confirmée',
       description: 'La vérification a été confirmée et les Pūpū d\'inscription ont été attribués.',
-      color: 'green',
+      color: 'success',
     })
     delete upgradeToPremium.value[verificationId]
     delete customExpirationDay.value[verificationId]

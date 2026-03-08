@@ -103,7 +103,7 @@ const handleFetchPosts = async () => {
     toast.add({
       title: 'Erreur',
       description: blogStore.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -123,7 +123,7 @@ const handleSavePost = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -143,7 +143,7 @@ const handleDeletePost = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }

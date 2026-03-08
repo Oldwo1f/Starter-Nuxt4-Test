@@ -90,7 +90,7 @@ const handleFetchGoodies = async () => {
     toast.add({
       title: 'Erreur',
       description: goodieStore.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -110,7 +110,7 @@ const handleSaveGoodie = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -130,7 +130,7 @@ const handleDeleteGoodie = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }

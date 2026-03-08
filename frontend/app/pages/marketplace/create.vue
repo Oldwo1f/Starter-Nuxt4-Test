@@ -239,7 +239,7 @@ const confirmAndSubmit = async () => {
       toast.add({
         title: 'Erreur',
         description: 'Veuillez remplir tous les champs obligatoires',
-        color: 'error',
+        color: 'red',
       })
       return
     }
@@ -266,7 +266,7 @@ const confirmAndSubmit = async () => {
       toast.add({
         title: 'Erreur',
         description: result.error || 'Erreur lors de la création',
-        color: 'error',
+        color: 'red',
         icon: 'i-heroicons-exclamation-circle',
       })
     }
@@ -274,7 +274,7 @@ const confirmAndSubmit = async () => {
     toast.add({
       title: 'Erreur',
       description: error.message || 'Erreur lors de la création',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   } finally {

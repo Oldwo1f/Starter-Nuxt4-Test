@@ -129,7 +129,7 @@ const uploadCroppedImage = async () => {
       toast.add({
         title: 'Avatar mis à jour',
         description: 'Votre avatar a été mis à jour avec succès.',
-        color: 'green',
+        color: 'success',
       })
 
       emit('uploaded', response.avatarUrl)

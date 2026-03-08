@@ -231,7 +231,7 @@ const saveProfile = async () => {
       toast.add({
         title: 'Profil mis à jour',
         description: 'Vos informations ont été mises à jour avec succès.',
-        color: 'green',
+        color: 'success',
       })
       isEditing.value = false
     } else {
@@ -380,7 +380,7 @@ const saveTradingPreferences = async () => {
       toast.add({
         title: 'Préférences mises à jour',
         description: 'Vos préférences de troc ont été mises à jour avec succès.',
-        color: 'green',
+        color: 'success',
       })
       isEditingTradingPreferences.value = false
       tradingPreferencesBackup.value = [...tradingPreferences.value]
@@ -469,7 +469,7 @@ const savePassword = async () => {
       toast.add({
         title: 'Mot de passe modifié',
         description: 'Votre mot de passe a été modifié avec succès.',
-        color: 'green',
+        color: 'success',
       })
       cancelChangingPassword()
     } else {
@@ -616,7 +616,7 @@ const saveContactPreferences = async () => {
       toast.add({
         title: 'Préférences mises à jour',
         description: 'Vos préférences de contact ont été mises à jour avec succès.',
-        color: 'green',
+        color: 'success',
       })
       isEditingContactPreferences.value = false
       // Update backup with new values

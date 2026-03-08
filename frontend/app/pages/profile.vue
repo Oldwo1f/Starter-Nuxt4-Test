@@ -114,7 +114,7 @@ const saveProfile = async () => {
       toast.add({
         title: 'Profil mis à jour',
         description: 'Vos informations ont été mises à jour avec succès.',
-        color: 'green',
+        color: 'success',
       })
       isEditing.value = false
     } else {
@@ -232,7 +232,7 @@ const savePassword = async () => {
       toast.add({
         title: 'Mot de passe modifié',
         description: 'Votre mot de passe a été modifié avec succès.',
-        color: 'green',
+        color: 'success',
       })
       cancelChangingPassword()
     } else {

@@ -23,7 +23,7 @@ onMounted(() => {
     toast.add({
       title: 'Accès refusé',
       description: 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-shield-exclamation',
     })
   }
@@ -57,7 +57,7 @@ const handleFetchUsers = async () => {
     toast.add({
       title: 'Erreur',
       description: userStore.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -77,7 +77,7 @@ const handleSaveProfile = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -97,7 +97,7 @@ const handleUpdateUserRole = async (userId: number, newRole: string) => {
     toast.add({
       title: 'Erreur',
       description: result.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -117,7 +117,7 @@ const handleDeleteUser = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -218,7 +218,7 @@ const handleCreditUser = async () => {
     toast.add({
       title: 'Erreur',
       description: 'Le montant doit être supérieur à 0',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
     return
@@ -228,7 +228,7 @@ const handleCreditUser = async () => {
     toast.add({
       title: 'Erreur',
       description: 'La description est requise',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
     return
@@ -270,7 +270,7 @@ const handleCreditUser = async () => {
     toast.add({
       title: 'Erreur',
       description: error.data?.message || error.message || 'Erreur lors du crédit',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   } finally {
@@ -309,7 +309,7 @@ const handleToggleCertified = async (user: User) => {
     toast.add({
       title: 'Erreur',
       description: result.error || 'Erreur lors de la mise à jour',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }

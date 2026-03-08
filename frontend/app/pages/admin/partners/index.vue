@@ -78,7 +78,7 @@ const handleFetchPartners = async () => {
     toast.add({
       title: 'Erreur',
       description: partnerStore.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -98,7 +98,7 @@ const handleSavePartner = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -118,7 +118,7 @@ const handleDeletePartner = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -163,7 +163,7 @@ const handleBannerHorizontalChange = async (event: Event) => {
     toast.add({
       title: 'Erreur de validation',
       description: error.message,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
     target.value = ''
@@ -184,7 +184,7 @@ const handleBannerVerticalChange = async (event: Event) => {
     toast.add({
       title: 'Erreur de validation',
       description: error.message,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
     target.value = ''

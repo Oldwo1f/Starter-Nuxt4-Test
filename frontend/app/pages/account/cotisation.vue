@@ -142,7 +142,7 @@ const handleBankTransfer = async () => {
   toast.add({
     title: 'Référence générée',
     description: 'Copiez la référence et utilisez-la comme libellé de votre virement.',
-    color: 'green',
+    color: 'success',
   })
 }
 
@@ -196,7 +196,7 @@ const handleManualProcessPayment = async () => {
     toast.add({
       title: 'Paiement traité',
       description: 'Le paiement a été traité avec succès. Vos droits sont maintenant actifs.',
-      color: 'green',
+      color: 'success',
     })
   } else {
     toast.add({
@@ -226,7 +226,7 @@ onMounted(async () => {
     toast.add({
       title: 'Paiement réussi',
       description: 'Votre cotisation a été confirmée. Vos droits sont maintenant actifs.',
-      color: 'green',
+      color: 'success',
     })
     // Rafraîchir les données
     await authStore.fetchProfile()
@@ -723,7 +723,7 @@ onMounted(async () => {
                           @click="async () => {
                             try {
                               await navigator.clipboard.writeText(billingStore.payment!.referenceId)
-                              toast.add({ title: 'Copié', description: 'Référence copiée', color: 'green' })
+                              toast.add({ title: 'Copié', description: 'Référence copiée', color: 'success' })
                             } catch {
                               toast.add({ title: 'Erreur', description: 'Copie impossible', color: 'red' })
                             }

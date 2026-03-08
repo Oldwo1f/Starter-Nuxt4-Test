@@ -102,7 +102,7 @@ const handleFetchCultures = async () => {
     toast.add({
       title: 'Erreur',
       description: cultureStore.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -122,7 +122,7 @@ const handleSaveCulture = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }
@@ -142,7 +142,7 @@ const handleDeleteCulture = async () => {
     toast.add({
       title: 'Erreur',
       description: result.error,
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
   }

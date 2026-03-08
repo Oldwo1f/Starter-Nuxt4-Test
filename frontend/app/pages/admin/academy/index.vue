@@ -22,7 +22,7 @@ onMounted(() => {
     toast.add({
       title: 'Accès refusé',
       description: 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.',
-      color: 'error',
+      color: 'red',
       icon: 'i-heroicons-shield-exclamation',
     })
     return
@@ -39,7 +39,7 @@ const loadCourses = async () => {
     toast.add({
       title: 'Erreur',
       description: error.message || 'Erreur lors du chargement des cours',
-      color: 'error',
+      color: 'red',
     })
   }
 }
@@ -61,7 +61,7 @@ const handleDelete = async (courseId: number, courseTitle: string) => {
     toast.add({
       title: 'Erreur',
       description: error.message || 'Erreur lors de la suppression',
-      color: 'error',
+      color: 'red',
     })
   }
 }

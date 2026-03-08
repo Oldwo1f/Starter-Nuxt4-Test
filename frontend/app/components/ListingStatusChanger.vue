@@ -23,7 +23,7 @@ const toast = useToast()
 const isLoading = ref(false)
 
 const statusOptions = [
-  { label: 'Active', value: 'active' as const, color: 'green', icon: 'i-heroicons-check-circle' },
+  { label: 'Active', value: 'active' as const, color: 'success', icon: 'i-heroicons-check-circle' },
   { label: 'Vendue', value: 'sold' as const, color: 'red', icon: 'i-heroicons-x-circle' },
   { label: 'Archivée', value: 'archived' as const, color: 'gray', icon: 'i-heroicons-archive-box' },
 ]
@@ -44,7 +44,7 @@ const handleStatusChange = async (newStatus: 'active' | 'sold' | 'archived') => 
       toast.add({
         title: 'Statut mis à jour',
         description: `L'annonce a été marquée comme ${statusOptions.find(opt => opt.value === newStatus)?.label.toLowerCase()}.`,
-        color: 'green',
+        color: 'success',
       })
       emit('statusChanged', newStatus)
     } else {

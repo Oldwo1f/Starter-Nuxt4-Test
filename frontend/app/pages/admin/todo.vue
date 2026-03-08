@@ -150,7 +150,7 @@ const createTodo = async () => {
     toast.add({
       title: 'Tâche créée',
       description: 'La tâche a été créée avec succès.',
-      color: 'green',
+      color: 'success',
     })
     // Réinitialiser le formulaire
     newTodo.value = {
@@ -189,7 +189,7 @@ const updateTodo = async (id: number, updates: Partial<Todo>) => {
     toast.add({
       title: 'Tâche mise à jour',
       description: 'La tâche a été mise à jour avec succès.',
-      color: 'green',
+      color: 'success',
     })
     await fetchTodos()
   } catch (err: any) {
@@ -224,7 +224,7 @@ const deleteTodo = async (id: number) => {
     toast.add({
       title: 'Tâche supprimée',
       description: 'La tâche a été supprimée avec succès.',
-      color: 'green',
+      color: 'success',
     })
     await fetchTodos()
   } catch (err: any) {

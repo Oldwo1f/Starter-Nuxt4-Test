@@ -47,7 +47,7 @@ const generateReference = async () => {
   toast.add({
     title: 'Référence générée',
     description: 'Copiez la référence et utilisez-la comme libellé de votre virement.',
-    color: 'green',
+    color: 'success',
   })
 }
 
@@ -56,7 +56,7 @@ const copyReference = async () => {
   if (!refId) return
   try {
     await navigator.clipboard.writeText(refId)
-    toast.add({ title: 'Copié', description: 'Référence copiée dans le presse-papier', color: 'green' })
+    toast.add({ title: 'Copié', description: 'Référence copiée dans le presse-papier', color: 'success' })
   } catch {
     toast.add({ title: 'Erreur', description: 'Copie impossible (navigateur)', color: 'red' })
   }

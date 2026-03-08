@@ -78,7 +78,7 @@ const handleSubmit = async (response: any) => {
     toast.add({
       title: 'Réponse enregistrée',
       description: 'Votre réponse a été enregistrée avec succès',
-      color: 'green',
+      color: 'success',
     })
   } catch (err: any) {
     const errorMessage = err.data?.message || err.message || 'Erreur lors de l\'enregistrement de la réponse'
