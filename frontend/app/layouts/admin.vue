@@ -124,7 +124,7 @@ const allAdminMenuItems = [
     roles: ['moderator', 'admin', 'superadmin'], // Accessible à tous les staff
   },
   {
-    label: 'Gestion des utilisateurs',
+    label: 'Utilisateurs',
     icon: 'i-heroicons-users',
     to: '/admin/users',
     roles: ['admin', 'superadmin'], // Admin uniquement
@@ -136,37 +136,37 @@ const allAdminMenuItems = [
     roles: ['admin', 'superadmin'], // Admin uniquement
   },
   {
-    label: 'Gestion du blog',
+    label: 'Blog',
     icon: 'i-heroicons-document-text',
     to: '/admin/blog',
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
-    label: 'Gestion des partenaires',
+    label: 'Partenaires',
     icon: 'i-heroicons-building-office',
     to: '/admin/partners',
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
-    label: 'Gestion des goodies',
+    label: 'Goodies',
     icon: 'i-heroicons-gift',
     to: '/admin/goodies',
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
-    label: 'Gestion des vidéos Culture',
+    label: 'Vidéos Culture',
     icon: 'i-heroicons-video-camera',
     to: '/admin/culture',
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
-    label: 'Gestion des annonces',
+    label: 'Annonces',
     icon: 'i-heroicons-shopping-bag',
     to: '/admin/marketplace',
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
-    label: 'Gestion de l\'Academy',
+    label: 'Academy',
     icon: 'i-heroicons-academic-cap',
     to: '/admin/academy',
     roles: ['admin', 'superadmin'], // Admin uniquement
@@ -178,7 +178,7 @@ const allAdminMenuItems = [
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
-    label: 'Gestion des sondages',
+    label: 'Sondages',
     icon: 'i-heroicons-chart-bar',
     to: '/admin/polls',
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs

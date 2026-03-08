@@ -137,7 +137,7 @@ const getStatusIcon = (status: string) => {
     </div>
 
     <!-- Contest Banner -->
-    <UCard class="bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-red-500/20 border-2 border-yellow-500/30">
+    <UCard class="w-full md:max-w-[50%] transition-all duration-300 ease-out bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-red-500/20 border-2 border-yellow-500/30">
       <div class="space-y-4">
         <div class="flex items-start gap-3">
           <div class="flex-shrink-0">
