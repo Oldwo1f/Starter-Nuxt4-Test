@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../../load-env';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { Course } from '../../entities/course.entity';
@@ -100,7 +100,7 @@ async function generateUpdateScript() {
     }
 
     // Générer le script de mise à jour
-    const updateScript = `import 'dotenv/config';
+    const updateScript = `import '../../load-env';
 import { Client } from 'pg';
 
 // Durées récupérées depuis la DB locale le ${new Date().toLocaleString('fr-FR')}
@@ -214,7 +214,7 @@ if ! docker ps | grep -q "nunaheritage-backend"; then
     exit 1
 fi
 
-# Charger les variables d'environnement
+# Charger les variables d'environnement (racine du projet)
 if [ -f .env ]; then
     set -a
     source .env

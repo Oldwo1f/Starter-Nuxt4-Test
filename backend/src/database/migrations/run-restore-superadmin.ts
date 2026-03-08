@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../../load-env';
 import { Client } from 'pg';
 import { readFileSync } from 'fs';
 import { join } from 'path';

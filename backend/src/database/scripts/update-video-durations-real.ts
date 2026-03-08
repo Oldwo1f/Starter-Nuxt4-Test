@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../../load-env';
 import { Client } from 'pg';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';

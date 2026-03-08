@@ -14,8 +14,8 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
-# Vérifier si .env existe
-if [ ! -f ".env" ]; then
+# Vérifier si .env existe (racine du projet ou backend)
+if [ ! -f ".env" ] && [ ! -f "../.env" ]; then
     echo "⚠️  Fichier .env non trouvé. Utilisation des valeurs par défaut."
 fi
 

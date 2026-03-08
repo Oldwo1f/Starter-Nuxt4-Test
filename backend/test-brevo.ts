@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './src/load-env';
 import { BrevoClient } from '@getbrevo/brevo';
 
 async function testBrevo() {

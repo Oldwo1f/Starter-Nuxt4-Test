@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../../load-env';
 import { Client } from 'pg';
 
 // Durées récupérées depuis la DB locale le 21/02/2026 15:10:07

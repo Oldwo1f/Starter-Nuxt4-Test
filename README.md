@@ -6,8 +6,11 @@ Application full stack avec frontend Nuxt 3 PWA et backend NestJS avec PostgreSQ
 
 ```
 nunaheritage/
+├── .env               # Configuration centralisée (backend, frontend, mcp-admin)
+├── .env.example       # Modèle de configuration
 ├── frontend/          # Application Nuxt 3 PWA
 ├── backend/           # Application NestJS
+├── mcp-admin/         # Serveur MCP pour administration (Cursor)
 └── README.md          # Documentation du projet
 ```
 
@@ -34,25 +37,22 @@ CREATE DATABASE nunaheritage;
 \q
 ```
 
-### 2. Backend
+### 2. Configuration (.env à la racine)
+
+```bash
+# À la racine du projet
+cp .env.example .env
+
+# Éditer .env avec vos paramètres (DB, JWT, Stripe, Brevo, etc.)
+```
+
+### 3. Backend
 
 ```bash
 cd backend
 
 # Installer les dépendances
 npm install
-
-# Copier le fichier d'environnement
-cp env.example .env
-
-# Éditer .env avec vos paramètres de base de données
-# DB_HOST=localhost
-# DB_PORT=5432
-# DB_USERNAME=postgres
-# DB_PASSWORD=postgres
-# DB_NAME=nunaheritage
-# JWT_SECRET=your-secret-key-change-in-production
-# PORT=3001
 
 # Lancer les seeds (créer les données initiales)
 npm run seed
@@ -63,7 +63,7 @@ npm run start:dev
 
 Le backend sera accessible sur `http://localhost:3001`
 
-### 3. Frontend
+### 4. Frontend
 
 ```bash
 cd frontend
@@ -71,7 +71,7 @@ cd frontend
 # Installer les dépendances
 npm install
 
-# Démarrer le serveur de développement
+# Démarrer le serveur de développement (charge .env depuis la racine)
 npm run dev
 ```
 
