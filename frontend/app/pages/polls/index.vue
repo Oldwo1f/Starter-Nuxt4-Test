@@ -4,47 +4,19 @@ definePageMeta({
   title: 'Sondages',
 })
 
-import { usePollStore, PollType, PollStatus, PollAccessLevel } from '~/stores/usePollStore'
+import { usePollStore } from '~/stores/usePollStore'
 
 const pollStore = usePollStore()
 const toast = useToast()
 
-// Filtres
-const selectedType = ref<PollType | ''>('')
-const selectedStatus = ref<PollStatus | ''>('')
-const selectedAccessLevel = ref<PollAccessLevel | ''>('')
-
-// Charger les sondages
+// Charger les sondages (20 par page, triés du plus récent au plus vieux)
 onMounted(async () => {
-  await pollStore.fetchPolls(
-    pollStore.pagination.page,
-    pollStore.pagination.pageSize,
-    selectedStatus.value || undefined,
-    selectedAccessLevel.value || undefined,
-    selectedType.value || undefined,
-  )
-})
-
-// Watchers pour recharger quand les filtres changent
-watch([selectedType, selectedStatus, selectedAccessLevel], async () => {
-  await pollStore.fetchPolls(
-    1,
-    pollStore.pagination.pageSize,
-    selectedStatus.value || undefined,
-    selectedAccessLevel.value || undefined,
-    selectedType.value || undefined,
-  )
+  await pollStore.fetchPolls(1, 20)
 })
 
 // Handler pour changement de page
 const handlePageChange = async (page: number) => {
-  await pollStore.fetchPolls(
-    page,
-    pollStore.pagination.pageSize,
-    selectedStatus.value || undefined,
-    selectedAccessLevel.value || undefined,
-    selectedType.value || undefined,
-  )
+  await pollStore.fetchPolls(page, 20)
 }
 </script>
 
@@ -57,46 +29,6 @@ const handlePageChange = async (page: number) => {
       <p class="mt-4 text-lg text-white/70">
         Découvrez tous les sondages et partagez votre avis
       </p>
-    </div>
-
-    <!-- Filtres -->
-    <div class="mb-8 flex flex-wrap gap-4">
-      <USelect
-        v-model="selectedType"
-        :options="[
-          { label: 'Tous les types', value: '' },
-          { label: 'QCM', value: 'qcm' },
-          { label: 'Classement', value: 'ranking' },
-        ]"
-        option-attribute="label"
-        value-attribute="value"
-        placeholder="Type de sondage"
-        class="w-full sm:w-48"
-      />
-      <USelect
-        v-model="selectedStatus"
-        :options="[
-          { label: 'Tous les statuts', value: '' },
-          { label: 'En cours', value: 'active' },
-          { label: 'Terminé', value: 'ended' },
-        ]"
-        option-attribute="label"
-        value-attribute="value"
-        placeholder="Statut"
-        class="w-full sm:w-48"
-      />
-      <USelect
-        v-model="selectedAccessLevel"
-        :options="[
-          { label: 'Tous les accès', value: '' },
-          { label: 'Public', value: 'public' },
-          { label: 'Membres', value: 'member' },
-        ]"
-        option-attribute="label"
-        value-attribute="value"
-        placeholder="Niveau d'accès"
-        class="w-full sm:w-48"
-      />
     </div>
 
     <!-- Liste des sondages -->

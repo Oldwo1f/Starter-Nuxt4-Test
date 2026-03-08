@@ -83,6 +83,9 @@ export class PollsService {
       queryBuilder.andWhere('poll.accessLevel = :public', { public: PollAccessLevel.PUBLIC });
     }
 
+    // Trier par date de création (du plus récent au plus vieux)
+    queryBuilder.addOrderBy('poll.createdAt', 'DESC');
+
     // Obtenir le total avant la pagination
     const total = await queryBuilder.getCount();
 
