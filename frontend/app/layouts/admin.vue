@@ -183,6 +183,12 @@ const allAdminMenuItems = [
     to: '/admin/polls',
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
+  {
+    label: 'Newsletter',
+    icon: 'i-heroicons-envelope',
+    to: '/admin/newsletter',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
+  },
 ]
 
 // Filtrer le menu selon le rôle de l'utilisateur
