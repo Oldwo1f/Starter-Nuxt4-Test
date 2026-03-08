@@ -1,4 +1,4 @@
-<script setup lang="ts">
+²<script setup lang="ts">
 definePageMeta({
   layout: 'default',
 })

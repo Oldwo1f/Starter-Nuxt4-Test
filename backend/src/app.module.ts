@@ -18,6 +18,7 @@ import { ReferralModule } from './referral/referral.module';
 import { BillingModule } from './billing/billing.module';
 import { StripeModule } from './stripe/stripe.module';
 import { TodosModule } from './todos/todos.module';
+import { PollsModule } from './polls/polls.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { TodosModule } from './todos/todos.module';
     BillingModule,
     StripeModule,
     TodosModule,
+    PollsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

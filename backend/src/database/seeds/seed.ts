@@ -30,7 +30,16 @@ export async function seedDatabase(dataSource: DataSource) {
     role: UserRole,
     firstName?: string | null,
     lastName?: string | null,
-    avatarImage?: string | null
+    avatarImage?: string | null,
+    commune?: string | null,
+    contactPreferences?: {
+      order: string[];
+      accounts: {
+        messenger?: string;
+        telegram?: string;
+        whatsapp?: string;
+      };
+    } | null
   ) => {
     let user = await userRepository.findOne({ where: { email } });
     if (!user) {
@@ -43,6 +52,8 @@ export async function seedDatabase(dataSource: DataSource) {
         firstName: firstName || null,
         lastName: lastName || null,
         avatarImage: avatarImage || null,
+        commune: commune || null,
+        contactPreferences: contactPreferences || null,
       });
       user = await userRepository.save(user);
       console.log(`✓ User created: ${user.email} (${user.role}) - ${user.walletBalance} 🐚`);
@@ -65,11 +76,23 @@ export async function seedDatabase(dataSource: DataSource) {
         user.avatarImage = avatarImage;
         updated = true;
       }
+      if (commune && user.commune !== commune) {
+        user.commune = commune;
+        updated = true;
+      }
+      if (contactPreferences && JSON.stringify(user.contactPreferences) !== JSON.stringify(contactPreferences)) {
+        user.contactPreferences = contactPreferences;
+        updated = true;
+      }
+      if (role && user.role !== role) {
+        user.role = role;
+        updated = true;
+      }
       if (updated) {
         user = await userRepository.save(user);
-        console.log(`✓ User updated: ${user.email} - ${user.walletBalance} 🐚`);
+        console.log(`✓ User updated: ${user.email} (${user.role}) - ${user.walletBalance} 🐚`);
       } else {
-        console.log(`✓ User already exists: ${user.email} - ${user.walletBalance} 🐚`);
+        console.log(`✓ User already exists: ${user.email} (${user.role}) - ${user.walletBalance} 🐚`);
       }
     }
     return user;
@@ -100,34 +123,62 @@ export async function seedDatabase(dataSource: DataSource) {
     {
       email: 'user1@example.com',
       password: 'user123',
-      role: UserRole.USER,
+      role: UserRole.MEMBER,
       firstName: 'Teva',
       lastName: 'Tama',
       avatarImage: getUnsplashAvatar('1500648767791-00dcc994a43e'),
+      commune: 'Papeete',
+      contactPreferences: {
+        order: ['whatsapp', 'messenger', 'telegram'],
+        accounts: {
+          whatsapp: '+689 87 12 34 56',
+        },
+      },
     },
     {
       email: 'user2@example.com',
       password: 'user123',
-      role: UserRole.USER,
+      role: UserRole.PREMIUM,
       firstName: 'Sophie',
       lastName: 'Martin',
       avatarImage: getUnsplashAvatar('1438761681033-6461ffad8d80'),
+      commune: 'Punaauia',
+      contactPreferences: {
+        order: ['whatsapp', 'messenger'],
+        accounts: {
+          whatsapp: '+689 87 65 43 21',
+        },
+      },
     },
     {
       email: 'user3@example.com',
       password: 'user123',
-      role: UserRole.MEMBER,
+      role: UserRole.VIP,
       firstName: 'Hinano',
       lastName: 'Tehei',
       avatarImage: getUnsplashAvatar('1531425384884-0c0c0c0c0c0c'),
+      commune: 'Bora-Bora',
+      contactPreferences: {
+        order: ['whatsapp', 'telegram', 'messenger'],
+        accounts: {
+          whatsapp: '+689 87 98 76 54',
+        },
+      },
     },
     {
       email: 'user4@example.com',
       password: 'user123',
-      role: UserRole.MEMBER,
+      role: UserRole.MODERATOR,
       firstName: 'Lucas',
       lastName: 'Bernard',
       avatarImage: getUnsplashAvatar('1539571690997-28b0d0c0c0c0'),
+      commune: 'Moorea-Maiao',
+      contactPreferences: {
+        order: ['whatsapp', 'messenger'],
+        accounts: {
+          whatsapp: '+689 87 11 22 33',
+        },
+      },
     },
     {
       email: 'user5@example.com',
@@ -219,7 +270,9 @@ export async function seedDatabase(dataSource: DataSource) {
       userData.role || UserRole.USER,
       userData.firstName,
       userData.lastName,
-      userData.avatarImage
+      userData.avatarImage,
+      userData.commune,
+      userData.contactPreferences
     );
     savedUsers.push(user);
   }
@@ -330,10 +383,10 @@ export async function seedDatabase(dataSource: DataSource) {
   console.log('   Super Admin: alexismomcilovic@gmail.com / Alexis09');
   console.log('   Admin: admin@example.com / admin123');
   console.log('   Users (password: user123):');
-  console.log('          user1@example.com (user)');
-  console.log('          user2@example.com (user)');
-  console.log('          user3@example.com (member)');
-  console.log('          user4@example.com (member)');
+  console.log('          user1@example.com (member)');
+  console.log('          user2@example.com (premium)');
+  console.log('          user3@example.com (vip)');
+  console.log('          user4@example.com (moderator)');
   console.log('          user5@example.com (premium)');
   console.log('          user6@example.com (premium)');
   console.log('          user7@example.com (vip)');

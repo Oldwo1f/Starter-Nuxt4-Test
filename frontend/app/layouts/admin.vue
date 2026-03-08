@@ -177,6 +177,12 @@ const allAdminMenuItems = [
     to: '/admin/todo',
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
+  {
+    label: 'Gestion des sondages',
+    icon: 'i-heroicons-chart-bar',
+    to: '/admin/polls',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
+  },
 ]
 
 // Filtrer le menu selon le rôle de l'utilisateur

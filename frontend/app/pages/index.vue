@@ -3,6 +3,7 @@ import videoUrl from '~/assets/images/nuna-a-heritage-video-presentation.mp4'
 import logoUrl from '~/assets/images/logo-nuna-heritage.png'
 import tenatiraaImage1 from '~/assets/images/tenatiraa/tenatiraa.jpeg'
 import tenatiraaImage2 from '~/assets/images/tenatiraa/tenatiraa1.jpeg'
+import { usePollStore } from '~/stores/usePollStore'
 
 definePageMeta({
   layout: 'default',
@@ -10,6 +11,10 @@ definePageMeta({
 
 const { appName } = useAppInfo()
 const { apiBaseUrl } = useApi()
+const pollStore = usePollStore()
+
+// Sondages actifs pour la home
+const activePolls = computed(() => pollStore.activePolls)
 
 // État de l'accordéon - un seul panneau ouvert à la fois, toujours au moins un ouvert
 const openAccordion = ref<string>('transmettre')
@@ -79,9 +84,10 @@ const fetchFeaturedPosts = async () => {
   }
 }
 
-// Charger les articles au montage
+// Charger les articles et sondages au montage
 onMounted(() => {
   fetchFeaturedPosts()
+  pollStore.fetchActivePolls()
 })
 
 // Témoignages de nos membres (placeholder)
@@ -301,6 +307,49 @@ const accordionSections = [
       <div class="absolute inset-0 -z-0">
         <div class="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-primary-500/10 blur-3xl" />
         <div class="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-primary-600/10 blur-3xl" />
+      </div>
+    </section>
+
+    <!-- Section Sondages en cours -->
+    <section v-if="activePolls.length > 0" class="relative bg-black/50 py-16 sm:py-24">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mb-12 text-center">
+          <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
+            Sondages en cours
+          </h2>
+          <p class="mx-auto max-w-2xl text-lg text-white/70">
+            Partagez votre avis sur les sujets qui vous tiennent à cœur
+          </p>
+        </div>
+
+        <div v-if="pollStore.isLoading" class="flex justify-center py-12">
+          <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-primary-500" />
+        </div>
+
+        <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <PollCard
+            v-for="poll in activePolls"
+            :key="poll.id"
+            :poll="poll"
+            :show-response="true"
+          />
+        </div>
+
+        <div v-if="activePolls.length > 0" class="mt-8 text-center">
+          <UButton
+            to="/polls"
+            size="lg"
+            variant="outline"
+            icon="i-heroicons-arrow-right"
+            class="group"
+          >
+            Voir tous les sondages
+            <UIcon
+              name="i-heroicons-arrow-right"
+              class="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
+            />
+          </UButton>
+        </div>
       </div>
     </section>
 

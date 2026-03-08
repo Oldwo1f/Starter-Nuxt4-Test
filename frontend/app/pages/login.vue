@@ -8,12 +8,19 @@ import { useFacebook } from '~/composables/useFacebook'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
 const isFacebookLoading = ref(false)
 const error = ref('')
+
+// Récupérer l'URL de retour depuis les query params
+const getReturnUrl = () => {
+  const returnUrl = route.query.returnUrl as string | undefined
+  return returnUrl && returnUrl.startsWith('/') ? returnUrl : '/'
+}
 
 const handleLogin = async () => {
   error.value = ''
@@ -27,7 +34,7 @@ const handleLogin = async () => {
   isLoading.value = false
 
   if (result.success) {
-    router.push('/')
+    router.push(getReturnUrl())
   } else {
     error.value = result.error || 'Erreur de connexion'
   }
@@ -58,7 +65,7 @@ const handleFacebookLogin = async () => {
     )
 
     if (result.success) {
-      router.push('/')
+      router.push(getReturnUrl())
     } else {
       error.value = result.error || 'Erreur lors de la connexion Facebook'
     }

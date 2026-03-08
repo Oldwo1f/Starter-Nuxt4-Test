@@ -19,6 +19,9 @@ import { StripePayment } from '../entities/stripe-payment.entity';
 import { LegacyPaymentVerification } from '../entities/legacy-payment-verification.entity';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import { Todo } from '../entities/todo.entity';
+import { Poll } from '../entities/poll.entity';
+import { PollOption } from '../entities/poll-option.entity';
+import { PollResponse } from '../entities/poll-response.entity';
 
 @Module({
   imports: [
@@ -29,11 +32,11 @@ import { Todo } from '../entities/todo.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'nunaheritage',
-      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo],
+      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
-    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo]),
+    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse]),
   ],
   exports: [TypeOrmModule],
 })
