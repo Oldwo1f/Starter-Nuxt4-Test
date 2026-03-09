@@ -68,6 +68,12 @@ export class UsersService {
     createdAt?: string,
     sortBy: string = 'id',
     sortOrder: 'ASC' | 'DESC' = 'ASC',
+    filters?: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      commune?: string;
+    },
   ) {
     const queryBuilder = this.usersRepository.createQueryBuilder('user');
 
@@ -84,6 +90,8 @@ export class UsersService {
       'user.isCertified',
       'user.lastLogin',
       'user.walletBalance',
+      'user.commune',
+      'user.phoneNumber',
       'user.createdAt',
       'user.updatedAt',
     ]);
@@ -108,9 +116,22 @@ export class UsersService {
 
     if (search) {
       queryBuilder.andWhere(
-        '(user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search OR CAST(user.id AS TEXT) ILIKE :search)',
+        '(user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search OR user.commune ILIKE :search OR user.phoneNumber ILIKE :search OR CAST(user.id AS TEXT) ILIKE :search)',
         { search: `%${search}%` },
       );
+    }
+
+    if (filters?.firstName) {
+      queryBuilder.andWhere('user.firstName ILIKE :firstName', { firstName: `%${filters.firstName}%` });
+    }
+    if (filters?.lastName) {
+      queryBuilder.andWhere('user.lastName ILIKE :lastName', { lastName: `%${filters.lastName}%` });
+    }
+    if (filters?.email) {
+      queryBuilder.andWhere('user.email ILIKE :email', { email: `%${filters.email}%` });
+    }
+    if (filters?.commune) {
+      queryBuilder.andWhere('user.commune ILIKE :commune', { commune: `%${filters.commune}%` });
     }
 
     // Apply sorting

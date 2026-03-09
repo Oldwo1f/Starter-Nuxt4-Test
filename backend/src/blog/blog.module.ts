@@ -9,6 +9,7 @@ import { UploadModule } from '../upload/upload.module';
   imports: [TypeOrmModule.forFeature([BlogPost]), UploadModule],
   controllers: [BlogController],
   providers: [BlogService],
+  exports: [BlogService],
 })
 export class BlogModule {}
 

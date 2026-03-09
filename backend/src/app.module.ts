@@ -19,6 +19,7 @@ import { BillingModule } from './billing/billing.module';
 import { StripeModule } from './stripe/stripe.module';
 import { TodosModule } from './todos/todos.module';
 import { PollsModule } from './polls/polls.module';
+import { AdminAgentModule } from './admin-agent/admin-agent.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { PollsModule } from './polls/polls.module';
     StripeModule,
     TodosModule,
     PollsModule,
+    AdminAgentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

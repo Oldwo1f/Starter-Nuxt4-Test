@@ -124,6 +124,12 @@ const allAdminMenuItems = [
     roles: ['moderator', 'admin', 'superadmin'], // Accessible à tous les staff
   },
   {
+    label: 'Agent IA',
+    icon: 'i-heroicons-chat-bubble-left-right',
+    to: '/admin/agent',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible à tous les staff
+  },
+  {
     label: 'Utilisateurs',
     icon: 'i-heroicons-users',
     to: '/admin/users',

@@ -1,8 +1,13 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import handleNuxtBasePath from './plugins/vite-handle-nuxt-base'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: ['@pinia/nuxt', '@nuxt/icon', '@nuxt/ui'],
+  vite: {
+    plugins: [handleNuxtBasePath()],
+  },
   css: ['~/assets/css/main.css'],
   colorMode: {
     preference: 'dark',

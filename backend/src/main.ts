@@ -19,8 +19,13 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
   
   // Enable CORS for frontend
+  const isDev = process.env.NODE_ENV !== 'production';
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const corsOrigins = isDev
+    ? ['http://localhost:3000', 'http://127.0.0.1:3000', frontendUrl].filter(Boolean)
+    : frontendUrl;
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: corsOrigins,
     credentials: true,
     exposedHeaders: ['Content-Range', 'Accept-Ranges', 'Content-Length'],
   });
