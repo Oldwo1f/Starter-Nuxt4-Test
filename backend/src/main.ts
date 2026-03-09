@@ -99,7 +99,8 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
   
   const port = process.env.PORT ?? 3001;
-  await app.listen(port);
+  const host = process.env.HOST ?? '0.0.0.0';
+  await app.listen(port, host);
   console.log(`Application is running on: ${await app.getUrl()}`);
   console.log(`Swagger documentation available at: ${await app.getUrl()}/api`);
   console.log(`Static files served from: ${join(process.cwd(), uploadPath)}`);
