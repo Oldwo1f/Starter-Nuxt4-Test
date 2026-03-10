@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './useAuthStore'
 
+export type BlogStatus = 'draft' | 'active' | 'archived'
+
 export interface BlogPost {
   id: number
   title: string
@@ -12,6 +14,9 @@ export interface BlogPost {
     id: number
     email: string
   }
+  status: BlogStatus
+  publishedAt?: string | null
+  isPinned?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -37,6 +42,9 @@ export interface BlogForm {
   images?: File[]
   existingImages?: string[]
   videoUrl?: string
+  status: BlogStatus
+  publishedAt?: string | null
+  isPinned?: boolean
 }
 
 export const useBlogStore = defineStore('blog', () => {
@@ -61,6 +69,7 @@ export const useBlogStore = defineStore('blog', () => {
   // États pour les filtres
   const globalFilter = ref('')
   const authorIdFilter = ref('')
+  const statusFilter = ref<BlogStatus | ''>('')
 
   // États pour le tri et la pagination
   const sorting = ref<SortingState[]>([])
@@ -76,6 +85,9 @@ export const useBlogStore = defineStore('blog', () => {
   const form = ref<BlogForm>({
     title: '',
     content: '',
+    status: 'draft',
+    publishedAt: null,
+    isPinned: false,
   })
 
   // Synchroniser currentPage avec pagination.pageIndex
@@ -95,7 +107,7 @@ export const useBlogStore = defineStore('blog', () => {
   })
 
   // Watchers pour déclencher le fetch lors des changements
-  watch([globalFilter, authorIdFilter], () => {
+  watch([globalFilter, authorIdFilter, statusFilter], () => {
     if (!isFetching.value) {
       pagination.value.pageIndex = 0
       fetchPosts()
@@ -133,6 +145,9 @@ export const useBlogStore = defineStore('blog', () => {
         if (!isNaN(authorId)) {
           params.authorId = authorId
         }
+      }
+      if (statusFilter.value) {
+        params.status = statusFilter.value
       }
 
       if (sorting.value.length > 0 && sorting.value[0]) {
@@ -175,8 +190,23 @@ export const useBlogStore = defineStore('blog', () => {
       images: [],
       existingImages: [],
       videoUrl: '',
+      status: 'draft',
+      publishedAt: null,
+      isPinned: false,
     }
     isPostModalOpen.value = true
+  }
+
+  const toDatetimeLocal = (iso: string | null | undefined): string => {
+    if (!iso) return ''
+    const d = new Date(iso)
+    const pad = (n: number) => n.toString().padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
+  const fromDatetimeLocal = (local: string | null | undefined): string | null => {
+    if (!local || !local.trim()) return null
+    return new Date(local).toISOString()
   }
 
   const openEditModal = (post: BlogPost) => {
@@ -188,6 +218,9 @@ export const useBlogStore = defineStore('blog', () => {
       images: [],
       existingImages: post.images || [],
       videoUrl: post.videoUrl || '',
+      status: post.status || 'draft',
+      publishedAt: post.publishedAt ? toDatetimeLocal(post.publishedAt) : null,
+      isPinned: post.isPinned ?? false,
     }
     isPostModalOpen.value = true
   }
@@ -201,6 +234,9 @@ export const useBlogStore = defineStore('blog', () => {
       images: [],
       existingImages: [],
       videoUrl: '',
+      status: 'draft',
+      publishedAt: null,
+      isPinned: false,
     }
   }
 
@@ -216,7 +252,10 @@ export const useBlogStore = defineStore('blog', () => {
       const formData = new FormData()
       formData.append('title', form.value.title)
       formData.append('content', form.value.content)
-      
+      formData.append('status', form.value.status)
+      const publishedAtIso = fromDatetimeLocal(form.value.publishedAt ?? '')
+      formData.append('publishedAt', publishedAtIso ?? '')
+      formData.append('isPinned', String(form.value.isPinned ?? false))
       if (form.value.videoUrl) {
         formData.append('videoUrl', form.value.videoUrl)
       }
@@ -321,6 +360,7 @@ export const useBlogStore = defineStore('blog', () => {
   const resetFilters = () => {
     globalFilter.value = ''
     authorIdFilter.value = ''
+    statusFilter.value = ''
     sorting.value = []
     pagination.value = {
       pageIndex: 0,
@@ -340,10 +380,28 @@ export const useBlogStore = defineStore('blog', () => {
     })
   }
 
+  const statusLabels: Record<BlogStatus, string> = {
+    draft: 'Brouillon',
+    active: 'Actif',
+    archived: 'Archivé',
+  }
+
+  const formatPublishedAt = (post: BlogPost) => {
+    if (!post.publishedAt) return '—'
+    const date = new Date(post.publishedAt)
+    const now = new Date()
+    if (date > now) {
+      return `Programmé pour le ${date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+    }
+    return date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  }
+
   // Préparer les données pour UTable
   interface TableRow extends BlogPost {
     createdAtFormatted: string
     authorEmail: string
+    statusFormatted: string
+    publishedAtFormatted: string
   }
 
   const data = computed<TableRow[]>(() => {
@@ -351,6 +409,8 @@ export const useBlogStore = defineStore('blog', () => {
       ...post,
       createdAtFormatted: formatDate(post.createdAt),
       authorEmail: post.author?.email || 'Inconnu',
+      statusFormatted: statusLabels[post.status || 'draft'],
+      publishedAtFormatted: formatPublishedAt(post),
     }))
   })
 
@@ -368,6 +428,7 @@ export const useBlogStore = defineStore('blog', () => {
     isEditMode: readonly(isEditMode),
     globalFilter,
     authorIdFilter,
+    statusFilter,
     sorting,
     pagination,
     currentPage,
@@ -384,5 +445,9 @@ export const useBlogStore = defineStore('blog', () => {
     deletePost,
     resetFilters,
     formatDate,
+    formatPublishedAt,
+    statusLabels,
+    toDatetimeLocal,
+    fromDatetimeLocal,
   }
 })

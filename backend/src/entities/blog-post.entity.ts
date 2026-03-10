@@ -9,6 +9,12 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
+export enum BlogStatus {
+  DRAFT = 'draft',
+  ACTIVE = 'active',
+  ARCHIVED = 'archived',
+}
+
 @Entity('blog_posts')
 export class BlogPost {
   @PrimaryGeneratedColumn()
@@ -25,6 +31,15 @@ export class BlogPost {
 
   @Column({ type: 'varchar', nullable: true })
   videoUrl: string | null; // URL de la vidéo (YouTube, Vimeo, etc.)
+
+  @Column({ type: 'varchar', length: 20, default: BlogStatus.DRAFT })
+  status: BlogStatus;
+
+  @Column({ type: 'timestamp', nullable: true })
+  publishedAt: Date | null;
+
+  @Column({ type: 'boolean', default: false })
+  isPinned: boolean;
 
   @ManyToOne(() => User, (user) => user.blogPosts)
   @JoinColumn({ name: 'authorId' })

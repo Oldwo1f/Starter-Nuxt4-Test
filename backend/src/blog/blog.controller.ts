@@ -24,12 +24,15 @@ import {
   ApiProperty,
   ApiConsumes,
 } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsArray, IsEnum, IsBoolean, IsDateString } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { BlogService } from './blog.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { UserRole } from '../entities/user.entity';
+import { BlogStatus } from '../entities/blog-post.entity';
 import { BlogPaginationQueryDto } from './dto/pagination-query.dto';
 import { PaginatedBlogPostsResponseDto } from './dto/paginated-response.dto';
 import { UploadService } from '../upload/upload.service';
@@ -52,6 +55,22 @@ export class CreateBlogDto {
   @IsString()
   @IsNotEmpty()
   content: string;
+
+  @ApiProperty({ description: 'Status: draft, active, archived', required: false, enum: BlogStatus })
+  @IsOptional()
+  @IsEnum(BlogStatus)
+  status?: BlogStatus;
+
+  @ApiProperty({ description: 'When published or scheduled (ISO date)', required: false })
+  @IsOptional()
+  @IsDateString()
+  publishedAt?: string;
+
+  @ApiProperty({ description: 'Featured article at top', required: false, default: false })
+  @IsOptional()
+  @Transform(({ value }) => (value === undefined || value === '' ? undefined : value === 'true' || value === true || value === '1' || value === 1))
+  @IsBoolean()
+  isPinned?: boolean;
 }
 
 export class UpdateBlogDto {
@@ -89,6 +108,22 @@ export class UpdateBlogDto {
   @IsArray()
   @IsOptional()
   images?: string[];
+
+  @ApiProperty({ description: 'Status: draft, active, archived', required: false, enum: BlogStatus })
+  @IsOptional()
+  @IsEnum(BlogStatus)
+  status?: BlogStatus;
+
+  @ApiProperty({ description: 'When published or scheduled (ISO date)', required: false })
+  @IsOptional()
+  @IsDateString()
+  publishedAt?: string;
+
+  @ApiProperty({ description: 'Featured article at top', required: false })
+  @IsOptional()
+  @Transform(({ value }) => (value === undefined || value === '' ? undefined : value === 'true' || value === true || value === '1' || value === 1))
+  @IsBoolean()
+  isPinned?: boolean;
 }
 
 @ApiTags('blog')
@@ -105,6 +140,22 @@ export class BlogController {
     if (!existsSync(this.blogUploadPath)) {
       mkdirSync(this.blogUploadPath, { recursive: true });
     }
+  }
+
+  private parseBlogMeta(dto: any): { status?: BlogStatus; publishedAt?: Date | null; isPinned?: boolean } {
+    const meta: { status?: BlogStatus; publishedAt?: Date | null; isPinned?: boolean } = {};
+    if (dto.status && ['draft', 'active', 'archived'].includes(dto.status)) {
+      meta.status = dto.status as BlogStatus;
+    }
+    if (dto.publishedAt !== undefined && dto.publishedAt !== '' && dto.publishedAt !== null) {
+      meta.publishedAt = new Date(dto.publishedAt);
+    } else if (dto.publishedAt === '' || dto.publishedAt === null) {
+      meta.publishedAt = null;
+    }
+    if (dto.isPinned !== undefined) {
+      meta.isPinned = dto.isPinned === true || dto.isPinned === 'true';
+    }
+    return meta;
   }
 
   private async saveBlogImages(blogId: number, files: Express.Multer.File[]): Promise<string[]> {
@@ -137,47 +188,67 @@ export class BlogController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin/Staff only' })
   async create(
-    @Body() createBlogDto: CreateBlogDto,
+    @Body() createBlogDto: CreateBlogDto & { status?: string; publishedAt?: string; isPinned?: string },
     @Request() req,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
-    // Save images if provided
-    let imageUrls: string[] = [];
+    const meta = this.parseBlogMeta(createBlogDto);
+    const status = meta.status ?? BlogStatus.DRAFT;
+    const publishedAt = meta.publishedAt;
+    const isPinned = meta.isPinned ?? false;
+
     if (files && files.length > 0) {
-      // Create blog post first to get ID
       const blogPost = await this.blogService.create(
         createBlogDto.title,
         createBlogDto.content,
         req.user.id,
+        undefined,
+        undefined,
+        status,
+        publishedAt,
+        isPinned,
       );
-      
-      // Save images
-      imageUrls = await this.saveBlogImages(blogPost.id, files);
-      
-      // Update blog post with image URLs
+
+      const imageUrls = await this.saveBlogImages(blogPost.id, files);
+
       return this.blogService.update(
         blogPost.id,
         undefined,
         undefined,
         imageUrls,
         undefined,
+        undefined,
+        undefined,
+        undefined,
       );
     }
 
-    return this.blogService.create(createBlogDto.title, createBlogDto.content, req.user.id);
+    return this.blogService.create(
+      createBlogDto.title,
+      createBlogDto.content,
+      req.user.id,
+      undefined,
+      undefined,
+      status,
+      publishedAt,
+      isPinned,
+    );
   }
 
   @Get()
-  @ApiOperation({ 
-    summary: 'Get all blog posts with pagination', 
-    description: 'Retrieve a paginated list of blog posts with filtering and sorting' 
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get all blog posts with pagination',
+    description: 'Public: active posts only. Admin: all posts with optional status filter.',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Paginated list of blog posts retrieved successfully',
     type: PaginatedBlogPostsResponseDto,
   })
-  findAll(@Query() query: BlogPaginationQueryDto) {
+  findAll(@Query() query: BlogPaginationQueryDto, @Request() req: { user?: { role: string } }) {
+    const isAdmin = req.user && [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR].includes(req.user.role as UserRole);
+    const forPublic = !isAdmin;
     return this.blogService.findAllPaginated(
       query.page,
       query.pageSize,
@@ -185,16 +256,21 @@ export class BlogController {
       query.authorId,
       query.sortBy,
       query.sortOrder,
+      isAdmin ? query.status : undefined,
+      forPublic,
     );
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a blog post by ID', description: 'Retrieve a specific blog post by its ID' })
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiOperation({ summary: 'Get a blog post by ID', description: 'Public: active posts only. Admin: any post.' })
   @ApiParam({ name: 'id', description: 'Blog post ID', type: 'number' })
   @ApiResponse({ status: 200, description: 'Blog post retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Blog post not found' })
-  findOne(@Param('id') id: string) {
-    return this.blogService.findOne(+id);
+  findOne(@Param('id') id: string, @Request() req: { user?: { role: string } }) {
+    const isAdmin = req.user && [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR].includes(req.user.role as UserRole);
+    const forPublic = !isAdmin;
+    return this.blogService.findOne(+id, forPublic);
   }
 
   @Patch(':id')
@@ -236,12 +312,16 @@ export class BlogController {
       imageUrls = [...(imageUrls || []), ...newImageUrls];
     }
 
+    const meta = this.parseBlogMeta(updateBlogDto);
     return this.blogService.update(
       id,
       updateBlogDto.title,
       updateBlogDto.content,
       imageUrls,
       updateBlogDto.videoUrl,
+      meta.status,
+      meta.publishedAt,
+      meta.isPinned,
     );
   }
 

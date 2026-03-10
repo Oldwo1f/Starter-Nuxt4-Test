@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { BlogPost } from '../entities/blog-post.entity';
+import { BlogPost, BlogStatus } from '../entities/blog-post.entity';
 
 @Injectable()
 export class BlogService {
@@ -16,6 +16,9 @@ export class BlogService {
     authorId: number,
     images?: string[],
     videoUrl?: string,
+    status: BlogStatus = BlogStatus.DRAFT,
+    publishedAt?: Date | null,
+    isPinned = false,
   ): Promise<BlogPost> {
     const blogPost = this.blogPostRepository.create({
       title,
@@ -23,6 +26,9 @@ export class BlogService {
       authorId,
       images: images || [],
       videoUrl: videoUrl || null,
+      status,
+      publishedAt: publishedAt ?? null,
+      isPinned,
     });
     return this.blogPostRepository.save(blogPost);
   }
@@ -49,26 +55,28 @@ export class BlogService {
     authorId?: number,
     sortBy: string = 'createdAt',
     sortOrder: 'ASC' | 'DESC' = 'DESC',
+    status?: string,
+    forPublic = false,
   ) {
     const queryBuilder = this.blogPostRepository.createQueryBuilder('blogPost');
 
-    // Joindre l'auteur
     queryBuilder.leftJoinAndSelect('blogPost.author', 'author');
 
-    // Sélectionner uniquement les champs nécessaires de l'auteur
     queryBuilder.select([
       'blogPost.id',
       'blogPost.title',
       'blogPost.content',
       'blogPost.images',
       'blogPost.videoUrl',
+      'blogPost.status',
+      'blogPost.publishedAt',
+      'blogPost.isPinned',
       'blogPost.createdAt',
       'blogPost.updatedAt',
       'author.id',
       'author.email',
     ]);
 
-    // Appliquer les filtres
     if (authorId) {
       queryBuilder.andWhere('blogPost.authorId = :authorId', { authorId });
     }
@@ -80,22 +88,28 @@ export class BlogService {
       );
     }
 
-    // Appliquer le tri
-    const validSortColumns = ['id', 'title', 'createdAt', 'updatedAt'];
-    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'createdAt';
-    queryBuilder.orderBy(`blogPost.${sortColumn}`, sortOrder);
+    if (forPublic) {
+      queryBuilder.andWhere('blogPost.status = :status', { status: BlogStatus.ACTIVE });
+      queryBuilder.andWhere(
+        '(blogPost.publishedAt IS NULL OR blogPost.publishedAt <= :now)',
+        { now: new Date() },
+      );
+    } else if (status) {
+      queryBuilder.andWhere('blogPost.status = :status', { status });
+    }
 
-    // Obtenir le total avant la pagination
+    queryBuilder
+      .orderBy('blogPost.isPinned', 'DESC')
+      .addOrderBy('blogPost.publishedAt', 'DESC', 'NULLS LAST')
+      .addOrderBy('blogPost.createdAt', 'DESC');
+
     const total = await queryBuilder.getCount();
 
-    // Appliquer la pagination
     const skip = (page - 1) * pageSize;
     queryBuilder.skip(skip).take(pageSize);
 
-    // Exécuter la requête
     const data = await queryBuilder.getMany();
 
-    // Calculer les métadonnées de pagination
     const totalPages = Math.ceil(total / pageSize);
     const hasNext = page < totalPages;
     const hasPrev = page > 1;
@@ -111,25 +125,22 @@ export class BlogService {
     };
   }
 
-  async findOne(id: number): Promise<BlogPost> {
-    const blogPost = await this.blogPostRepository.findOne({
-      where: { id },
-      relations: ['author'],
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        images: true,
-        videoUrl: true,
-        createdAt: true,
-        updatedAt: true,
-        authorId: true,
-        author: {
-          id: true,
-          email: true,
-        },
-      },
-    });
+  async findOne(id: number, forPublic = false): Promise<BlogPost> {
+    const queryBuilder = this.blogPostRepository
+      .createQueryBuilder('blogPost')
+      .leftJoinAndSelect('blogPost.author', 'author')
+      .where('blogPost.id = :id', { id });
+
+    if (forPublic) {
+      queryBuilder
+        .andWhere('blogPost.status = :status', { status: BlogStatus.ACTIVE })
+        .andWhere(
+          '(blogPost.publishedAt IS NULL OR blogPost.publishedAt <= :now)',
+          { now: new Date() },
+        );
+    }
+
+    const blogPost = await queryBuilder.getOne();
     if (!blogPost) {
       throw new NotFoundException(`Blog post with ID ${id} not found`);
     }
@@ -142,8 +153,11 @@ export class BlogService {
     content?: string,
     images?: string[],
     videoUrl?: string,
+    status?: BlogStatus,
+    publishedAt?: Date | null,
+    isPinned?: boolean,
   ): Promise<BlogPost> {
-    const blogPost = await this.findOne(id);
+    const blogPost = await this.findOne(id, false);
     if (title !== undefined) {
       blogPost.title = title;
     }
@@ -156,7 +170,32 @@ export class BlogService {
     if (videoUrl !== undefined) {
       blogPost.videoUrl = videoUrl;
     }
+    if (status !== undefined) {
+      const wasDraft = blogPost.status === BlogStatus.DRAFT;
+      blogPost.status = status;
+      if (wasDraft && status === BlogStatus.ACTIVE && !blogPost.publishedAt) {
+        blogPost.publishedAt = new Date();
+      }
+    }
+    if (publishedAt !== undefined) {
+      blogPost.publishedAt = publishedAt;
+    }
+    if (isPinned !== undefined) {
+      blogPost.isPinned = isPinned;
+    }
     return this.blogPostRepository.save(blogPost);
+  }
+
+  async publishScheduledPosts(): Promise<number> {
+    const result = await this.blogPostRepository
+      .createQueryBuilder()
+      .update(BlogPost)
+      .set({ status: BlogStatus.ACTIVE })
+      .where('status = :draft', { draft: BlogStatus.DRAFT })
+      .andWhere('publishedAt IS NOT NULL')
+      .andWhere('publishedAt <= :now', { now: new Date() })
+      .execute();
+    return result.affected ?? 0;
   }
 
   async remove(id: number): Promise<void> {

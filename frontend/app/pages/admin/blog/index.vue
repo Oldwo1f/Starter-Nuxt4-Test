@@ -10,6 +10,20 @@ import type { BlogPost } from '~/stores/useBlogStore'
 
 const blogStore = useBlogStore()
 const toast = useToast()
+const { getImageUrl } = useApi()
+
+const statusFilterOptions = [
+  { value: '', label: 'Tous' },
+  { value: 'draft', label: 'Brouillon' },
+  { value: 'active', label: 'Actif' },
+  { value: 'archived', label: 'Archivé' },
+]
+
+const statusOptions = [
+  { value: 'draft', label: 'Brouillon' },
+  { value: 'active', label: 'Actif' },
+  { value: 'archived', label: 'Archivé' },
+]
 
 // Configuration des colonnes pour UTable
 const columns = [
@@ -24,6 +38,24 @@ const columns = [
     accessorKey: 'title',
     header: 'Titre',
     enableSorting: true,
+  },
+  {
+    id: 'statusFormatted',
+    accessorKey: 'statusFormatted',
+    header: 'Statut',
+    enableSorting: false,
+  },
+  {
+    id: 'publishedAtFormatted',
+    accessorKey: 'publishedAtFormatted',
+    header: 'Publié le',
+    enableSorting: false,
+  },
+  {
+    id: 'isPinned',
+    accessorKey: 'isPinned',
+    header: 'À la une',
+    enableSorting: false,
   },
   {
     id: 'authorEmail',
@@ -389,6 +421,14 @@ const getImagePreviewUrl = (file: File) => {
                 
             </div>
             <div class="flex items-center gap-2">
+              <USelect
+                v-model="blogStore.statusFilter"
+                :items="statusFilterOptions"
+                option-attribute="label"
+                value-attribute="value"
+                placeholder="Statut"
+                class="w-36"
+              />
               <UInput
                 v-model="blogStore.globalFilter"
                 placeholder="Rechercher par titre, contenu..."
@@ -428,6 +468,23 @@ const getImagePreviewUrl = (file: File) => {
               },
             }"
           >
+            <template #statusFormatted-cell="{ row }">
+              <UBadge
+                :color="row.original.status === 'active' ? 'success' : row.original.status === 'draft' ? 'warning' : 'neutral'"
+                variant="soft"
+                size="sm"
+              >
+                {{ blogStore.statusLabels[row.original.status || 'draft'] }}
+              </UBadge>
+            </template>
+            <template #isPinned-cell="{ row }">
+              <UIcon
+                v-if="row.original.isPinned"
+                name="i-heroicons-bookmark-solid"
+                class="w-5 h-5 text-primary-500"
+              />
+              <span v-else class="text-white/40">—</span>
+            </template>
             <template #actions-cell="{ row }">
               <div class="flex items-center gap-2">
                 <UButton
@@ -525,6 +582,32 @@ const getImagePreviewUrl = (file: File) => {
               class="w-full mb-5"
             />
           </UFormGroup>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-5">
+            <UFormGroup label="Statut" name="status">
+              <USelect
+                v-model="blogStore.form.status"
+                :items="statusOptions"
+                option-attribute="label"
+                value-attribute="value"
+                class="w-full"
+              />
+            </UFormGroup>
+            <UFormGroup label="Publié le" name="publishedAt" description="Optionnel. Pour programmer une publication, choisir une date future.">
+              <UInput
+                v-model="blogStore.form.publishedAt"
+                type="datetime-local"
+                placeholder="Date de publication"
+                class="w-full"
+              />
+            </UFormGroup>
+            <UFormGroup label="À la une" name="isPinned">
+              <UCheckbox
+                v-model="blogStore.form.isPinned"
+                label="Mettre en avant"
+              />
+            </UFormGroup>
+          </div>
 
           <UFormGroup label="Contenu" name="content" required>
             <UEditor 
