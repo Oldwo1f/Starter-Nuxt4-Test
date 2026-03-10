@@ -12,7 +12,8 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application (increase heap for Nuxt build - avoids OOM on low-memory servers)
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npm run build
 
 # Production stage
