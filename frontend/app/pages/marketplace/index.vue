@@ -2,6 +2,7 @@
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useDate } from '~/composables/useDate'
 import { useProfileValidation } from '~/composables/useProfileValidation'
+import { useMemberCheck } from '~/composables/useMemberCheck'
 
 definePageMeta({
   layout: 'marketplace',
@@ -11,6 +12,7 @@ const { fromNow } = useDate()
 const { apiBaseUrl } = useApi()
 const authStore = useAuthStore()
 const { isProfileComplete } = useProfileValidation()
+const { canCreateListing } = useMemberCheck()
 
 // View mode: 'list' or 'grid'
 const viewMode = ref<'list' | 'grid'>('list')
@@ -322,7 +324,7 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
           />
         </div>
         <UButton
-          v-if="authStore.isAuthenticated"
+          v-if="authStore.isAuthenticated && canCreateListing"
           to="/marketplace/create"
           color="primary"
           icon="i-heroicons-plus-circle"
@@ -330,6 +332,16 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
         >
           <span class="hidden sm:inline">Créer une annonce</span>
           <span class="sm:hidden">Créer</span>
+        </UButton>
+        <UButton
+          v-else-if="authStore.isAuthenticated && !canCreateListing"
+          to="/account/cotisation"
+          color="primary"
+          variant="outline"
+          icon="i-heroicons-lock-closed"
+        >
+          <span class="hidden sm:inline">Devenir membre pour poster</span>
+          <span class="sm:hidden">Devenir membre</span>
         </UButton>
       </div>
     </div>
@@ -561,12 +573,21 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
       <UIcon name="i-heroicons-inbox" class="mx-auto mb-4 h-12 w-12" />
       <p>Aucune annonce trouvée</p>
       <UButton
-        v-if="authStore.isAuthenticated"
+        v-if="authStore.isAuthenticated && canCreateListing"
         to="/marketplace/create"
         color="primary"
         class="mt-4"
       >
         Créer la première annonce
+      </UButton>
+      <UButton
+        v-else-if="authStore.isAuthenticated && !canCreateListing"
+        to="/account/cotisation"
+        color="primary"
+        variant="outline"
+        class="mt-4"
+      >
+        Devenir membre pour poster une annonce
       </UButton>
     </div>
 

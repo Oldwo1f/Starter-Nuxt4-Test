@@ -19,6 +19,7 @@ import { BillingModule } from './billing/billing.module';
 import { StripeModule } from './stripe/stripe.module';
 import { TodosModule } from './todos/todos.module';
 import { PollsModule } from './polls/polls.module';
+import { MessagesModule } from './messages/messages.module';
 import { AdminAgentModule } from './admin-agent/admin-agent.module';
 
 @Module({
@@ -41,6 +42,7 @@ import { AdminAgentModule } from './admin-agent/admin-agent.module';
     StripeModule,
     TodosModule,
     PollsModule,
+    MessagesModule,
     AdminAgentModule,
   ],
   controllers: [AppController],

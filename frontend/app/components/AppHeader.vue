@@ -2,9 +2,18 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import logoUrl from '~/assets/images/logo-nuna-heritage.png'
 import { useAuthStore } from '~/stores/useAuthStore'
+import { useMessagesStore } from '~/stores/useMessagesStore'
 
 const { appName, tagline } = useAppInfo()
 const authStore = useAuthStore()
+const messagesStore = useMessagesStore()
+
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    messagesStore.initSocket()
+    messagesStore.fetchUnreadCount()
+  }
+})
 const router = useRouter()
 const route = useRoute()
 
@@ -73,6 +82,12 @@ const heritageMenuItems = computed<MenuItem[]>(() => [
     to: '/partners',
     icon: 'i-heroicons-building-office-2',
     active: route.path.startsWith('/partners'),
+  },
+  {
+    label: 'Nos packs',
+    to: '/tarifs',
+    icon: 'i-heroicons-cube',
+    active: route.path.startsWith('/tarifs'),
   },
   {
     label: 'Te Natira\'a',
@@ -292,7 +307,24 @@ const mobileMenuItems = computed<DropdownMenuItem[][]>(() => {
         >
           <span class="hidden sm:inline">Connexion</span>
         </UButton>
-        <UDropdownMenu v-else :items="userMenuItems">
+        <template v-else>
+          <NuxtLink
+            to="/account/messages"
+            class="relative flex items-center justify-center rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Messages"
+          >
+            <UIcon name="i-heroicons-chat-bubble-left-right" class="h-5 w-5" />
+            <UBadge
+              v-if="messagesStore.totalUnreadCount > 0"
+              color="primary"
+              variant="solid"
+              size="xs"
+              class="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 text-[10px] leading-none !rounded-full justify-center px-1.5"
+            >
+              {{ messagesStore.totalUnreadCount > 99 ? '99+' : messagesStore.totalUnreadCount }}
+            </UBadge>
+          </NuxtLink>
+          <UDropdownMenu :items="userMenuItems">
           <UButton
             color="neutral"
             variant="ghost"
@@ -308,6 +340,7 @@ const mobileMenuItems = computed<DropdownMenuItem[][]>(() => {
             />
           </UButton>
         </UDropdownMenu>
+        </template>
       </div>
     </div>
   </header>

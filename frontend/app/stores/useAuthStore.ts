@@ -113,11 +113,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const register = async (email: string, password: string, referralCode?: string) => {
+  const register = async (email: string, password: string, phoneNumber: string, referralCode?: string) => {
     try {
       const body: any = {
         email,
         password,
+        phoneNumber,
       }
       if (referralCode) {
         body.referralCode = referralCode

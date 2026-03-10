@@ -30,6 +30,9 @@ import { IsString, IsNotEmpty, IsOptional, IsNumber, IsEnum, IsArray, IsBoolean,
 import { Type, Transform } from 'class-transformer';
 import { MarketplaceService, ListingFilters } from './marketplace.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from '../entities/user.entity';
 import { Listing, ListingType, ListingStatus } from '../entities/listing.entity';
 import { UploadService } from '../upload/upload.service';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
@@ -230,17 +233,19 @@ export class MarketplaceController {
   }
 
   @Post('listings')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MEMBER, UserRole.PREMIUM, UserRole.VIP, UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR)
   @ApiBearerAuth('JWT-auth')
   @UseInterceptors(FilesInterceptor('images', 10)) // Max 10 images
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Create a new listing',
-    description: 'Create a new listing with images (requires authentication)',
+    description: 'Create a new listing with images (members only - inscrits cannot post)',
   })
   @ApiBody({ type: CreateListingDto })
   @ApiResponse({ status: 201, description: 'Listing successfully created' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Members only (inscrits cannot post)' })
   async create(
     @Body() createListingDto: CreateListingDto,
     @Request() req,

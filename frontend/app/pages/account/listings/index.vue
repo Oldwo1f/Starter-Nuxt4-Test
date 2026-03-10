@@ -2,6 +2,7 @@
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useMarketplaceStore } from '~/stores/useMarketplaceStore'
 import { useProfileValidation } from '~/composables/useProfileValidation'
+import { useMemberCheck } from '~/composables/useMemberCheck'
 
 definePageMeta({
   layout: 'account',
@@ -12,6 +13,7 @@ const marketplaceStore = useMarketplaceStore()
 const authStore = useAuthStore()
 const toast = useToast()
 const { isProfileComplete } = useProfileValidation()
+const { canCreateListing } = useMemberCheck()
 
 // Helper function to format image URL
 const { getImageUrl: getImageUrlHelper } = useApi()
@@ -149,12 +151,22 @@ onMounted(() => {
         <p class="text-white/60">Gérez vos annonces publiées</p>
       </div>
       <UButton
+        v-if="canCreateListing"
         to="/marketplace/create"
         color="primary"
         icon="i-heroicons-plus-circle"
         :disabled="!isProfileComplete"
       >
         Créer une annonce
+      </UButton>
+      <UButton
+        v-else
+        to="/account/cotisation"
+        color="primary"
+        variant="outline"
+        icon="i-heroicons-lock-closed"
+      >
+        Devenir membre pour poster
       </UButton>
     </div>
 
@@ -283,13 +295,23 @@ onMounted(() => {
     <div v-else class="py-12 text-center text-white/60">
       <UIcon name="i-heroicons-inbox" class="mx-auto mb-4 h-12 w-12" />
       <p>Aucune annonce trouvée</p>
-      <UButton 
-        to="/marketplace/create" 
-        color="primary" 
+      <UButton
+        v-if="canCreateListing"
+        to="/marketplace/create"
+        color="primary"
         class="mt-4"
         :disabled="!isProfileComplete"
       >
         Créer une annonce
+      </UButton>
+      <UButton
+        v-else
+        to="/account/cotisation"
+        color="primary"
+        variant="outline"
+        class="mt-4"
+      >
+        Devenir membre pour poster une annonce
       </UButton>
     </div>
   </div>

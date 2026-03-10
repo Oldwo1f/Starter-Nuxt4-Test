@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useMarketplaceStore } from '~/stores/useMarketplaceStore'
 import { useAuthStore } from '~/stores/useAuthStore'
+import { useMemberCheck } from '~/composables/useMemberCheck'
 
 definePageMeta({
   layout: 'default',
@@ -10,6 +11,7 @@ definePageMeta({
 const { apiBaseUrl } = useApi()
 const marketplaceStore = useMarketplaceStore()
 const authStore = useAuthStore()
+const { isNonMemberAuthenticated } = useMemberCheck()
 const router = useRouter()
 const toast = useToast()
 
@@ -281,6 +283,23 @@ const confirmAndSubmit = async () => {
     isSubmitting.value = false
   }
 }
+
+// Rediriger les inscrits non-membres vers la page de cotisation
+watch(
+  isNonMemberAuthenticated,
+  (isNonMember) => {
+    if (isNonMember) {
+      toast.add({
+        title: 'Réservé aux membres',
+        description: 'La création d\'annonces est réservée aux membres. Devenez membre pour poster des annonces.',
+        color: 'warning',
+        icon: 'i-heroicons-lock-closed',
+      })
+      router.replace('/account/cotisation')
+    }
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   fetchOptions()

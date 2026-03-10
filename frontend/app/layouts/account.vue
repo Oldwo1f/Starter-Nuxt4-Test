@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { useAuthStore } from '~/stores/useAuthStore'
+import { useMessagesStore } from '~/stores/useMessagesStore'
 import logoUrl from '~/assets/images/logo-nuna-heritage.png'
 
 const authStore = useAuthStore()
+const messagesStore = useMessagesStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -41,6 +43,8 @@ onMounted(() => {
     router.push('/login')
     return
   }
+  messagesStore.initSocket()
+  messagesStore.fetchUnreadCount()
 })
 
 // Vérifier si l'utilisateur est staff ou admin
@@ -105,6 +109,11 @@ const accountMenuItems = [
     label: 'Dashboard',
     icon: 'i-heroicons-squares-2x2',
     to: '/account',
+  },
+  {
+    label: 'Messages',
+    icon: 'i-heroicons-chat-bubble-left-right',
+    to: '/account/messages',
   },
   {
     label: 'Cotisation',
@@ -225,7 +234,16 @@ const isActive = (path: string) => {
             @click="isDrawerOpen = false"
           >
             <UIcon :name="item.icon" class="w-5 h-5 flex-shrink-0" />
-            <span v-if="isSidebarOpen" class="truncate">{{ item.label }}</span>
+            <span v-if="isSidebarOpen" class="truncate flex-1">{{ item.label }}</span>
+            <UBadge
+              v-if="item.to === '/account/messages' && messagesStore.totalUnreadCount > 0"
+              color="primary"
+              variant="solid"
+              size="xs"
+              class="ml-auto min-w-[1.25rem] justify-center px-1 flex-shrink-0"
+            >
+              {{ messagesStore.totalUnreadCount > 99 ? '99+' : messagesStore.totalUnreadCount }}
+            </UBadge>
           </NuxtLink>
         </nav>
       </div>
@@ -284,7 +302,16 @@ const isActive = (path: string) => {
               @click="isDrawerOpen = false"
             >
               <UIcon :name="item.icon" class="w-5 h-5 flex-shrink-0" />
-              <span class="truncate">{{ item.label }}</span>
+              <span class="truncate flex-1">{{ item.label }}</span>
+              <UBadge
+                v-if="item.to === '/account/messages' && messagesStore.totalUnreadCount > 0"
+                color="primary"
+                variant="solid"
+                size="xs"
+                class="ml-auto min-w-[1.25rem] justify-center px-1 flex-shrink-0"
+              >
+                {{ messagesStore.totalUnreadCount > 99 ? '99+' : messagesStore.totalUnreadCount }}
+              </UBadge>
             </NuxtLink>
           </nav>
 

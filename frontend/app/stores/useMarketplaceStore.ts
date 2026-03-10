@@ -186,7 +186,11 @@ export const useMarketplaceStore = defineStore('marketplace', () => {
 
       return { success: true, data: listing }
     } catch (err: any) {
-      error.value = err.data?.message || err.message || 'Erreur lors de la création de l\'annonce'
+      const status = err?.statusCode ?? err?.status
+      error.value =
+        status === 403
+          ? 'La création d\'annonces est réservée aux membres. Devenez membre pour poster des annonces.'
+          : err.data?.message || err.message || 'Erreur lors de la création de l\'annonce'
       return {
         success: false,
         error: error.value,

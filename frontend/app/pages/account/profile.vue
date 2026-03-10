@@ -309,35 +309,6 @@ const personalInfoMessage = computed(() => {
   return `Vous devez renseigner ${allFields} et ${lastField} pour que votre profile soit valide.`
 })
 
-const missingContactMethods = computed(() => {
-  if (!user.value) return []
-  const hasPhone = !!(user.value.phoneNumber && user.value.phoneNumber.trim())
-  const hasMessenger = !!(user.value.contactPreferences?.accounts?.messenger && user.value.contactPreferences.accounts.messenger.trim())
-  const hasTelegram = !!(user.value.contactPreferences?.accounts?.telegram && user.value.contactPreferences.accounts.telegram.trim())
-  const hasWhatsapp = !!(user.value.contactPreferences?.accounts?.whatsapp && user.value.contactPreferences.accounts.whatsapp.trim())
-  
-  let count = 0
-  if (hasPhone) count++
-  if (hasMessenger) count++
-  if (hasTelegram) count++
-  if (hasWhatsapp) count++
-  
-  return Math.max(0, 2 - count)
-})
-
-const isContactPreferencesValid = computed(() => {
-  return missingContactMethods.value === 0
-})
-
-const contactPreferencesMessage = computed(() => {
-  const missing = missingContactMethods.value
-  if (missing === 0) return ''
-  if (missing === 1) {
-    return 'Vous devez renseigner au moins un deuxième moyen de contact pour que votre profile soit valide.'
-  }
-  return `Vous devez renseigner au moins ${missing} moyens de contact supplémentaires pour que votre profile soit valide.`
-})
-
 // Trading preferences functions
 const startEditingTradingPreferences = () => {
   if (user.value) {
@@ -1038,16 +1009,6 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Alerte validation préférences de contact -->
-        <UAlert
-          v-if="!isContactPreferencesValid"
-          color="error"
-          variant="soft"
-          icon="i-heroicons-exclamation-triangle"
-          title="Profil incomplet"
-          :description="contactPreferencesMessage"
-          class="text-left"
-        />
       </div>
     </UCard>
 

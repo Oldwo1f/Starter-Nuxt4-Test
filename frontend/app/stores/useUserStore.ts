@@ -7,6 +7,7 @@ export interface User {
   firstName?: string | null
   lastName?: string | null
   avatarImage?: string | null
+  phoneNumber?: string | null
   role: string
   emailVerified?: boolean
   isActive?: boolean
@@ -36,6 +37,7 @@ export interface ProfileFormData {
   firstName: string
   lastName: string
   avatarImage: string
+  phoneNumber: string
   isCertified: boolean
 }
 
@@ -64,6 +66,7 @@ export const useUserStore = defineStore('user', () => {
     firstName: '',
     lastName: '',
     avatarImage: '',
+    phoneNumber: '',
     isCertified: false,
   })
 
@@ -185,6 +188,8 @@ export const useUserStore = defineStore('user', () => {
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       avatarImage: user.avatarImage || '',
+      phoneNumber: user.phoneNumber || '',
+      isCertified: user.isCertified || false,
     }
     isEditingProfile.value = false
     isUserModalOpen.value = true
@@ -202,6 +207,7 @@ export const useUserStore = defineStore('user', () => {
         firstName: selectedUser.value.firstName || '',
         lastName: selectedUser.value.lastName || '',
         avatarImage: selectedUser.value.avatarImage || '',
+        phoneNumber: selectedUser.value.phoneNumber || '',
         isCertified: selectedUser.value.isCertified || false,
       }
       isEditingProfile.value = true
@@ -214,6 +220,7 @@ export const useUserStore = defineStore('user', () => {
         firstName: selectedUser.value.firstName || '',
         lastName: selectedUser.value.lastName || '',
         avatarImage: selectedUser.value.avatarImage || '',
+        phoneNumber: selectedUser.value.phoneNumber || '',
         isCertified: selectedUser.value.isCertified || false,
       }
     }
@@ -240,6 +247,7 @@ export const useUserStore = defineStore('user', () => {
           firstName: profileFormData.value.firstName || undefined,
           lastName: profileFormData.value.lastName || undefined,
           avatarImage: profileFormData.value.avatarImage || undefined,
+          phoneNumber: profileFormData.value.phoneNumber || undefined,
           isCertified: profileFormData.value.isCertified,
         },
       })

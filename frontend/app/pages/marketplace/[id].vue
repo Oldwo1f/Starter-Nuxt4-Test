@@ -60,7 +60,19 @@ const getSellerAvatarText = (seller: any) => {
   return seller?.email?.charAt(0).toUpperCase() || 'U'
 }
 
-// Contact seller handler - Open contact modal
+// Navigate to messaging with this seller
+const handleSendMessage = () => {
+  const router = useRouter()
+  router.push({
+    path: '/account/messages',
+    query: {
+      userId: listing.value?.sellerId,
+      listingId: listing.value?.id,
+    },
+  })
+}
+
+// Contact seller via external means - Open contact modal
 const handleContactSeller = () => {
   isContactModalOpen.value = true
 }
@@ -412,9 +424,18 @@ onMounted(() => {
                   color="primary"
                   block
                   icon="i-heroicons-chat-bubble-left-right"
+                  @click="handleSendMessage"
+                >
+                  Envoyer un message
+                </UButton>
+                <UButton
+                  v-if="availableContactMethods.length > 0"
+                  variant="outline"
+                  block
+                  icon="i-heroicons-phone"
                   @click="handleContactSeller"
                 >
-                  Contacter le troqueur
+                  Autres moyens de contact
                 </UButton>
                 <UButton
                   variant="outline"

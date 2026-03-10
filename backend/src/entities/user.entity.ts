@@ -91,7 +91,7 @@ export class User {
   @Column({ type: 'varchar', nullable: true, unique: true })
   referralCode: string | null; // Code de parrainage unique
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: true, name: 'phoneNumber' })
   phoneNumber: string | null;
 
   @Column({ type: 'varchar', nullable: true })

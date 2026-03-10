@@ -13,6 +13,7 @@ const route = useRoute()
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const phoneNumber = ref('')
 const referralCode = ref('')
 const isLoading = ref(false)
 const isFacebookLoading = ref(false)
@@ -31,7 +32,7 @@ const handleRegister = async () => {
   error.value = ''
   success.value = ''
 
-  if (!email.value || !password.value || !confirmPassword.value) {
+  if (!email.value || !password.value || !confirmPassword.value || !phoneNumber.value?.trim()) {
     error.value = 'Veuillez remplir tous les champs'
     return
   }
@@ -50,6 +51,7 @@ const handleRegister = async () => {
   const result = await authStore.register(
     email.value,
     password.value,
+    phoneNumber.value.trim(),
     referralCode.value || undefined
   )
   isLoading.value = false
@@ -135,6 +137,17 @@ const handleFacebookLogin = async () => {
             />
           </UFormGroup>
 
+          <UFormGroup label="Téléphone" name="phoneNumber" required>
+            <UInput
+              v-model="phoneNumber"
+              type="tel"
+              placeholder="+689 87 12 34 56"
+              icon="i-heroicons-phone"
+              :disabled="isLoading"
+              size="lg"
+            />
+          </UFormGroup>
+
           <UFormGroup label="Mot de passe" name="password" required>
             <UInput
               v-model="password"
@@ -188,7 +201,7 @@ const handleFacebookLogin = async () => {
           </UButton>
         </form>
 
-        <div class="mt-6">
+        <!-- <div class="mt-6">
           <div class="relative">
             <div class="absolute inset-0 flex items-center">
               <div class="w-full border-t border-white/10"></div>
@@ -211,7 +224,7 @@ const handleFacebookLogin = async () => {
             <UIcon name="i-simple-icons-facebook" class="w-5 h-5 mr-2" />
             Continuer avec Facebook
           </UButton>
-        </div>
+        </div> -->
 
         <div class="mt-6 text-center">
           <p class="text-sm text-white/60">

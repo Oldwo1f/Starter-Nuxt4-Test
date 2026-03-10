@@ -56,6 +56,7 @@ export class AuthService {
         emailVerified: user.emailVerified,
         isActive: user.isActive,
         paidAccessExpiresAt: user.paidAccessExpiresAt,
+        phoneNumber: user.phoneNumber,
       },
     };
   }
@@ -136,6 +137,7 @@ export class AuthService {
         emailVerified: user.emailVerified,
         isActive: user.isActive,
         paidAccessExpiresAt: user.paidAccessExpiresAt,
+        phoneNumber: user.phoneNumber,
       },
     };
   }
@@ -157,6 +159,7 @@ export class AuthService {
   async register(
     email: string,
     password: string,
+    phoneNumber: string,
     firstName?: string,
     lastName?: string,
     referralCode?: string,
@@ -165,7 +168,7 @@ export class AuthService {
     if (existingUser) {
       throw new UnauthorizedException('User already exists');
     }
-    const user = await this.usersService.create(email, password, undefined, firstName, lastName);
+    const user = await this.usersService.create(email, password, undefined, phoneNumber, firstName, lastName);
 
     // Generate email verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');

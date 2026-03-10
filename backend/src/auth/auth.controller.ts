@@ -63,6 +63,13 @@ export class RegisterDto {
   lastName?: string;
 
   @ApiProperty({
+    description: 'User phone number',
+    example: '+689 87 12 34 56',
+  })
+  @IsString()
+  phoneNumber: string;
+
+  @ApiProperty({
     description: 'Referral code (optional)',
     example: 'ABC12345',
     required: false,
@@ -245,10 +252,19 @@ export class AuthController {
   @ApiBody({ type: RegisterDto })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   @ApiResponse({ status: 400, description: 'Invalid input or user already exists' })
-  async register(@Body() registerDto: RegisterDto) {
+  async register(
+    @Body() registerDto: RegisterDto,
+    @Body('phoneNumber') phoneNumberFromBody: string | undefined,
+  ) {
+    // Use @Body('phoneNumber') as fallback: ValidationPipe whitelist may strip it from DTO in some configs
+    const phoneNumber = (registerDto.phoneNumber ?? phoneNumberFromBody ?? '').trim();
+    if (!phoneNumber) {
+      throw new BadRequestException('Le numéro de téléphone est requis');
+    }
     return this.authService.register(
       registerDto.email,
       registerDto.password,
+      phoneNumber,
       registerDto.firstName,
       registerDto.lastName,
       registerDto.referralCode,

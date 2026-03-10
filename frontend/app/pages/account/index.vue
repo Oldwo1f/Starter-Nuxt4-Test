@@ -3,6 +3,7 @@ import { useAuthStore } from '~/stores/useAuthStore'
 import { useWalletStore } from '~/stores/useWalletStore'
 import { useMarketplaceStore } from '~/stores/useMarketplaceStore'
 import { useProfileValidation } from '~/composables/useProfileValidation'
+import { useMemberCheck } from '~/composables/useMemberCheck'
 
 definePageMeta({
   layout: 'account',
@@ -15,6 +16,7 @@ const marketplaceStore = useMarketplaceStore()
 const toast = useToast()
 const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
 const { isProfileComplete } = useProfileValidation()
+const { canCreateListing } = useMemberCheck()
 
 // Stats
 const stats = ref({
@@ -169,13 +171,23 @@ onMounted(() => {
           <h2 class="text-xl font-semibold">Actions rapides</h2>
         </template>
         <div class="flex flex-wrap gap-3">
-          <UButton 
-            to="/marketplace/create" 
-            color="primary" 
+          <UButton
+            v-if="canCreateListing"
+            to="/marketplace/create"
+            color="primary"
             icon="i-heroicons-plus-circle"
             :disabled="!isProfileComplete"
           >
             Créer une annonce
+          </UButton>
+          <UButton
+            v-else
+            to="/account/cotisation"
+            color="primary"
+            variant="outline"
+            icon="i-heroicons-lock-closed"
+          >
+            Devenir membre pour poster
           </UButton>
           <UButton 
             to="/account/wallet/transfer" 

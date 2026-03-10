@@ -15,6 +15,7 @@ export class UsersService {
     email: string,
     password: string,
     role: UserRole = UserRole.USER,
+    phoneNumber?: string,
     firstName?: string,
     lastName?: string,
   ): Promise<User> {
@@ -23,6 +24,7 @@ export class UsersService {
       email,
       password: hashedPassword,
       role,
+      phoneNumber: phoneNumber?.trim() || null,
       firstName: firstName || null,
       lastName: lastName || null,
       emailVerified: false,
@@ -135,7 +137,7 @@ export class UsersService {
     }
 
     // Apply sorting
-    const validSortColumns = ['id', 'email', 'firstName', 'lastName', 'role', 'emailVerified', 'isActive', 'lastLogin', 'createdAt', 'updatedAt'];
+    const validSortColumns = ['id', 'email', 'firstName', 'lastName', 'phoneNumber', 'role', 'emailVerified', 'isActive', 'lastLogin', 'createdAt', 'updatedAt'];
     const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'id';
     queryBuilder.orderBy(`user.${sortColumn}`, sortOrder);
 

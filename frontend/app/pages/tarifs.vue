@@ -14,7 +14,7 @@ definePageMeta({
 const authStore = useAuthStore()
 const toast = useToast()
 
-// Compte à rebours pour la promo de lancement - 10 mars à minuit
+// Compte à rebours pour la promo de lancement - 31 mars à minuit
 const countdown = ref({
   days: 0,
   hours: 0,
@@ -22,7 +22,7 @@ const countdown = ref({
   seconds: 0,
 })
 
-const targetDate = new Date('2026-03-10T00:00:00').getTime()
+const targetDate = new Date('2026-03-31T23:59:59').getTime()
 
 const updateCountdown = () => {
   const now = new Date().getTime()
@@ -206,10 +206,10 @@ const vipInvestPacks = [
               <span>Promo de Lancement du nouveau site</span>
             </div>
             <h2 class="mb-2 text-2xl font-bold text-white sm:text-3xl">
-              On double les 🐚 Pūpū
+              🐚 Pūpū supplémentaires pendant 1 an
             </h2>
             <p class="text-lg text-primary-300">
-              Jusqu'au 10 mars à minuit
+              Pour toute inscription avant le 31 mars — crédités chaque début de mois
             </p>
           </div>
           <div class="mb-6 grid grid-cols-4 gap-3 sm:gap-4 md:gap-6">
@@ -251,13 +251,13 @@ const vipInvestPacks = [
             <div class="rounded-lg bg-primary-500/20 p-4 text-center">
               <div class="mb-1 text-sm font-medium text-white/70">Pack Te Ohi</div>
               <div class="text-xl font-bold text-white">
-                50 🐚 × 2 = <span class="text-primary-300">100 🐚</span>
+                <span class="text-primary-300">+5 🐚</span> / mois pendant 1 an
               </div>
             </div>
             <div class="rounded-lg bg-primary-500/20 p-4 text-center">
               <div class="mb-1 text-sm font-medium text-white/70">Pack Umete</div>
               <div class="text-xl font-bold text-white">
-                100 🐚 × 2 = <span class="text-primary-300">200 🐚</span>
+                <span class="text-primary-300">+10 🐚</span> / mois pendant 1 an
               </div>
             </div>
           </div>

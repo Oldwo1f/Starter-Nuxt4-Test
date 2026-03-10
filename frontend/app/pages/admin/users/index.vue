@@ -352,6 +352,12 @@ const columns = [
     enableSorting: true,
   },
   {
+    id: 'phoneNumber',
+    accessorKey: 'phoneNumber',
+    header: 'Téléphone',
+    enableSorting: true,
+  },
+  {
     id: 'role',
     accessorKey: 'role',
     header: 'Rôle',
@@ -530,6 +536,10 @@ onUnmounted(() => {
 
           <template #lastName-cell="{ row }">
             <span class="text-white/90">{{ row.original.lastName || '-' }}</span>
+          </template>
+
+          <template #phoneNumber-cell="{ row }">
+            <span class="text-white/90">{{ row.original.phoneNumber || '-' }}</span>
           </template>
 
           <template #role-cell="{ row }">
@@ -713,6 +723,15 @@ onUnmounted(() => {
               </div>
 
               <div>
+                <label class="block text-sm font-medium text-white/70 mb-2">Téléphone</label>
+                <UInput
+                  :value="userStore.selectedUser?.phoneNumber || 'Non renseigné'"
+                  disabled
+                  icon="i-heroicons-phone"
+                />
+              </div>
+
+              <div>
                 <label class="block text-sm font-medium text-white/70 mb-2">Rôle actuel</label>
                 <UInput
                   :value="getRoleLabel(userStore.selectedUser?.role || '')"
@@ -773,6 +792,15 @@ onUnmounted(() => {
                     v-model="userStore.profileFormData.lastName"
                     placeholder="Entrez le nom"
                     icon="i-heroicons-user"
+                  />
+                </UFormGroup>
+
+                <UFormGroup label="Téléphone" name="phoneNumber">
+                  <UInput
+                    v-model="userStore.profileFormData.phoneNumber"
+                    type="tel"
+                    placeholder="+689 87 12 34 56"
+                    icon="i-heroicons-phone"
                   />
                 </UFormGroup>
 

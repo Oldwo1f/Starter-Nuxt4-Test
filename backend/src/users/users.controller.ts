@@ -56,6 +56,15 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   isCertified?: boolean;
+
+  @ApiProperty({
+    description: 'User phone number',
+    example: '+689 87 12 34 56',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
 }
 
 @ApiTags('users')
@@ -137,6 +146,7 @@ export class UsersController {
       lastName: updateUserDto.lastName,
       avatarImage: updateUserDto.avatarImage,
       isCertified: updateUserDto.isCertified,
+      phoneNumber: updateUserDto.phoneNumber,
     });
   }
 
