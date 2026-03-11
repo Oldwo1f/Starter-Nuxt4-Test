@@ -2,6 +2,7 @@
 import { useMessagesStore } from '~/stores/useMessagesStore'
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useDate } from '~/composables/useDate'
+import { useDebounceFn } from '@vueuse/core'
 
 definePageMeta({
   layout: 'account',
@@ -58,7 +59,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   messagesStore.setActiveConversation(null)
-  messagesStore.cleanup()
 })
 
 const getParticipantAvatar = (participant: any) => {
@@ -80,10 +80,28 @@ const isOwnMessage = (msg: any) => msg.senderId === authStore.user?.id
 
 const { unlock: unlockSound } = useMessageSound()
 
+const TYPING_STOP_DELAY = 2000
+
+const emitTypingStopDebounced = useDebounceFn(() => {
+  if (messagesStore.activeConversation) {
+    messagesStore.emitTypingStop(messagesStore.activeConversation.id)
+  }
+}, TYPING_STOP_DELAY)
+
+const onInputTyping = () => {
+  const conv = messagesStore.activeConversation
+  if (!conv) return
+  messagesStore.emitTypingStart(conv.id)
+  emitTypingStopDebounced()
+}
+
 const handleSend = async () => {
   unlockSound()
   const content = messageInput.value.trim()
   if (!content || !messagesStore.activeConversation) return
+
+  messagesStore.emitTypingStop(messagesStore.activeConversation.id)
+  emitTypingStopDebounced.cancel?.()
 
   const sent = await messagesStore.sendMessage(messagesStore.activeConversation.id, content)
   if (sent) {
@@ -94,8 +112,8 @@ const handleSend = async () => {
 </script>
 
 <template>
-  <div class="flex h-[calc(100vh-12rem)] flex-col" @click="unlockSound">
-    <div v-if="messagesStore.activeConversation" class="flex items-center gap-4 border-b border-white/10 pb-4">
+  <div class="flex flex-1 min-h-0 flex-col overflow-hidden" @click="unlockSound">
+    <div v-if="messagesStore.activeConversation" class="shrink-0 flex items-center gap-4 border-b border-white/10 pb-4">
       <UButton
         color="neutral"
         variant="ghost"
@@ -122,13 +140,13 @@ const handleSend = async () => {
 
     <div
       v-if="messagesStore.activeConversation"
-      class="flex-1 space-y-4 overflow-y-auto py-4"
+      class="flex-1 min-h-0 overflow-y-auto space-y-4 py-4 pl-2 pr-4"
     >
       <div v-if="messagesStore.isLoadingMessages" class="flex justify-center py-8">
         <div class="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
       </div>
 
-      <div v-else-if="messagesStore.messages.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
+      <div v-else-if="messagesStore.messages.length === 0 && !messagesStore.isOtherTyping" class="flex flex-col items-center justify-center py-12 text-center">
         <UIcon name="i-heroicons-chat-bubble-left-right" class="h-12 w-12 text-white/30" />
         <p class="mt-4 text-white/60">Aucun message</p>
         <p class="mt-1 text-sm text-white/40">Envoyez le premier message pour démarrer la conversation.</p>
@@ -161,23 +179,48 @@ const handleSend = async () => {
       <div ref="messagesEndRef" />
     </div>
 
-    <div v-if="messagesStore.activeConversation" class="border-t border-white/10 pt-4">
-      <form @submit.prevent="handleSend" class="flex gap-2">
+    <div v-if="messagesStore.activeConversation" class="shrink-0 border-t border-white/10">
+      <div
+        v-if="messagesStore.isOtherTyping"
+        class="px-2 py-1.5 text-sm text-white/60 flex items-center gap-1"
+      >
+        <span>{{ otherParticipant?.firstName || otherParticipant?.lastName || 'Quelqu\'un' }}</span>
+        <span>est en train d'écrire</span>
+        <span class="typing-dots">...</span>
+      </div>
+      <form @submit.prevent="handleSend" class="flex gap-3 items-center py-2">
         <UInput
           v-model="messageInput"
           placeholder="Écrivez votre message..."
-          class="flex-1"
+          size="lg"
+          class="flex-1 min-h-12"
           :disabled="messagesStore.isLoadingMessages"
           autocomplete="off"
           @focus="unlockSound"
+          @input="onInputTyping"
         />
         <UButton
           type="submit"
           color="primary"
-          icon="i-heroicons-paper-airplane"
+          size="lg"
           :disabled="!messageInput.trim()"
-        />
+          class="shrink-0 min-h-12 min-w-12 flex items-center justify-center p-0"
+        >
+          <UIcon name="i-heroicons-paper-airplane" class="h-7 w-7" />
+        </UButton>
       </form>
     </div>
   </div>
 </template>
+
+<style scoped>
+.typing-dots {
+  display: inline-block;
+  animation: typing-blink 1.4s infinite;
+}
+
+@keyframes typing-blink {
+  0%, 60%, 100% { opacity: 0.3; }
+  30% { opacity: 1; }
+}
+</style>

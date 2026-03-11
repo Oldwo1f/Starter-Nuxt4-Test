@@ -29,6 +29,7 @@ const messagesEnd = ref<HTMLElement | null>(null)
 const {
   isSupported: isSpeechSupported,
   isListening,
+  isFinal: isSpeechFinal,
   result: speechResult,
   error: speechError,
   start: startSpeech,
@@ -66,6 +67,15 @@ watch(speechError, (err) => {
   }
 })
 
+// Accumule chaque segment final (VueUse écrase result à chaque événement, on doit tout garder)
+watch([speechResult, isSpeechFinal], ([result, isFinal]) => {
+  if (isFinal && result?.trim()) {
+    accumulatedText.value = accumulatedText.value
+      ? `${accumulatedText.value} ${result.trim()}`
+      : result.trim()
+  }
+})
+
 const startRecording = () => {
   if (!isSpeechSupported.value) return
   accumulatedText.value = ''
@@ -81,9 +91,10 @@ const pauseRecording = () => {
   stopSpeech()
   pauseTimer()
   isPaused.value = true
+  // Fallback: capture le segment en cours si pas encore finalisé (évite doublon si déjà dans accumulated)
   setTimeout(() => {
     const text = speechResult.value?.trim()
-    if (text) {
+    if (text && !accumulatedText.value.endsWith(text)) {
       accumulatedText.value = accumulatedText.value ? `${accumulatedText.value} ${text}` : text
     }
   }, 100)
@@ -107,18 +118,25 @@ const closeRecording = (textToInput: string) => {
   accumulatedText.value = ''
 }
 
+const getFullTranscript = () => {
+  const acc = accumulatedText.value.trim()
+  const cur = speechResult.value?.trim() || ''
+  if (!acc) return cur
+  if (!cur) return acc
+  return acc.endsWith(cur) ? acc : `${acc} ${cur}`
+}
+
 const stopRecording = () => {
   stopSpeech()
   setTimeout(() => {
-    const fullText = (accumulatedText.value + (speechResult.value?.trim() ? ` ${speechResult.value.trim()}` : '')).trim()
-    closeRecording(fullText)
+    closeRecording(getFullTranscript())
   }, 100)
 }
 
 const sendRecording = () => {
   stopSpeech()
   setTimeout(() => {
-    const fullText = (accumulatedText.value + (speechResult.value?.trim() ? ` ${speechResult.value.trim()}` : '')).trim()
+    const fullText = getFullTranscript()
     closeRecording('')
     if (fullText) {
       input.value = fullText

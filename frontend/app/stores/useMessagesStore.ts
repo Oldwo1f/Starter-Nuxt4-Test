@@ -57,6 +57,59 @@ export const useMessagesStore = defineStore('messages', () => {
   const isLoadingMessages = ref(false)
   const error = ref<string | null>(null)
 
+  // typing indicator: conversationId -> userId who is typing
+  const typingUserByConversation = ref<Record<number, number>>({})
+
+  const emitTypingStart = (conversationId: number) => {
+    const socket = getSocket()
+    if (socket) socket.emit('typing:start', { conversationId })
+  }
+
+  const emitTypingStop = (conversationId: number) => {
+    const socket = getSocket()
+    if (socket) socket.emit('typing:stop', { conversationId })
+  }
+
+  const typingTimeouts = new Map<number, ReturnType<typeof setTimeout>>()
+
+  const handleTypingTyping = (payload: { conversationId: number; userId: number }) => {
+    if (!payload?.conversationId || !payload?.userId) return
+    const existing = typingTimeouts.get(payload.conversationId)
+    if (existing) clearTimeout(existing)
+    typingUserByConversation.value = {
+      ...typingUserByConversation.value,
+      [payload.conversationId]: payload.userId,
+    }
+    const timeout = setTimeout(() => {
+      typingUserByConversation.value = { ...typingUserByConversation.value }
+      delete typingUserByConversation.value[payload.conversationId]
+      typingTimeouts.delete(payload.conversationId)
+    }, 5000)
+    typingTimeouts.set(payload.conversationId, timeout)
+  }
+
+  const handleTypingStopped = (payload: { conversationId: number; userId: number }) => {
+    if (!payload?.conversationId) return
+    const existing = typingTimeouts.get(payload.conversationId)
+    if (existing) {
+      clearTimeout(existing)
+      typingTimeouts.delete(payload.conversationId)
+    }
+    const next = { ...typingUserByConversation.value }
+    delete next[payload.conversationId]
+    typingUserByConversation.value = next
+  }
+
+  const isOtherTyping = computed(() => {
+    const conv = activeConversation.value
+    if (!conv) return false
+    const typingMap = typingUserByConversation.value
+    if (!typingMap || typeof typingMap !== 'object') return false
+    const typingUserId = typingMap[conv.id]
+    if (!typingUserId) return false
+    return typingUserId !== authStore.user?.id
+  })
+
   const getOtherParticipant = (conv: Conversation): UserSummary | undefined => {
     if (!authStore.user) return undefined
     return conv.participant1Id === authStore.user.id ? conv.participant2 : conv.participant1
@@ -138,7 +191,7 @@ export const useMessagesStore = defineStore('messages', () => {
           headers: {
             Authorization: `Bearer ${authStore.accessToken}`,
           },
-          query: { page, pageSize: 50 },
+          query: { page, pageSize: 100 },
         },
       )
       if (page === 1) {
@@ -232,8 +285,14 @@ export const useMessagesStore = defineStore('messages', () => {
 
   const addMessageFromSocket = (message: Message) => {
     const isFromOtherUser = message.senderId !== authStore.user?.id
+    const isViewingConversation = activeConversation.value?.id === message.conversationId
 
-    if (activeConversation.value?.id === message.conversationId) {
+    // Clear typing indicator when message received from that user
+    if (typingUserByConversation.value[message.conversationId] === message.senderId) {
+      handleTypingStopped({ conversationId: message.conversationId, userId: message.senderId })
+    }
+
+    if (isViewingConversation) {
       if (!messages.value.some((m) => m.id === message.id)) {
         messages.value = [...messages.value, message]
       }
@@ -242,12 +301,12 @@ export const useMessagesStore = defineStore('messages', () => {
     if (conv) {
       conv.lastMessage = message
       conv.updatedAt = message.createdAt
-      if (isFromOtherUser) {
+      if (isFromOtherUser && !isViewingConversation) {
         conv.unreadCount = (conv.unreadCount ?? 0) + 1
       }
       conversations.value = [...conversations.value]
     }
-    if (isFromOtherUser) {
+    if (isFromOtherUser && !isViewingConversation) {
       unreadCountTotal.value += 1
     }
 
@@ -297,6 +356,8 @@ export const useMessagesStore = defineStore('messages', () => {
   }
 
   let unsubscribeMessageNew: (() => void) | null = null
+  let unsubscribeTypingTyping: (() => void) | null = null
+  let unsubscribeTypingStopped: (() => void) | null = null
   let isSocketInitialized = false
 
   const initSocket = () => {
@@ -305,11 +366,19 @@ export const useMessagesStore = defineStore('messages', () => {
     isSocketInitialized = true
     connect()
     unsubscribeMessageNew = on('message:new', addMessageFromSocket)
+    unsubscribeTypingTyping = on('typing:typing', handleTypingTyping)
+    unsubscribeTypingStopped = on('typing:stopped', handleTypingStopped)
   }
 
   const cleanup = () => {
     unsubscribeMessageNew?.()
     unsubscribeMessageNew = null
+    unsubscribeTypingTyping?.()
+    unsubscribeTypingTyping = null
+    unsubscribeTypingStopped?.()
+    unsubscribeTypingStopped = null
+    typingTimeouts.forEach((t) => clearTimeout(t))
+    typingTimeouts.clear()
     isSocketInitialized = false
     disconnect()
   }
@@ -321,6 +390,8 @@ export const useMessagesStore = defineStore('messages', () => {
     isLoading,
     isLoadingMessages,
     error,
+    typingUserByConversation,
+    isOtherTyping,
     getOtherParticipant,
     fetchConversations,
     fetchConversation,
@@ -329,6 +400,8 @@ export const useMessagesStore = defineStore('messages', () => {
     sendMessage,
     setActiveConversation,
     addMessageFromSocket,
+    emitTypingStart,
+    emitTypingStop,
     totalUnreadCount,
     fetchUnreadCount,
     markConversationAsRead,

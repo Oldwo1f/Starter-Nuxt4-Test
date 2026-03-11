@@ -124,11 +124,12 @@ export class MessagesController {
   @Get('conversations/:id/messages')
   @ApiOperation({
     summary: 'Get messages',
-    description: 'Get paginated messages for a conversation',
+    description: 'Get paginated messages for a conversation. Returns most recent messages first (page 1). Use beforeId to load older messages.',
   })
   @ApiParam({ name: 'id', description: 'Conversation ID', type: 'number' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'pageSize', required: false, type: Number })
+  @ApiQuery({ name: 'beforeId', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Paginated messages' })
   @ApiResponse({ status: 403, description: 'Forbidden - Not a participant' })
   @ApiResponse({ status: 404, description: 'Conversation not found' })
@@ -142,6 +143,7 @@ export class MessagesController {
       user,
       query.page ?? 1,
       query.pageSize ?? 50,
+      query.beforeId,
     );
   }
 

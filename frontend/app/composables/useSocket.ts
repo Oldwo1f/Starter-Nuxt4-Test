@@ -17,7 +17,7 @@ export const useSocket = () => {
       return null
     }
 
-    if (socketInstance?.connected) {
+    if (socketInstance) {
       return socketInstance
     }
 
@@ -56,7 +56,7 @@ export const useSocket = () => {
 
   const getSocket = (): Socket | null => {
     if (!process.client) return null
-    if (socketInstance?.connected) return socketInstance
+    if (socketInstance) return socketInstance
     if (authStore.isAuthenticated) {
       return connect()
     }

@@ -144,6 +144,8 @@ export class MessagesService {
 
   /**
    * Get messages for a conversation with pagination.
+   * Initial load (no beforeId): returns the most recent messages (chronological order).
+   * With beforeId: returns older messages for "load more" (chronological order).
    */
   async getMessages(
     conversationId: number,
@@ -154,20 +156,31 @@ export class MessagesService {
   ): Promise<{ data: Message[]; total: number; page: number; pageSize: number; totalPages: number }> {
     await this.getConversation(conversationId, currentUser);
 
-    const queryBuilder = this.messageRepository
+    const baseQuery = this.messageRepository
       .createQueryBuilder('m')
       .leftJoinAndSelect('m.sender', 'sender')
-      .where('m.conversationId = :conversationId', { conversationId })
-      .orderBy('m.createdAt', 'ASC');
+      .where('m.conversationId = :conversationId', { conversationId });
 
+    const total = await baseQuery.getCount();
+
+    let data: Message[];
     if (beforeId) {
-      queryBuilder.andWhere('m.id < :beforeId', { beforeId });
+      // Load older messages (for "load more" scroll up)
+      data = await baseQuery
+        .andWhere('m.id < :beforeId', { beforeId })
+        .orderBy('m.createdAt', 'DESC')
+        .take(pageSize)
+        .getMany();
+      data = data.reverse(); // chronological order (oldest first in batch)
+    } else {
+      // Initial load: get most recent messages (last pageSize messages)
+      const skip = Math.max(0, total - pageSize);
+      data = await baseQuery
+        .orderBy('m.createdAt', 'ASC')
+        .skip(skip)
+        .take(pageSize)
+        .getMany();
     }
-
-    const total = await queryBuilder.getCount();
-
-    const skip = (page - 1) * pageSize;
-    const data = await queryBuilder.skip(skip).take(pageSize).getMany();
 
     const totalPages = Math.ceil(total / pageSize);
 

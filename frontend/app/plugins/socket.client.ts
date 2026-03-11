@@ -1,7 +1,10 @@
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useMessagesStore } from '~/stores/useMessagesStore'
 
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin({
+  name: 'socket',
+  dependsOn: ['auth'],
+  setup(nuxtApp) {
   const authStore = useAuthStore()
 
   const initSocket = () => {
@@ -24,7 +27,11 @@ export default defineNuxtPlugin(() => {
     }
   })
 
-  if (authStore.isAuthenticated) {
-    initSocket()
+  // Exécuter après le montage de l'app pour s'assurer que le store auth est hydraté
+  nuxtApp.hook('app:mounted', () => {
+    if (authStore.isAuthenticated) {
+      initSocket()
+    }
+  })
   }
 })

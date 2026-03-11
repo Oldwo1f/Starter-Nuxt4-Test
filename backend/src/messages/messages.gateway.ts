@@ -92,6 +92,66 @@ export class MessagesGateway
     this.server.to(`user:${recipientId}`).emit('message:new', message);
   }
 
+  @SubscribeMessage('typing:start')
+  async handleTypingStart(
+    @MessageBody() payload: { conversationId: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data?.userId;
+    if (!userId) return;
+
+    if (!payload?.conversationId) return;
+
+    try {
+      const conversation = await this.messagesService.getConversation(
+        payload.conversationId,
+        { id: userId },
+      );
+      const recipientId = this.messagesService.getRecipientId(
+        conversation,
+        userId,
+      );
+      this.server
+        .to(`user:${recipientId}`)
+        .emit('typing:typing', {
+          conversationId: payload.conversationId,
+          userId,
+        });
+    } catch {
+      // Ignore invalid conversation
+    }
+  }
+
+  @SubscribeMessage('typing:stop')
+  async handleTypingStop(
+    @MessageBody() payload: { conversationId: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data?.userId;
+    if (!userId) return;
+
+    if (!payload?.conversationId) return;
+
+    try {
+      const conversation = await this.messagesService.getConversation(
+        payload.conversationId,
+        { id: userId },
+      );
+      const recipientId = this.messagesService.getRecipientId(
+        conversation,
+        userId,
+      );
+      this.server
+        .to(`user:${recipientId}`)
+        .emit('typing:stopped', {
+          conversationId: payload.conversationId,
+          userId,
+        });
+    } catch {
+      // Ignore invalid conversation
+    }
+  }
+
   @SubscribeMessage('message:send')
   async handleMessageSend(
     @MessageBody() payload: { conversationId: number; content: string },

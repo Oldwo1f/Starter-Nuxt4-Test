@@ -23,4 +23,12 @@ export class MessagesQueryDto {
   @Max(100)
   @Type(() => Number)
   pageSize?: number = 50;
+
+  @ApiPropertyOptional({
+    description: 'Fetch messages older than this message ID (for load more)',
+  })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  beforeId?: number;
 }

@@ -4,6 +4,7 @@
 
 <template>
   <UApp>
+    <SocketInitializer />
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

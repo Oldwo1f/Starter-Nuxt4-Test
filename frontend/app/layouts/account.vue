@@ -432,8 +432,8 @@ const isActive = (path: string) => {
       </header>
 
       <!-- Page content -->
-      <main class="flex-1 overflow-auto bg-gray-950 w-full pb-20 md:pb-0">
-        <div class="p-4 md:p-6">
+      <main class="flex-1 min-h-0 overflow-auto bg-gray-950 w-full pb-20 md:pb-0">
+        <div class="h-full flex flex-col p-4 md:p-6">
           <slot />
         </div>
       </main>

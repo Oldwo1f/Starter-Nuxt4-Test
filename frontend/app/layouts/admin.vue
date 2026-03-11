@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { useAuthStore } from '~/stores/useAuthStore'
+import { useMessagesStore } from '~/stores/useMessagesStore'
 import logoUrl from '~/assets/images/logo-nuna-heritage.png'
 
 const authStore = useAuthStore()
+const messagesStore = useMessagesStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -63,6 +65,8 @@ onMounted(() => {
     router.push('/')
     return
   }
+  messagesStore.initSocket()
+  messagesStore.fetchUnreadCount()
 })
 
 // Items du menu dropdown
@@ -278,6 +282,23 @@ const isActive = (path: string) => {
               {{ route.meta?.title || 'Administration' }}
             </h1>
             <div class="flex items-center gap-2">
+              <!-- Messages -->
+              <NuxtLink
+                to="/account/messages"
+                class="relative flex items-center justify-center rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Messages"
+              >
+                <UIcon name="i-heroicons-chat-bubble-left-right" class="h-5 w-5" />
+                <UBadge
+                  v-if="messagesStore.totalUnreadCount > 0"
+                  color="primary"
+                  variant="solid"
+                  size="xs"
+                  class="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 text-[10px] leading-none !rounded-full justify-center px-1.5"
+                >
+                  {{ messagesStore.totalUnreadCount > 99 ? '99+' : messagesStore.totalUnreadCount }}
+                </UBadge>
+              </NuxtLink>
               <!-- User menu -->
               <UDropdownMenu :items="userMenuItems">
                 <UButton
