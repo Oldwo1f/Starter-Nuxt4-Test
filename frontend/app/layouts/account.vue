@@ -141,6 +141,11 @@ const accountMenuItems = [
     to: '/account/referral',
   },
   {
+    label: 'Mes badges',
+    icon: 'i-heroicons-trophy',
+    to: '/account/badges',
+  },
+  {
     label: 'Mon profil',
     icon: 'i-heroicons-user-circle',
     to: '/account/profile',

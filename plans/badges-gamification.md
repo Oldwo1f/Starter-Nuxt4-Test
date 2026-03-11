@@ -107,6 +107,16 @@ flowchart TB
 | **Rameur de la Communauté**    | Parraine 5 membres       | Idem                                    |
 | **Navigateur du Réseau**       | Parraine 15 membres      | Idem                                    |
 
+### Série Soutien
+
+| Badge             | Condition                      | Données à créer                                                       |
+| ----------------- | ------------------------------ | --------------------------------------------------------------------- |
+| **Soutien Local** | 1 achat chez un partenaire     | Entité `PartnerPurchase` (userId, partnerId, purchasedAt, montant?)   |
+| **Mécène**        | 5 achats chez des partenaires  | Idem                                                                  |
+| **Bienfaiteur**   | 15 achats chez des partenaires | Idem                                                                  |
+
+*Note : Les partenaires sont listés dans `partners`. Il faut un flux de déclaration/validation des achats (formulaire utilisateur + validation admin, ou lien partenaire avec tracking).*
+
 ---
 
 ## 3. INSPIRER (engagement, événements, soutien)
@@ -127,16 +137,6 @@ flowchart TB
 | **Voix de la Communauté** | Laisse 1 témoignage validé | Entité `Testimonial` (userId, videoUrl, status) |
 | **Porte-parole**          | 3 témoignages validés      | Idem                                            |
 | **Conteur Public**        | 5 témoignages validés      | Idem                                            |
-
-### Série Soutien
-
-| Badge             | Condition                      | Données à créer                                                       |
-| ----------------- | ------------------------------ | --------------------------------------------------------------------- |
-| **Soutien Local** | 1 achat chez un partenaire     | Entité `PartnerPurchase` (userId, partnerId, purchasedAt, montant?)   |
-| **Mécène**        | 5 achats chez des partenaires  | Idem                                                                  |
-| **Bienfaiteur**   | 15 achats chez des partenaires | Idem                                                                  |
-
-*Note : Les partenaires sont listés dans `partners`. Il faut un flux de déclaration/validation des achats (formulaire utilisateur + validation admin, ou lien partenaire avec tracking).*
 
 ### Série Découverte
 
