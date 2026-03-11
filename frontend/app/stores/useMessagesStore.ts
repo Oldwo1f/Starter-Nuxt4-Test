@@ -284,11 +284,14 @@ export const useMessagesStore = defineStore('messages', () => {
   }
 
   const addMessageFromSocket = (message: Message) => {
+    if (!message?.conversationId || message.senderId == null) return
+
     const isFromOtherUser = message.senderId !== authStore.user?.id
     const isViewingConversation = activeConversation.value?.id === message.conversationId
 
     // Clear typing indicator when message received from that user
-    if (typingUserByConversation.value[message.conversationId] === message.senderId) {
+    const typingMap = typingUserByConversation.value
+    if (typingMap && typingMap[message.conversationId] === message.senderId) {
       handleTypingStopped({ conversationId: message.conversationId, userId: message.senderId })
     }
 

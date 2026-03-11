@@ -37,14 +37,38 @@ const handleLogout = () => {
   router.push('/')
 }
 
-// Rediriger si l'utilisateur n'est pas authentifié
+// Initialiser le socket et rafraîchir le compteur de messages
+const refreshUnreadCount = () => {
+  messagesStore.initSocket()
+  messagesStore.fetchUnreadCount()
+}
+
+// Rafraîchir le compteur à chaque navigation dans l'espace compte
+watch(
+  () => route.path,
+  (path) => {
+    if (path.startsWith('/account') && authStore.isAuthenticated) {
+      refreshUnreadCount()
+    }
+  },
+)
+
+// Rediriger si l'utilisateur n'est pas authentifié + init socket + polling
+let pollInterval: ReturnType<typeof setInterval> | null = null
 onMounted(() => {
   if (!authStore.isAuthenticated) {
     router.push('/login')
     return
   }
-  messagesStore.initSocket()
-  messagesStore.fetchUnreadCount()
+  refreshUnreadCount()
+  // Polling du compteur non lus (toutes les 15s) pour les mises à jour temps réel
+  pollInterval = setInterval(() => messagesStore.fetchUnreadCount(), 15000)
+})
+onUnmounted(() => {
+  if (pollInterval) {
+    clearInterval(pollInterval)
+    pollInterval = null
+  }
 })
 
 // Vérifier si l'utilisateur est staff ou admin
@@ -413,6 +437,23 @@ const isActive = (path: string) => {
                   Academy
                 </UButton>
               </div>
+              <!-- Messages -->
+              <NuxtLink
+                to="/account/messages"
+                class="relative flex items-center justify-center rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Messages"
+              >
+                <UIcon name="i-heroicons-chat-bubble-left-right" class="h-5 w-5" />
+                <UBadge
+                  v-if="messagesStore.totalUnreadCount > 0"
+                  color="primary"
+                  variant="solid"
+                  size="xs"
+                  class="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 text-[10px] leading-none !rounded-full justify-center px-1.5"
+                >
+                  {{ messagesStore.totalUnreadCount > 99 ? '99+' : messagesStore.totalUnreadCount }}
+                </UBadge>
+              </NuxtLink>
               <!-- User menu -->
               <UDropdownMenu :items="userMenuItems">
                 <UButton
