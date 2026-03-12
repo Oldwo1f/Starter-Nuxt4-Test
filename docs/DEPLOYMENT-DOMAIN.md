@@ -70,7 +70,9 @@ NUXT_PUBLIC_API_BASE_URL: https://api.nunaaheritage.com
    - `https://nunaaheritage.com/register`
    - (Optionnel) `https://www.nunaaheritage.com/` si vous utilisez www
 5. **Paramètres** → **Paramètres de base** → **Domaines de l'application** : ajouter `nunaaheritage.com`
-6. **Paramètres** → **Paramètres avancés** → **URL de demande de suppression des données** : `https://api.nunaaheritage.com/auth/facebook-deletion-callback`
+6. **Paramètres** → **Paramètres avancés** :
+   - **URL de demande de suppression des données** (callback API) : `https://api.nunaaheritage.com/auth/facebook-deletion-callback`
+   - **URL d'instructions pour la suppression des données** (page site) : `https://nunaaheritage.com/privacy/suppression-donnees`
 7. Sauvegarder les modifications
 
 ---
