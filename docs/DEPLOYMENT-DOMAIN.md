@@ -70,7 +70,8 @@ NUXT_PUBLIC_API_BASE_URL: https://api.nunaaheritage.com
    - `https://nunaaheritage.com/register`
    - (Optionnel) `https://www.nunaaheritage.com/` si vous utilisez www
 5. **Paramètres** → **Paramètres de base** → **Domaines de l'application** : ajouter `nunaaheritage.com`
-6. Sauvegarder les modifications
+6. **Paramètres** → **Paramètres avancés** → **URL de demande de suppression des données** : `https://api.nunaaheritage.com/auth/facebook-deletion-callback`
+7. Sauvegarder les modifications
 
 ---
 
@@ -144,7 +145,7 @@ Si vous voulez que `www.nunaaheritage.com` redirige vers `nunaaheritage.com`, aj
 - [ ] DNS propagés
 - [ ] `.env` mis à jour (FRONTEND_URL, NUXT_PUBLIC_API_BASE_URL)
 - [ ] `docker-compose.yml` mis à jour (labels Traefik)
-- [ ] Facebook : OAuth Redirect URIs et domaines
+- [ ] Facebook : OAuth Redirect URIs, domaines, et URL de suppression des données
 - [ ] Stripe : webhook URL
 - [ ] Brevo : domaine vérifié
 - [ ] Redéploiement effectué

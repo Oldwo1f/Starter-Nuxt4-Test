@@ -574,6 +574,40 @@ export class AuthController {
     );
   }
 
+  @Post('facebook-deletion-callback')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Facebook data deletion callback',
+    description:
+      'Callback URL for Facebook/Meta data deletion requests. Called when users remove the app and request data deletion. Must return url and confirmation_code.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        signed_request: {
+          type: 'string',
+          description: 'Facebook signed request containing user_id',
+        },
+      },
+      required: ['signed_request'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Deletion request acknowledged',
+    schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL to check deletion status' },
+        confirmation_code: { type: 'string', description: 'Alphanumeric confirmation code' },
+      },
+    },
+  })
+  async facebookDeletionCallback(@Body() body: { signed_request?: string }) {
+    return this.authService.handleFacebookDataDeletionRequest(body.signed_request);
+  }
+
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

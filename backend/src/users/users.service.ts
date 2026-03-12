@@ -1,14 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { User, UserRole } from '../entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import { Transaction } from '../entities/transaction.entity';
+import { Listing } from '../entities/listing.entity';
+import { BlogPost } from '../entities/blog-post.entity';
+import { CourseProgress } from '../entities/course-progress.entity';
+import { Referral } from '../entities/referral.entity';
+import { BankTransferPayment } from '../entities/bank-transfer-payment.entity';
+import { StripePayment } from '../entities/stripe-payment.entity';
+import { LegacyPaymentVerification } from '../entities/legacy-payment-verification.entity';
+import { RefreshToken } from '../entities/refresh-token.entity';
+import { PollResponse } from '../entities/poll-response.entity';
+import { Conversation } from '../entities/conversation.entity';
+import { Goodie } from '../entities/goodie.entity';
+import { Culture } from '../entities/culture.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private dataSource: DataSource,
   ) {}
 
   async create(
@@ -338,6 +352,129 @@ export class UsersService {
 
   async findByFacebookId(facebookId: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { facebookId } });
+  }
+
+  /**
+   * Deletes a user and all their related data (for Facebook data deletion callback).
+   * Order respects foreign key constraints.
+   * @returns true if user was found and deleted, false if user not found
+   */
+  async deleteUserByFacebookIdWithCascade(facebookId: string): Promise<boolean> {
+    const user = await this.findByFacebookId(facebookId);
+    if (!user) {
+      return false;
+    }
+
+    const userId = user.id;
+    const transactionRepo = this.dataSource.getRepository(Transaction);
+    const listingRepo = this.dataSource.getRepository(Listing);
+    const blogPostRepo = this.dataSource.getRepository(BlogPost);
+    const courseProgressRepo = this.dataSource.getRepository(CourseProgress);
+    const referralRepo = this.dataSource.getRepository(Referral);
+    const bankTransferRepo = this.dataSource.getRepository(BankTransferPayment);
+    const stripeRepo = this.dataSource.getRepository(StripePayment);
+    const legacyPaymentRepo = this.dataSource.getRepository(LegacyPaymentVerification);
+    const refreshTokenRepo = this.dataSource.getRepository(RefreshToken);
+    const pollResponseRepo = this.dataSource.getRepository(PollResponse);
+    const conversationRepo = this.dataSource.getRepository(Conversation);
+    const goodieRepo = this.dataSource.getRepository(Goodie);
+    const cultureRepo = this.dataSource.getRepository(Culture);
+
+    // 1. Transactions (fromUser or toUser)
+    await transactionRepo
+      .createQueryBuilder()
+      .delete()
+      .where('fromUserId = :userId OR toUserId = :userId', { userId })
+      .execute();
+
+    // 2. Conversations (participant1 or participant2) - CASCADE deletes their messages
+    await conversationRepo
+      .createQueryBuilder()
+      .delete()
+      .where('participant1Id = :userId OR participant2Id = :userId', { userId })
+      .execute();
+
+    // 4. Listings (seller)
+    await listingRepo
+      .createQueryBuilder()
+      .delete()
+      .where('sellerId = :userId', { userId })
+      .execute();
+
+    // 5. Blog posts (author)
+    await blogPostRepo
+      .createQueryBuilder()
+      .delete()
+      .where('authorId = :userId', { userId })
+      .execute();
+
+    // 6. Course progress
+    await courseProgressRepo
+      .createQueryBuilder()
+      .delete()
+      .where('userId = :userId', { userId })
+      .execute();
+
+    // 7. Referrals (referrer or referred)
+    await referralRepo
+      .createQueryBuilder()
+      .delete()
+      .where('referrerId = :userId OR referredId = :userId', { userId })
+      .execute();
+
+    // 8. Bank transfer payments
+    await bankTransferRepo
+      .createQueryBuilder()
+      .delete()
+      .where('userId = :userId', { userId })
+      .execute();
+
+    // 9. Stripe payments
+    await stripeRepo
+      .createQueryBuilder()
+      .delete()
+      .where('userId = :userId', { userId })
+      .execute();
+
+    // 10. Legacy payment verifications
+    await legacyPaymentRepo
+      .createQueryBuilder()
+      .delete()
+      .where('userId = :userId', { userId })
+      .execute();
+
+    // 11. Refresh tokens
+    await refreshTokenRepo
+      .createQueryBuilder()
+      .delete()
+      .where('userId = :userId', { userId })
+      .execute();
+
+    // 12. Poll responses
+    await pollResponseRepo
+      .createQueryBuilder()
+      .delete()
+      .where('userId = :userId', { userId })
+      .execute();
+
+    // 13. Reassign goodies and cultures (set createdById to null)
+    await goodieRepo
+      .createQueryBuilder()
+      .update()
+      .set({ createdById: null })
+      .where('createdById = :userId', { userId })
+      .execute();
+
+    await cultureRepo
+      .createQueryBuilder()
+      .update()
+      .set({ createdById: null })
+      .where('createdById = :userId', { userId })
+      .execute();
+
+    // 14. Delete user
+    await this.usersRepository.delete(userId);
+    return true;
   }
 
   async findOrCreateByFacebook(

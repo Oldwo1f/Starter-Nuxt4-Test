@@ -395,5 +395,82 @@ export class AuthService {
       throw new BadRequestException('Failed to verify Facebook token');
     }
   }
+
+  /**
+   * Handles Facebook/Meta data deletion callback.
+   * Called when users remove the app and request data deletion via Facebook Settings.
+   * Must return { url, confirmation_code } per Meta requirements.
+   */
+  async handleFacebookDataDeletionRequest(signedRequest?: string): Promise<{
+    url: string;
+    confirmation_code: string;
+  }> {
+    const appSecret = process.env.FACEBOOK_APP_SECRET;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://nunaaheritage.com';
+
+    if (!appSecret) {
+      throw new BadRequestException('Facebook data deletion not configured');
+    }
+
+    if (!signedRequest) {
+      throw new BadRequestException('Missing signed_request');
+    }
+
+    const payload = this.parseFacebookSignedRequest(signedRequest, appSecret);
+    if (!payload?.user_id) {
+      throw new BadRequestException('Invalid signed request: missing user_id');
+    }
+
+    const facebookId = String(payload.user_id);
+    const deleted = await this.usersService.deleteUserByFacebookIdWithCascade(facebookId);
+
+    // Generate alphanumeric confirmation code
+    const confirmationCode = crypto.randomBytes(8).toString('hex');
+
+    // Status URL where user can check deletion status (Meta requirement)
+    const statusUrl = `${frontendUrl.replace(/\/$/, '')}/privacy/data-deletion-status`;
+
+    return {
+      url: statusUrl,
+      confirmation_code: confirmationCode,
+    };
+  }
+
+  /**
+   * Parses and verifies Facebook signed_request (HMAC-SHA256).
+   * @see https://developers.facebook.com/docs/development/create-an-app/app-dashboard/data-deletion-callback/
+   */
+  private parseFacebookSignedRequest(
+    signedRequest: string,
+    appSecret: string,
+  ): { user_id: string } | null {
+    try {
+      const [encodedSig, payload] = signedRequest.split('.', 2);
+      if (!encodedSig || !payload) {
+        return null;
+      }
+
+      const sig = this.base64UrlDecode(encodedSig);
+      const data = JSON.parse(this.base64UrlDecode(payload).toString('utf8')) as { user_id?: string };
+
+      const expectedSig = crypto
+        .createHmac('sha256', appSecret)
+        .update(payload)
+        .digest();
+
+      if (!sig.equals(expectedSig) || !data.user_id) {
+        return null;
+      }
+
+      return { user_id: data.user_id };
+    } catch {
+      return null;
+    }
+  }
+
+  private base64UrlDecode(input: string): Buffer {
+    const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+    return Buffer.from(base64, 'base64');
+  }
 }
 
