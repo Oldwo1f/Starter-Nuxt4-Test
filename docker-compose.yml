@@ -37,7 +37,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-nunaheritage}
       JWT_SECRET: ${JWT_SECRET}
-      FRONTEND_URL: ${FRONTEND_URL:-https://nunaaheritage.aito-flow.com}
+      FRONTEND_URL: ${FRONTEND_URL:-https://nunaaheritage.com}
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
       FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
@@ -61,7 +61,7 @@ services:
       - traefik-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nunaheritage-backend.rule=Host(`api.nunaaheritage.aito-flow.com`)"
+      - "traefik.http.routers.nunaheritage-backend.rule=Host(`api.nunaaheritage.com`)"
       - "traefik.http.routers.nunaheritage-backend.entrypoints=websecure"
       - "traefik.http.routers.nunaheritage-backend.tls.certresolver=mytlschallenge"
       - "traefik.http.services.nunaheritage-backend.loadbalancer.server.port=8081"
@@ -78,7 +78,7 @@ services:
       NODE_ENV: production
       PORT: 8080
       HOST: 0.0.0.0
-      NUXT_PUBLIC_API_BASE_URL: https://api.nunaaheritage.aito-flow.com
+      NUXT_PUBLIC_API_BASE_URL: https://api.nunaaheritage.com
       NUXT_PUBLIC_FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
     depends_on:
       - backend
@@ -87,7 +87,7 @@ services:
       - traefik-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.nunaheritage-frontend.rule=Host(`nunaaheritage.aito-flow.com`)"
+      - "traefik.http.routers.nunaheritage-frontend.rule=Host(`nunaaheritage.com`)"
       - "traefik.http.routers.nunaheritage-frontend.entrypoints=websecure"
       - "traefik.http.routers.nunaheritage-frontend.tls.certresolver=mytlschallenge"
       - "traefik.http.services.nunaheritage-frontend.loadbalancer.server.port=8080"
