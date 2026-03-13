@@ -310,40 +310,93 @@ const accordionSections = [
       </div>
     </section>
 
-    <!-- Section Sondages en cours -->
-    <section v-if="activePolls.length > 0" class="relative bg-black/50 py-16 sm:py-24">
+    <!-- Section À la une -->
+    <section v-if="featuredPosts.length > 0" class="relative bg-black/50 py-16 sm:py-24">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
-            Sondages en cours
+            À la une
           </h2>
           <p class="mx-auto max-w-2xl text-lg text-white/70">
-            Partagez votre avis sur les sujets qui vous tiennent à cœur
+            Découvrez nos derniers articles de blog
           </p>
         </div>
 
-        <div v-if="pollStore.isLoading" class="flex justify-center py-12">
+        <div v-if="isLoadingFeatured" class="flex justify-center py-12">
           <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-primary-500" />
         </div>
 
-        <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <PollCard
-            v-for="poll in activePolls"
-            :key="poll.id"
-            :poll="poll"
-            :show-response="true"
-          />
+        <div v-else class="grid gap-8 md:grid-cols-2">
+          <UCard
+            v-for="post in featuredPosts"
+            :key="post.id"
+            class="group cursor-pointer overflow-hidden bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20"
+            @click="navigateTo(post.to)"
+          >
+            <template #header>
+              <!-- Vidéo (priorité sur les images) -->
+              <div v-if="post.videoUrl" class="relative aspect-[16/9] w-full overflow-hidden rounded-lg">
+                <iframe
+                  v-if="getVideoEmbedUrl(post.videoUrl)"
+                  :src="getVideoEmbedUrl(post.videoUrl)"
+                  class="h-full w-full transition-transform group-hover:scale-105"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                />
+                <div v-else class="flex h-full items-center justify-center bg-white/10">
+                  <UIcon name="i-heroicons-video-camera" class="h-12 w-12 text-white/40" />
+                </div>
+              </div>
+              <!-- Image si pas de vidéo -->
+              <div v-else-if="post.image" class="relative aspect-[16/9] w-full overflow-hidden rounded-lg">
+                <img
+                  :src="post.image"
+                  :alt="post.title"
+                  class="h-full w-full object-cover transition-transform group-hover:scale-105"
+                />
+              </div>
+              <!-- Placeholder si ni vidéo ni image -->
+              <div v-else class="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-gradient-to-br from-primary-500/20 to-primary-600/20 flex items-center justify-center">
+                <UIcon name="i-heroicons-document-text" class="h-16 w-16 text-primary-400/60" />
+              </div>
+            </template>
+            <div class="space-y-4">
+              <h3 class="text-2xl font-bold text-white transition-colors group-hover:text-primary-400">
+                {{ post.title }}
+              </h3>
+              <p class="line-clamp-3 text-white/80">
+                {{ post.description }}
+              </p>
+              <div class="flex items-center justify-between border-t border-white/10 pt-4">
+                <div class="flex items-center gap-4 text-sm text-white/60">
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-heroicons-user" class="h-4 w-4" />
+                    <span>{{ post.author }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-heroicons-calendar" class="h-4 w-4" />
+                    <span>{{ new Date(post.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+                  </div>
+                </div>
+                <UIcon
+                  name="i-heroicons-arrow-right"
+                  class="h-5 w-5 text-white/40 transition-all group-hover:translate-x-1 group-hover:text-primary-400"
+                />
+              </div>
+            </div>
+          </UCard>
         </div>
 
-        <div v-if="activePolls.length > 0" class="mt-8 text-center">
+        <div v-if="featuredPosts.length > 0" class="mt-8 text-center">
           <UButton
-            to="/polls"
+            to="/blog"
             size="lg"
             variant="outline"
             icon="i-heroicons-arrow-right"
             class="group"
           >
-            Voir tous les sondages
+            Voir tous les articles
             <UIcon
               name="i-heroicons-arrow-right"
               class="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
@@ -607,93 +660,40 @@ const accordionSections = [
       </div>
     </section>
 
-    <!-- Section À la une -->
-    <section v-if="featuredPosts.length > 0" class="relative bg-black/50 py-16 sm:py-24">
+    <!-- Section Sondages en cours -->
+    <section v-if="activePolls.length > 0" class="relative bg-black/50 py-16 sm:py-24">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
-            À la une
+            Sondages en cours
           </h2>
           <p class="mx-auto max-w-2xl text-lg text-white/70">
-            Découvrez nos derniers articles de blog
+            Partagez votre avis sur les sujets qui vous tiennent à cœur
           </p>
         </div>
 
-        <div v-if="isLoadingFeatured" class="flex justify-center py-12">
+        <div v-if="pollStore.isLoading" class="flex justify-center py-12">
           <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-primary-500" />
         </div>
 
-        <div v-else class="grid gap-8 md:grid-cols-2">
-          <UCard
-            v-for="post in featuredPosts"
-            :key="post.id"
-            class="group cursor-pointer overflow-hidden bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20"
-            @click="navigateTo(post.to)"
-          >
-            <template #header>
-              <!-- Vidéo (priorité sur les images) -->
-              <div v-if="post.videoUrl" class="relative aspect-[16/9] w-full overflow-hidden rounded-lg">
-                <iframe
-                  v-if="getVideoEmbedUrl(post.videoUrl)"
-                  :src="getVideoEmbedUrl(post.videoUrl)"
-                  class="h-full w-full transition-transform group-hover:scale-105"
-                  frameborder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen
-                />
-                <div v-else class="flex h-full items-center justify-center bg-white/10">
-                  <UIcon name="i-heroicons-video-camera" class="h-12 w-12 text-white/40" />
-                </div>
-              </div>
-              <!-- Image si pas de vidéo -->
-              <div v-else-if="post.image" class="relative aspect-[16/9] w-full overflow-hidden rounded-lg">
-                <img
-                  :src="post.image"
-                  :alt="post.title"
-                  class="h-full w-full object-cover transition-transform group-hover:scale-105"
-                />
-              </div>
-              <!-- Placeholder si ni vidéo ni image -->
-              <div v-else class="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-gradient-to-br from-primary-500/20 to-primary-600/20 flex items-center justify-center">
-                <UIcon name="i-heroicons-document-text" class="h-16 w-16 text-primary-400/60" />
-              </div>
-            </template>
-            <div class="space-y-4">
-              <h3 class="text-2xl font-bold text-white transition-colors group-hover:text-primary-400">
-                {{ post.title }}
-              </h3>
-              <p class="line-clamp-3 text-white/80">
-                {{ post.description }}
-              </p>
-              <div class="flex items-center justify-between border-t border-white/10 pt-4">
-                <div class="flex items-center gap-4 text-sm text-white/60">
-                  <div class="flex items-center gap-2">
-                    <UIcon name="i-heroicons-user" class="h-4 w-4" />
-                    <span>{{ post.author }}</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <UIcon name="i-heroicons-calendar" class="h-4 w-4" />
-                    <span>{{ new Date(post.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
-                  </div>
-                </div>
-                <UIcon
-                  name="i-heroicons-arrow-right"
-                  class="h-5 w-5 text-white/40 transition-all group-hover:translate-x-1 group-hover:text-primary-400"
-                />
-              </div>
-            </div>
-          </UCard>
+        <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <PollCard
+            v-for="poll in activePolls"
+            :key="poll.id"
+            :poll="poll"
+            :show-response="true"
+          />
         </div>
 
-        <div v-if="featuredPosts.length > 0" class="mt-8 text-center">
+        <div v-if="activePolls.length > 0" class="mt-8 text-center">
           <UButton
-            to="/blog"
+            to="/polls"
             size="lg"
             variant="outline"
             icon="i-heroicons-arrow-right"
             class="group"
           >
-            Voir tous les articles
+            Voir tous les sondages
             <UIcon
               name="i-heroicons-arrow-right"
               class="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
