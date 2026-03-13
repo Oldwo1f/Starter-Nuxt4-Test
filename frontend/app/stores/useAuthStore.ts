@@ -181,6 +181,24 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const verifyEmail = async (token: string) => {
+    try {
+      const response = await $fetch<{ message: string }>(
+        `${API_BASE_URL}/auth/verify-email`,
+        {
+          method: 'POST',
+          body: { token },
+        }
+      )
+      return { success: true, message: response.message }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.data?.message || error.message || 'Erreur lors de la vérification de l\'email',
+      }
+    }
+  }
+
   const changePassword = async (currentPassword: string, newPassword: string) => {
     try {
       const response = await $fetch<{ message: string }>(
@@ -371,6 +389,7 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     forgotPassword,
     resetPassword,
+    verifyEmail,
     changePassword,
     facebookLogin,
     logout,

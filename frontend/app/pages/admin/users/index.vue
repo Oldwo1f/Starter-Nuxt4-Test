@@ -514,6 +514,18 @@ onUnmounted(() => {
               },
             }"
           >
+          <template #email-cell="{ row }">
+            <div class="flex items-center gap-2">
+              <span class="text-white/90">{{ row.original.email }}</span>
+              <UIcon
+                v-if="row.original.emailVerified"
+                name="i-heroicons-check-badge"
+                class="h-4 w-4 text-green-400 shrink-0"
+                title="Email vérifié"
+              />
+            </div>
+          </template>
+
           <template #avatar-cell="{ row }">
             <div class="flex items-center gap-3">
               <CertifiedAvatar

@@ -26,6 +26,16 @@ export class EmailService {
     this.frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     
     this.logger.log(`Email service configured - FROM: ${this.fromEmail} (${this.fromName}), Frontend URL: ${this.frontendUrl}`);
+    this.logger.log(`Email format: ${this.usePlainTextOnly ? 'plain text only (EMAIL_TEXT_ONLY)' : 'HTML + text'}`);
+  }
+
+  /**
+   * When true, emails are sent as plain text only (no HTML).
+   * Set EMAIL_TEXT_ONLY=false in env to restore HTML emails.
+   */
+  private get usePlainTextOnly(): boolean {
+    const val = process.env.EMAIL_TEXT_ONLY;
+    return val === undefined || val === '' || val.toLowerCase() === 'true' || val === '1';
   }
 
   private async sendEmail(
@@ -40,16 +50,26 @@ export class EmailService {
       return;
     }
 
+    const plainText = textContent || this.stripHtml(htmlContent);
+
     try {
       this.logger.log(`Attempting to send email to ${to} from ${this.fromEmail} (${this.fromName})`);
       
-      const result = await this.brevoClient.transactionalEmails.sendTransacEmail({
-        subject: subject,
-        htmlContent: htmlContent,
-        textContent: textContent || this.stripHtml(htmlContent),
+      const payload: Parameters<BrevoClient['transactionalEmails']['sendTransacEmail']>[0] = {
+        subject,
         sender: { name: this.fromName, email: this.fromEmail },
         to: [{ email: to }],
-      });
+      };
+
+      if (this.usePlainTextOnly) {
+        payload.textContent = plainText;
+        this.logger.debug('Sending plain text email (EMAIL_TEXT_ONLY)');
+      } else {
+        payload.htmlContent = htmlContent;
+        payload.textContent = plainText;
+      }
+
+      const result = await this.brevoClient.transactionalEmails.sendTransacEmail(payload);
 
       this.logger.log(`Email sent successfully to ${to}. Message ID: ${result.messageId}`);
     } catch (error: any) {
