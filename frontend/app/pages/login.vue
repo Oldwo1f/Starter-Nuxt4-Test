@@ -45,19 +45,19 @@ const handleFacebookLogin = async () => {
   isFacebookLoading.value = true
 
   try {
-    // Get Facebook composable (only on client side)
-    const { initFacebook, login: facebookLogin } = useFacebook()
-    
-    // Initialize Facebook SDK if needed
+    const { initFacebook, login: facebookLogin, isMobile, redirectToFacebookLogin } = useFacebook()
+
+    // Sur mobile, les popups sont souvent bloquées → utiliser le flux redirect
+    if (isMobile()) {
+      redirectToFacebookLogin(getReturnUrl(), 'login')
+      return // La page va se recharger pour la redirection
+    }
+
+    // Desktop : flux popup classique
     await initFacebook()
-    
-    // Login with Facebook
     const fbResponse = await facebookLogin()
-    
-    // Use email if available, otherwise use Facebook ID (backend will generate temp email)
     const emailToUse = fbResponse.email || `fb_${fbResponse.userID}@facebook.temp`
 
-    // Call backend
     const result = await authStore.facebookLogin(
       fbResponse.userID,
       emailToUse,

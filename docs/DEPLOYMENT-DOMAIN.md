@@ -68,6 +68,7 @@ NUXT_PUBLIC_API_BASE_URL: https://api.nunaaheritage.com
    - `https://nunaaheritage.com/`
    - `https://nunaaheritage.com/login`
    - `https://nunaaheritage.com/register`
+   - `https://nunaaheritage.com/auth/facebook-callback` (requis pour le flux redirect mobile)
    - (Optionnel) `https://www.nunaaheritage.com/` si vous utilisez www
 5. **Paramètres** → **Paramètres de base** → **Domaines de l'application** : ajouter `nunaaheritage.com`
 6. **Paramètres** → **Paramètres avancés** :
