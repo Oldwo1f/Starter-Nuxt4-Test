@@ -1,6 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BrevoClient } from '@getbrevo/brevo';
 import * as QRCode from 'qrcode';
+import PDFDocument from 'pdfkit';
+
+export interface EmailAttachment {
+  content: string; // base64
+  name: string;
+}
 
 @Injectable()
 export class EmailService {
@@ -44,6 +50,7 @@ export class EmailService {
     subject: string,
     htmlContent: string,
     textContent?: string,
+    attachments?: EmailAttachment[],
   ): Promise<void> {
     if (!this.brevoClient) {
       this.logger.warn('Brevo API not initialized. Email not sent.');
@@ -68,6 +75,10 @@ export class EmailService {
       } else {
         payload.htmlContent = htmlContent;
         payload.textContent = plainText;
+      }
+
+      if (attachments?.length) {
+        payload.attachment = attachments.map((a) => ({ content: a.content, name: a.name }));
       }
 
       const result = await this.brevoClient.transactionalEmails.sendTransacEmail(payload);
@@ -306,7 +317,81 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
       qrCode,
     );
 
-    await this.sendEmail(email, subject, htmlContent, textContent);
+    const attachments: EmailAttachment[] = [];
+    try {
+      const pdfBuffer = await this.generateTeNatiraaTicketPdf(
+        firstName,
+        lastName,
+        adultCount,
+        childCount,
+        qrCode,
+      );
+      const safeName = `${lastName}-${firstName}`.replace(/[^a-zA-Z0-9-_]/g, '-').replace(/-+/g, '-');
+      attachments.push({
+        content: pdfBuffer.toString('base64'),
+        name: `billet-te-natiraa-${safeName}.pdf`,
+      });
+    } catch (err) {
+      this.logger.error('Failed to generate PDF ticket for Te Natiraa', err);
+    }
+
+    await this.sendEmail(email, subject, htmlContent, textContent, attachments);
+  }
+
+  private async generateTeNatiraaTicketPdf(
+    firstName: string,
+    lastName: string,
+    adultCount: number,
+    childCount: number,
+    qrCode: string,
+  ): Promise<Buffer> {
+    const qrBuffer = await QRCode.toBuffer(qrCode, { width: 300, margin: 2, type: 'png' });
+
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ size: 'A5', margin: 40 });
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('error', reject);
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+      // En-tête
+      doc.fontSize(24).font('Helvetica-Bold').text('Te Natira\'a', { align: 'center' });
+      doc.moveDown(0.5);
+      doc.fontSize(14).font('Helvetica').text('Nuna\'a Heritage', { align: 'center' });
+      doc.moveDown(2);
+
+      // Billet
+      doc.fontSize(12).font('Helvetica');
+      doc.text(`Bonjour ${firstName} ${lastName},`);
+      doc.moveDown(1);
+      doc.text('Votre inscription au Te Natira\'a est confirmée.');
+      doc.text('Présentez ce billet à l\'entrée.');
+      doc.moveDown(1.5);
+
+      doc.fontSize(11).text(`Adultes : ${adultCount}`, { continued: false });
+      doc.text(`Enfants : ${childCount}`);
+      doc.moveDown(2);
+
+      // QR code centré
+      const qrSize = 180;
+      const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      const qrX = (doc.page.width - qrSize) / 2;
+      const qrY = doc.y;
+      doc.image(qrBuffer, qrX, qrY, { width: qrSize, height: qrSize });
+      doc.y = qrY + qrSize + 20;
+
+      // Infos événement
+      doc.fontSize(11).text('Samedi 11 avril à 8h00', { align: 'center' });
+      doc.text('Vallée de Tipaerui', { align: 'center' });
+      doc.moveDown(1);
+
+      doc.fontSize(9).fillColor('#666666').text(`Code : ${qrCode}`, { align: 'center' });
+      doc.moveDown(1);
+
+      doc.fontSize(8).fillColor('#999999').text(`© ${new Date().getFullYear()} Nuna'a Heritage`, { align: 'center' });
+
+      doc.end();
+    });
   }
 
   private getTeNatiraaTicketTemplate(
@@ -341,7 +426,7 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
                 Bonjour ${firstName} ${lastName},
               </p>
               <p style="margin: 0 0 30px 0; color: #333333; font-size: 16px; line-height: 1.6;">
-                Votre inscription au Te Natira'a est confirmée. Présentez ce billet à l'entrée.
+                Votre inscription au Te Natira'a est confirmée. Votre billet électronique avec QR code scannable est en pièce jointe.
               </p>
               <div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
                 <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Adultes : ${adultCount}</p>
@@ -379,12 +464,10 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
     return `
 Bonjour ${firstName} ${lastName},
 
-Votre inscription au Te Natira'a est confirmée. Présentez ce billet à l'entrée.
+Votre inscription au Te Natira'a est confirmée. Votre billet électronique avec QR code scannable est en pièce jointe (PDF).
 
 Adultes : ${adultCount}
 Enfants : ${childCount}
-
-Code QR : ${qrCode}
 
 Samedi 11 avril à 8h00 - Vallée de Tipaerui
 
