@@ -4,6 +4,7 @@ import { useMemberCheck } from '~/composables/useMemberCheck'
 
 definePageMeta({
   layout: 'default',
+  middleware: 'te-natiraa-redirect',
   meta: {
     title: 'Inscription Te Natira\'a',
   },

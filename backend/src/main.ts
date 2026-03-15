@@ -25,9 +25,15 @@ async function bootstrap() {
   // Enable CORS for frontend
   const isDev = process.env.NODE_ENV !== 'production';
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const prodOrigins = frontendUrl
+    ? [
+        frontendUrl,
+        ...(frontendUrl.includes('www.') ? [] : [frontendUrl.replace(/^(https?:\/\/)/, '$1www.')]),
+      ].filter((o, i, arr) => arr.indexOf(o) === i)
+    : [];
   const corsOrigins = isDev
     ? ['http://localhost:3000', 'http://127.0.0.1:3000', frontendUrl].filter(Boolean)
-    : frontendUrl;
+    : prodOrigins;
   app.enableCors({
     origin: corsOrigins,
     credentials: true,

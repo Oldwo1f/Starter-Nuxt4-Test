@@ -37,6 +37,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-nunaheritage}
       JWT_SECRET: ${JWT_SECRET}
+      # Doit correspondre à l'URL canonique du site (ex: https://nunaaheritage.com ou https://www.nunaaheritage.com)
+      # Utilisé pour les redirections Stripe après paiement Te Natira'a
       FRONTEND_URL: ${FRONTEND_URL:-https://nunaaheritage.com}
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
       FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
@@ -81,6 +83,7 @@ services:
       PORT: 8080
       HOST: 0.0.0.0
       NUXT_PUBLIC_API_BASE_URL: https://api.nunaaheritage.com
+      NUXT_BACKEND_INTERNAL_URL: http://backend:8081
       NUXT_PUBLIC_FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
     depends_on:
       - backend

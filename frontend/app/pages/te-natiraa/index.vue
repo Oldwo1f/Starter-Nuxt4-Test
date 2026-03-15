@@ -74,6 +74,16 @@ onUnmounted(() => {
         <p class="mx-auto max-w-3xl text-lg text-white/80 sm:text-xl">
           Rejoignez-nous pour partager la culture, les traditions et créer des liens durables
         </p>
+        <div class="mt-8">
+          <UButton
+            to="/te-natiraa/inscription"
+            size="xl"
+            color="primary"
+            icon="i-heroicons-ticket"
+          >
+            S'inscrire au Te Natira'a
+          </UButton>
+        </div>
       </div>
       <!-- Effet de fond décoratif -->
       <div class="absolute inset-0 -z-0">
