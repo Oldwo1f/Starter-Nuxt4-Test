@@ -104,7 +104,16 @@ const downloadHTML = () => {
           <span class="font-medium">Contenu de la newsletter</span>
         </div>
       </template>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div v-if="newsletterData.nextTeNatiraaEvent" class="flex items-center gap-3 p-4 rounded-lg bg-primary-500/10 border border-primary-500/30">
+          <div class="p-2 rounded-lg bg-primary-500/20">
+            <UIcon name="i-heroicons-ticket" class="w-6 h-6 text-primary-400" />
+          </div>
+          <div>
+            <p class="text-2xl font-bold text-white">Te Natira'a</p>
+            <p class="text-sm text-white/60">Prochain événement mis en avant</p>
+          </div>
+        </div>
         <div class="flex items-center gap-3 p-4 rounded-lg bg-white/5">
           <div class="p-2 rounded-lg bg-primary-500/20">
             <UIcon name="i-heroicons-chart-bar" class="w-6 h-6 text-primary-400" />
@@ -189,6 +198,7 @@ const downloadHTML = () => {
         <div class="space-y-2 text-white/70">
           <p>La newsletter inclura automatiquement :</p>
           <ul class="list-disc list-inside space-y-1 ml-4">
+            <li><strong>Le prochain Te Natira'a</strong> (mis en avant avec lien d'inscription)</li>
             <li>Les 2 derniers sondages (avec résultats si terminés, ou options de vote si en cours)</li>
             <li>Les 2 derniers articles du blog</li>
             <li>Les 3 dernières annonces du marketplace</li>

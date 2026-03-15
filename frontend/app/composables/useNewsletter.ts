@@ -3,10 +3,19 @@ import type { BlogPost } from '~/stores/useBlogStore'
 import type { Listing } from '~/stores/useMarketplaceStore'
 import { useAuthStore } from '~/stores/useAuthStore'
 
+export interface TeNatiraaEvent {
+  id: number
+  name: string
+  eventDate: string
+  eventTime: string
+  location: string
+}
+
 export interface NewsletterData {
   polls: Array<Poll & { results?: PollResults }>
   blogPosts: BlogPost[]
   listings: Listing[]
+  nextTeNatiraaEvent: TeNatiraaEvent | null
 }
 
 export const useNewsletter = () => {
@@ -137,18 +146,30 @@ export const useNewsletter = () => {
     }
   }
 
+  // Récupérer le prochain Te Natira'a
+  const fetchNextTeNatiraaEvent = async (): Promise<TeNatiraaEvent | null> => {
+    try {
+      return await $fetch<TeNatiraaEvent | null>(`${API_BASE_URL}/te-natiraa/next-event`)
+    } catch (err) {
+      console.error('Error fetching next Te Natiraa event:', err)
+      return null
+    }
+  }
+
   // Récupérer toutes les données de la newsletter
   const fetchNewsletterData = async (): Promise<NewsletterData> => {
-    const [polls, blogPosts, listings] = await Promise.all([
+    const [polls, blogPosts, listings, nextTeNatiraaEvent] = await Promise.all([
       fetchLatestPolls(),
       fetchLatestBlogPosts(),
       fetchLatestListings(),
+      fetchNextTeNatiraaEvent(),
     ])
 
     return {
       polls,
       blogPosts,
       listings,
+      nextTeNatiraaEvent,
     }
   }
 
@@ -323,6 +344,33 @@ export const useNewsletter = () => {
       `
     }
 
+    // Générer le HTML du Te Natira'a (mise en avant)
+    const generateTeNatiraaHTML = (event: TeNatiraaEvent): string => {
+      const inscriptionUrl = `${frontendUrl}/te-natiraa/inscription`
+      const eventDate = new Date(event.eventDate).toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+      return `
+        <div style="margin-bottom: 30px; padding: 24px; background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%); border-radius: 12px; border: 2px solid #3B82F6;">
+          <div style="display: inline-block; padding: 6px 14px; background-color: #3B82F6; color: #FFFFFF; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">
+            À ne pas manquer
+          </div>
+          <h2 style="margin: 0 0 12px 0; font-size: 24px; font-weight: 700; color: #F3F4F6;">Te Natira'a</h2>
+          <p style="margin: 0 0 8px 0; font-size: 16px; color: #D1D5DB;">${eventDate} à ${event.eventTime}</p>
+          <p style="margin: 0 0 20px 0; font-size: 14px; color: #9CA3AF;">📍 ${event.location}</p>
+          <p style="margin: 0 0 20px 0; font-size: 15px; color: #E5E7EB; line-height: 1.6;">
+            Un moment de rassemblement pour partager la culture, les traditions et créer des liens durables.
+          </p>
+          <a href="${inscriptionUrl}" style="display: inline-block; padding: 14px 28px; background-color: #3B82F6; color: #FFFFFF; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 16px;">
+            S'inscrire au Te Natira'a
+          </a>
+        </div>
+      `
+    }
+
     // Générer le HTML complet
     const html = `
 <!DOCTYPE html>
@@ -349,6 +397,8 @@ export const useNewsletter = () => {
           <!-- Content -->
           <tr>
             <td style="padding: 30px;">
+              ${data.nextTeNatiraaEvent ? generateTeNatiraaHTML(data.nextTeNatiraaEvent) : ''}
+              
               ${data.polls.length > 0 ? `
                 <h2 style="margin: 0 0 20px 0; font-size: 22px; font-weight: 700; color: #F3F4F6; border-bottom: 2px solid #374151; padding-bottom: 10px;">
                   <a href="${frontendUrl}/polls" style="color: #F3F4F6; text-decoration: none;">Votre Avis</a>

@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { TeNatiraaEvent } from './te-natiraa-event.entity';
 
 export enum TeNatiraaRegistrationStatus {
   PENDING = 'pending',
@@ -41,6 +42,13 @@ export class TeNatiraaRegistration {
 
   @Column({ type: 'int', nullable: true })
   userId: number | null;
+
+  @ManyToOne(() => TeNatiraaEvent, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'eventId' })
+  event: TeNatiraaEvent;
+
+  @Column({ type: 'int' })
+  eventId: number;
 
   @Column({ type: 'varchar', unique: true, nullable: true })
   stripeSessionId: string | null;

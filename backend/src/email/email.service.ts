@@ -292,8 +292,15 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
     adultCount: number,
     childCount: number,
     qrCode: string,
+    eventDetails?: { eventDate: string; eventTime: string; eventLocation: string },
   ): Promise<void> {
     const subject = 'Votre billet Te Natira\'a - Nuna\'a Heritage';
+
+    const eventInfo = eventDetails || {
+      eventDate: 'Samedi 11 avril',
+      eventTime: '8h00',
+      eventLocation: 'Vallée de Tipaerui',
+    };
 
     let qrDataUrl = '';
     try {
@@ -308,6 +315,7 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
       adultCount,
       childCount,
       qrDataUrl,
+      eventInfo,
     );
     const textContent = this.getTeNatiraaTicketTextTemplate(
       firstName,
@@ -315,6 +323,7 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
       adultCount,
       childCount,
       qrCode,
+      eventInfo,
     );
 
     const attachments: EmailAttachment[] = [];
@@ -325,6 +334,7 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
         adultCount,
         childCount,
         qrCode,
+        eventInfo,
       );
       const safeName = `${lastName}-${firstName}`.replace(/[^a-zA-Z0-9-_]/g, '-').replace(/-+/g, '-');
       attachments.push({
@@ -344,6 +354,7 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
     adultCount: number,
     childCount: number,
     qrCode: string,
+    eventDetails: { eventDate: string; eventTime: string; eventLocation: string },
   ): Promise<Buffer> {
     const qrBuffer = await QRCode.toBuffer(qrCode, { width: 300, margin: 2, type: 'png' });
 
@@ -381,8 +392,8 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
       doc.y = qrY + qrSize + 20;
 
       // Infos événement
-      doc.fontSize(11).text('Samedi 11 avril à 8h00', { align: 'center' });
-      doc.text('Vallée de Tipaerui', { align: 'center' });
+      doc.fontSize(11).text(`${eventDetails.eventDate} à ${eventDetails.eventTime}`, { align: 'center' });
+      doc.text(eventDetails.eventLocation, { align: 'center' });
       doc.moveDown(1);
 
       doc.fontSize(9).fillColor('#666666').text(`Code : ${qrCode}`, { align: 'center' });
@@ -400,6 +411,7 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
     adultCount: number,
     childCount: number,
     qrDataUrl: string,
+    eventDetails: { eventDate: string; eventTime: string; eventLocation: string },
   ): string {
     return `
 <!DOCTYPE html>
@@ -434,7 +446,7 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
               </div>
               ${qrDataUrl ? `<div style="margin: 30px 0; text-align: center;"><img src="${qrDataUrl}" alt="QR Code" style="width: 300px; height: 300px; max-width: 100%;" /></div>` : ''}
               <p style="margin: 30px 0 0 0; color: #999999; font-size: 12px; line-height: 1.6;">
-                Samedi 11 avril à 8h00 - Vallée de Tipaerui
+                ${eventDetails.eventDate} à ${eventDetails.eventTime} - ${eventDetails.eventLocation}
               </p>
             </td>
           </tr>
@@ -460,6 +472,7 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
     adultCount: number,
     childCount: number,
     qrCode: string,
+    eventDetails: { eventDate: string; eventTime: string; eventLocation: string },
   ): string {
     return `
 Bonjour ${firstName} ${lastName},
@@ -469,7 +482,7 @@ Votre inscription au Te Natira'a est confirmée. Votre billet électronique avec
 Adultes : ${adultCount}
 Enfants : ${childCount}
 
-Samedi 11 avril à 8h00 - Vallée de Tipaerui
+${eventDetails.eventDate} à ${eventDetails.eventTime} - ${eventDetails.eventLocation}
 
 © ${new Date().getFullYear()} Nuna'a Heritage. Tous droits réservés.
     `.trim();

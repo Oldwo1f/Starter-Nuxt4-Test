@@ -3,12 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TeNatiraaController } from './te-natiraa.controller';
 import { TeNatiraaService } from './te-natiraa.service';
 import { TeNatiraaRegistration } from '../entities/te-natiraa-registration.entity';
+import { TeNatiraaEvent } from '../entities/te-natiraa-event.entity';
 import { User } from '../entities/user.entity';
 import { StripeModule } from '../stripe/stripe.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TeNatiraaRegistration, User]),
+    TypeOrmModule.forFeature([TeNatiraaRegistration, TeNatiraaEvent, User]),
     StripeModule,
   ],
   controllers: [TeNatiraaController],

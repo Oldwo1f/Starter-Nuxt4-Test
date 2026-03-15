@@ -35,6 +35,7 @@
     "migrate:bank-transfer-payments": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-bank-transfer-payments.ts",
     "migrate:stripe-payments": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-stripe-payments.ts",
     "migrate:te-natiraa-registrations": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-te-natiraa-registrations.ts",
+    "migrate:te-natiraa-events": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-te-natiraa-events.ts",
     "migrate:legacy-verifications": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-legacy-verifications.ts",
     "migrate:polls": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-polls.ts",
     "migrate:conversations-messages": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-conversations-messages.ts",

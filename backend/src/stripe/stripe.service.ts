@@ -27,6 +27,12 @@ export interface CreateTeNatiraaCheckoutParams {
   isMember: boolean;
   successUrl: string;
   cancelUrl: string;
+  eventId: number;
+  eventDate: string;
+  eventTime: string;
+  eventLocation: string;
+  priceMemberId: string | null;
+  pricePublicId: string | null;
 }
 
 @Injectable()
@@ -97,8 +103,8 @@ export class StripeService {
 
   async createTeNatiraaCheckoutSession(params: CreateTeNatiraaCheckoutParams) {
     const priceId = params.isMember
-      ? process.env.STRIPE_TENATIRAA_PRICE_MEMBER_ID
-      : process.env.STRIPE_TENATIRAA_PRICE_PUBLIC_ID;
+      ? (params.priceMemberId || process.env.STRIPE_TENATIRAA_PRICE_MEMBER_ID)
+      : (params.pricePublicId || process.env.STRIPE_TENATIRAA_PRICE_PUBLIC_ID);
 
     if (!priceId) {
       throw new InternalServerErrorException(
@@ -123,6 +129,10 @@ export class StripeService {
       cancel_url: params.cancelUrl,
       metadata: {
         type: 'teNatiraa',
+        eventId: params.eventId.toString(),
+        eventDate: params.eventDate,
+        eventTime: params.eventTime,
+        eventLocation: params.eventLocation,
         email: params.email,
         firstName: params.firstName,
         lastName: params.lastName,
@@ -147,6 +157,10 @@ export class StripeService {
     const adultCount = parseInt(metadata.adultCount || '0', 10);
     const childCount = parseInt(metadata.childCount || '0', 10);
     const userId = metadata.userId ? parseInt(metadata.userId, 10) : null;
+    const eventId = metadata.eventId ? parseInt(metadata.eventId, 10) : null;
+    const eventDate = (metadata.eventDate as string) || 'Samedi 11 avril';
+    const eventTime = (metadata.eventTime as string) || '8h00';
+    const eventLocation = (metadata.eventLocation as string) || 'Vallée de Tipaerui';
 
     if (!email || !firstName || !lastName) {
       console.error('[Stripe Webhook] Te Natiraa: missing required metadata', { metadata });
@@ -162,6 +176,7 @@ export class StripeService {
       adultCount,
       childCount,
       userId: userId || null,
+      eventId: eventId || 1,
       stripeSessionId: session.id,
       qrCode,
       status: TeNatiraaRegistrationStatus.PAID,
@@ -169,7 +184,15 @@ export class StripeService {
 
     await this.teNatiraaRegistrationsRepository.save(registration);
 
-    await this.emailService.sendTeNatiraaTicket(email, firstName, lastName, adultCount, childCount, qrCode);
+    await this.emailService.sendTeNatiraaTicket(
+      email,
+      firstName,
+      lastName,
+      adultCount,
+      childCount,
+      qrCode,
+      { eventDate, eventTime, eventLocation },
+    );
 
     console.log(`[Stripe Webhook] Te Natiraa registration created: ${registration.id}, email sent to ${email}`);
 

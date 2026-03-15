@@ -1,14 +1,14 @@
 <script setup lang="ts">
-definePageMeta({
-  layout: 'admin',
-  title: 'Te Natira\'a - Inscriptions',
-})
-
 import { useAuthStore } from '~/stores/useAuthStore'
 
-const authStore = useAuthStore()
+definePageMeta({
+  layout: 'admin',
+  meta: { title: 'Te Natira\'a - Inscriptions' },
+})
+
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
+const authStore = useAuthStore()
 const toast = useToast()
 const router = useRouter()
 
@@ -34,12 +34,15 @@ interface Registration {
   status: string
   qrCode: string
   createdAt: string
+  event?: { id: number; name: string; eventDate: string; eventTime: string; location: string }
 }
 
-const registrations = ref<Registration[]>([])
-const total = ref(0)
-const page = ref(1)
-const totalPages = ref(1)
+interface GroupedData {
+  event: { id: number; name: string; eventDate: string; eventTime: string; location: string }
+  registrations: Registration[]
+}
+
+const groupedData = ref<GroupedData[]>([])
 const isLoading = ref(false)
 
 const formatDate = (iso: string) => {
@@ -52,6 +55,11 @@ const formatDate = (iso: string) => {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+const formatEventDate = (iso: string) => {
+  const d = new Date(iso)
+  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 const getStatusLabel = (status: string) => {
@@ -85,18 +93,9 @@ const fetchRegistrations = async () => {
 
   isLoading.value = true
   try {
-    const response = await $fetch<{
-      items: Registration[]
-      total: number
-      page: number
-      totalPages: number
-    }>(`${API_BASE_URL}/te-natiraa/registrations`, {
+    groupedData.value = await $fetch<GroupedData[]>(`${API_BASE_URL}/te-natiraa/registrations/grouped`, {
       headers: { Authorization: `Bearer ${authStore.accessToken}` },
-      query: { page: page.value, limit: 50 },
     })
-    registrations.value = response.items
-    total.value = response.total
-    totalPages.value = response.totalPages
   } catch (err: any) {
     toast.add({
       title: 'Erreur',
@@ -108,9 +107,30 @@ const fetchRegistrations = async () => {
   }
 }
 
-onMounted(() => {
-  fetchRegistrations()
+const totalRegistrations = computed(() =>
+  groupedData.value.reduce((sum, g) => sum + g.registrations.length, 0),
+)
+
+const totalAdults = computed(() =>
+  groupedData.value.reduce(
+    (sum, g) => sum + g.registrations.reduce((s, r) => s + (r.adultCount || 0), 0),
+    0,
+  ),
+)
+
+const totalChildren = computed(() =>
+  groupedData.value.reduce(
+    (sum, g) => sum + g.registrations.reduce((s, r) => s + (r.childCount || 0), 0),
+    0,
+  ),
+)
+
+const getGroupTotals = (registrations: Registration[]) => ({
+  adults: registrations.reduce((s, r) => s + (r.adultCount || 0), 0),
+  children: registrations.reduce((s, r) => s + (r.childCount || 0), 0),
 })
+
+onMounted(() => fetchRegistrations())
 </script>
 
 <template>
@@ -119,24 +139,31 @@ onMounted(() => {
       <div>
         <h2 class="text-2xl font-bold text-white">Inscriptions Te Natira'a</h2>
         <p class="text-white/70">
-          {{ total }} inscription(s) au total
+          {{ totalRegistrations }} inscription(s) au total
+          <span class="text-white/50">•</span>
+          {{ totalAdults }} adulte(s)
+          <span class="text-white/50">•</span>
+          {{ totalChildren }} enfant(s)
         </p>
       </div>
-      <NuxtLink to="/admin/te-natiraa/scanner">
-        <UButton
-          color="primary"
-          icon="i-heroicons-qr-code"
-          size="lg"
-        >
-          Ouvrir le scanner QR
-        </UButton>
-      </NuxtLink>
+      <div class="flex gap-2">
+        <NuxtLink to="/admin/te-natiraa/events">
+          <UButton variant="outline" icon="i-heroicons-calendar">
+            Gérer les événements
+          </UButton>
+        </NuxtLink>
+        <NuxtLink to="/admin/te-natiraa/scanner">
+          <UButton color="primary" icon="i-heroicons-qr-code" size="lg">
+            Ouvrir le scanner QR
+          </UButton>
+        </NuxtLink>
+      </div>
     </div>
 
     <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <template #header>
         <div class="flex items-center justify-between">
-          <span class="font-medium">Liste des inscriptions</span>
+          <span class="font-medium">Inscriptions par événement</span>
           <UButton
             variant="ghost"
             size="sm"
@@ -153,82 +180,73 @@ onMounted(() => {
         <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-white/50" />
       </div>
 
-      <div v-else-if="registrations.length === 0" class="py-12 text-center text-white/60">
+      <div v-else-if="groupedData.length === 0" class="py-12 text-center text-white/60">
         Aucune inscription pour le moment
       </div>
 
-      <div v-else class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="border-b border-white/10 text-left text-sm text-white/70">
-              <th class="pb-3 pr-4 font-medium">Nom</th>
-              <th class="pb-3 pr-4 font-medium">Email</th>
-              <th class="pb-3 pr-4 font-medium">Adultes</th>
-              <th class="pb-3 pr-4 font-medium">Enfants</th>
-              <th class="pb-3 pr-4 font-medium">Statut</th>
-              <th class="pb-3 font-medium">Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="r in registrations"
-              :key="r.id"
-              class="border-b border-white/5 text-white/90"
-            >
-              <td class="py-3 pr-4">
-                {{ r.firstName }} {{ r.lastName }}
-              </td>
-              <td class="py-3 pr-4">
-                {{ r.email }}
-              </td>
-              <td class="py-3 pr-4">
-                {{ r.adultCount }}
-              </td>
-              <td class="py-3 pr-4">
-                {{ r.childCount }}
-              </td>
-              <td class="py-3 pr-4">
-                <UBadge
-                  :color="getStatusColor(r.status)"
-                  variant="subtle"
-                  size="xs"
-                >
-                  {{ getStatusLabel(r.status) }}
-                </UBadge>
-              </td>
-              <td class="py-3">
-                {{ formatDate(r.createdAt) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <template v-if="totalPages > 1" #footer>
-        <div class="flex items-center justify-between">
-          <p class="text-sm text-white/60">
-            Page {{ page }} / {{ totalPages }}
+      <div v-else class="space-y-8">
+        <div
+          v-for="group in groupedData"
+          :key="group.event.id"
+          class="rounded-lg border border-white/10 bg-white/5 p-4"
+        >
+          <h3 class="mb-2 font-semibold text-white">
+            {{ group.event.name }}
+          </h3>
+          <p class="mb-4 text-sm text-white/70">
+            {{ formatEventDate(group.event.eventDate) }} à {{ group.event.eventTime }} - {{ group.event.location }}
           </p>
-          <div class="flex gap-2">
-            <UButton
-              variant="outline"
-              size="sm"
-              :disabled="page <= 1"
-              @click="page--; fetchRegistrations()"
-            >
-              Précédent
-            </UButton>
-            <UButton
-              variant="outline"
-              size="sm"
-              :disabled="page >= totalPages"
-              @click="page++; fetchRegistrations()"
-            >
-              Suivant
-            </UButton>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-white/10 text-left text-sm text-white/70">
+                  <th class="pb-3 pr-4 font-medium">Nom</th>
+                  <th class="pb-3 pr-4 font-medium">Email</th>
+                  <th class="pb-3 pr-4 font-medium">Adultes</th>
+                  <th class="pb-3 pr-4 font-medium">Enfants</th>
+                  <th class="pb-3 pr-4 font-medium">Statut</th>
+                  <th class="pb-3 font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="r in group.registrations"
+                  :key="r.id"
+                  class="border-b border-white/5 text-white/90"
+                >
+                  <td class="py-3 pr-4">
+                    {{ r.firstName }} {{ r.lastName }}
+                  </td>
+                  <td class="py-3 pr-4">
+                    {{ r.email }}
+                  </td>
+                  <td class="py-3 pr-4">
+                    {{ r.adultCount }}
+                  </td>
+                  <td class="py-3 pr-4">
+                    {{ r.childCount }}
+                  </td>
+                  <td class="py-3 pr-4">
+                    <UBadge :color="getStatusColor(r.status)" variant="subtle" size="xs">
+                      {{ getStatusLabel(r.status) }}
+                    </UBadge>
+                  </td>
+                  <td class="py-3">
+                    {{ formatDate(r.createdAt) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
+          <p class="mt-3 text-sm text-white/60">
+            {{ group.registrations.length }} inscription(s)
+            <span class="text-white/50">•</span>
+            {{ getGroupTotals(group.registrations).adults }} adulte(s)
+            <span class="text-white/50">•</span>
+            {{ getGroupTotals(group.registrations).children }} enfant(s)
+          </p>
         </div>
-      </template>
+      </div>
     </UCard>
   </div>
 </template>

@@ -126,8 +126,32 @@ const submit = async () => {
   }
 }
 
-onMounted(() => {
+const nextEvent = ref<{ id: number; eventDate: string; eventTime: string; location: string } | null>(null)
+const isCheckingEvent = ref(true)
+
+onMounted(async () => {
   authStore.fetchProfile().catch(() => {})
+  try {
+    nextEvent.value = await $fetch(`${API_BASE_URL}/te-natiraa/next-event`)
+    if (!nextEvent.value) {
+      toast.add({
+        title: 'Inscriptions fermées',
+        description: 'Aucun Te Natira\'a à venir pour le moment.',
+        color: 'amber',
+      })
+      await navigateTo('/te-natiraa')
+      return
+    }
+  } catch {
+    toast.add({
+      title: 'Erreur',
+      description: 'Impossible de charger les informations.',
+      color: 'red',
+    })
+    await navigateTo('/te-natiraa')
+    return
+  }
+  isCheckingEvent.value = false
   if (route.query.canceled === 'true') {
     toast.add({
       title: 'Paiement annulé',
@@ -137,6 +161,11 @@ onMounted(() => {
     router.replace({ query: {} })
   }
 })
+
+const formatEventDate = (iso: string) => {
+  const d = new Date(iso)
+  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+}
 </script>
 
 <template>
@@ -150,12 +179,19 @@ onMounted(() => {
         Retour au Te Natira'a
       </NuxtLink>
 
-      <div class="rounded-2xl border border-primary-500/30 bg-gradient-to-br from-primary-900/40 to-primary-800/30 p-8">
+      <div v-if="isCheckingEvent" class="flex justify-center py-24">
+        <UIcon name="i-heroicons-arrow-path" class="h-12 w-12 animate-spin text-primary-400" />
+      </div>
+
+      <div
+        v-else-if="nextEvent"
+        class="rounded-2xl border border-primary-500/30 bg-gradient-to-br from-primary-900/40 to-primary-800/30 p-8"
+      >
         <h1 class="mb-2 text-3xl font-bold text-white">
           Inscription au Te Natira'a
         </h1>
         <p class="mb-8 text-white/70">
-          Samedi 11 avril à 8h00 - Vallée de Tipaerui
+          {{ formatEventDate(nextEvent.eventDate) }} à {{ nextEvent.eventTime }} - {{ nextEvent.location }}
         </p>
 
         <!-- Message tarif membre si non connecté -->
@@ -178,13 +214,13 @@ onMounted(() => {
         <div class="mb-8 rounded-lg border border-white/10 bg-white/5 p-4">
           <h3 class="mb-2 font-semibold text-white">Tarifs</h3>
           <p v-if="isMember" class="text-primary-300">
-            Tarif membre : {{ displayedPrice.preVente.toLocaleString('fr-FR') }} XPF (pré-vente) / {{ displayedPrice.pleinTarif.toLocaleString('fr-FR') }} XPF (plein tarif)
+            Tarif membre : {{ displayedPrice.preVente.toLocaleString('fr-FR') }} XPF 
           </p>
           <p v-else class="text-white/80">
-            Tarif public : {{ displayedPrice.preVente.toLocaleString('fr-FR') }} XPF (pré-vente) / {{ displayedPrice.pleinTarif.toLocaleString('fr-FR') }} XPF (plein tarif)
+            Tarif public : {{ displayedPrice.preVente.toLocaleString('fr-FR') }} XPF
           </p>
           <p class="mt-2 text-sm text-white/60">
-            Gratuit pour les enfants et les jeunes de moins de 18 ans. Gratuit pour les étudiants (sur présentation de la carte étudiant).
+            Gratuit pour les enfants et les jeunes de moins de 18 ans. <br> Gratuit pour les étudiants (sur présentation de la carte étudiant).
           </p>
         </div>
 
@@ -232,7 +268,7 @@ onMounted(() => {
                 class="bg-white/5"
               />
             </UFormField>
-            <UFormField label="Nombre d'enfants" :error="errors.childCount">
+            <UFormField label="Nombre d'enfants/étudiants" :error="errors.childCount">
               <UInput
                 v-model.number="form.childCount"
                 type="number"

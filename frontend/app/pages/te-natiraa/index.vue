@@ -10,7 +10,18 @@ definePageMeta({
   layout: 'default',
 })
 
-// Compte à rebours pour Te Natira'a - 11 avril 2026 à 8h00
+const config = useRuntimeConfig()
+const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
+
+interface NextEvent {
+  id: number
+  name: string
+  eventDate: string
+  eventTime: string
+  location: string
+}
+
+const nextEvent = ref<NextEvent | null>(null)
 const countdown = ref({
   days: 0,
   hours: 0,
@@ -18,11 +29,21 @@ const countdown = ref({
   seconds: 0,
 })
 
-const targetDate = new Date('2026-04-11T08:00:00').getTime()
+const targetDate = computed(() => {
+  if (!nextEvent.value) return 0
+  const [y, m, d] = nextEvent.value.eventDate.split('-').map(Number)
+  const [hour = 8, min = 0] = (nextEvent.value.eventTime || '8h00')
+    .replace('h', ':')
+    .split(':')
+    .map((x) => parseInt(x, 10) || 0)
+  return new Date(y, m - 1, d, hour, min).getTime()
+})
 
 const updateCountdown = () => {
+  const t = targetDate.value
+  if (!t) return
   const now = new Date().getTime()
-  const distance = targetDate - now
+  const distance = t - now
 
   if (distance > 0) {
     countdown.value = {
@@ -32,30 +53,33 @@ const updateCountdown = () => {
       seconds: Math.floor((distance % (1000 * 60)) / 1000),
     }
   } else {
-    countdown.value = {
-      days: 0,
-      hours: 0,
-      minutes: 0,
-      seconds: 0,
-    }
+    countdown.value = { days: 0, hours: 0, minutes: 0, seconds: 0 }
   }
 }
 
 let countdownInterval: ReturnType<typeof setInterval> | null = null
 
-const startCountdown = () => {
-  updateCountdown()
-  countdownInterval = setInterval(updateCountdown, 1000)
+const formatEventDate = (iso: string) => {
+  const d = new Date(iso)
+  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-onMounted(() => {
-  startCountdown()
+const fetchNextEvent = async () => {
+  try {
+    nextEvent.value = await $fetch<NextEvent | null>(`${API_BASE_URL}/te-natiraa/next-event`)
+  } catch {
+    nextEvent.value = null
+  }
+}
+
+onMounted(async () => {
+  await fetchNextEvent()
+  updateCountdown()
+  countdownInterval = setInterval(updateCountdown, 1000)
 })
 
 onUnmounted(() => {
-  if (countdownInterval) {
-    clearInterval(countdownInterval)
-  }
+  if (countdownInterval) clearInterval(countdownInterval)
 })
 </script>
 
@@ -74,7 +98,7 @@ onUnmounted(() => {
         <p class="mx-auto max-w-3xl text-lg text-white/80 sm:text-xl">
           Rejoignez-nous pour partager la culture, les traditions et créer des liens durables
         </p>
-        <div class="mt-8">
+        <div v-if="nextEvent" class="mt-8">
           <UButton
             to="/te-natiraa/inscription"
             size="xl"
@@ -93,7 +117,7 @@ onUnmounted(() => {
     </section>
 
     <!-- Compte à rebours -->
-    <section class="relative bg-black/50 py-12 sm:py-16">
+    <section v-if="nextEvent" class="relative bg-black/50 py-12 sm:py-16">
       <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div class="rounded-2xl border border-primary-500/30 bg-gradient-to-br from-primary-900/40 to-primary-800/30 p-8 backdrop-blur-sm">
           <div class="mb-6 text-center">
@@ -101,7 +125,7 @@ onUnmounted(() => {
               Prochain événement
             </h2>
             <p class="text-lg text-primary-300">
-              Samedi 11 avril à 8h00
+              {{ formatEventDate(nextEvent.eventDate) }} à {{ nextEvent.eventTime }} - {{ nextEvent.location }}
             </p>
           </div>
           <div class="grid grid-cols-4 gap-4 sm:gap-6">
@@ -249,7 +273,7 @@ onUnmounted(() => {
               Informations pratiques
             </h2>
           </div>
-          <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div v-if="nextEvent" class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <UCard class="text-center bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
               <div class="mb-4 flex justify-center">
                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-primary-500/20">
@@ -260,7 +284,7 @@ onUnmounted(() => {
                 Date
               </h3>
               <p class="text-white/80">
-                Samedi 11 avril
+                {{ formatEventDate(nextEvent.eventDate) }}
               </p>
             </UCard>
 
@@ -274,7 +298,7 @@ onUnmounted(() => {
                 Lieu
               </h3>
               <p class="text-white/80">
-                Vallée de Tipaerui
+                {{ nextEvent.location }}
               </p>
             </UCard>
 
@@ -288,10 +312,13 @@ onUnmounted(() => {
                 Heure
               </h3>
               <p class="text-white/80">
-                8h00
+                {{ nextEvent.eventTime }}
               </p>
             </UCard>
           </div>
+          <p v-else class="text-center text-white/70">
+            Aucun Te Natira'a à venir pour le moment. Revenez bientôt !
+          </p>
 
           <!-- Section Tarifs -->
           <div class="mt-12">
@@ -373,6 +400,7 @@ onUnmounted(() => {
           </p>
           <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <UButton
+              v-if="nextEvent"
               to="/te-natiraa/inscription"
               size="xl"
               color="primary"
@@ -383,7 +411,7 @@ onUnmounted(() => {
             <UButton
               to="/"
               size="xl"
-              variant="outline"
+              :variant="nextEvent ? 'outline' : 'solid'"
               icon="i-heroicons-arrow-left"
             >
               Retour à l'accueil
