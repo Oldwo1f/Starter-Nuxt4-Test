@@ -333,6 +333,14 @@ onUnmounted(() => {
                 </div>
               </UCard>
             </div>
+            <div class="mt-6 space-y-2 text-center">
+              <p class="text-xl font-bold text-white/90">
+                Gratuit pour les enfants et les jeunes de moins de 18 ans
+              </p>
+              <p class="text-xl font-bold text-white/90">
+                Gratuit pour les étudiants (sur présentation de la carte étudiant)
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -355,12 +363,12 @@ onUnmounted(() => {
           </p>
           <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <UButton
-              to="/register"
+              to="/te-natiraa/inscription"
               size="xl"
               color="primary"
-              icon="i-heroicons-user-plus"
+              icon="i-heroicons-ticket"
             >
-              S'inscrire
+              S'inscrire au Te Natira'a
             </UButton>
             <UButton
               to="/"

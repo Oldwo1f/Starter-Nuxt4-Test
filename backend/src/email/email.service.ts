@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BrevoClient } from '@getbrevo/brevo';
+import * as QRCode from 'qrcode';
 
 @Injectable()
 export class EmailService {
@@ -270,6 +271,124 @@ ${resetUrl}
 Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisation de mot de passe, vous pouvez ignorer cet email. Votre mot de passe restera inchangé.
 
 © ${new Date().getFullYear()} Nuna Heritage. Tous droits réservés.
+    `.trim();
+  }
+
+  async sendTeNatiraaTicket(
+    email: string,
+    firstName: string,
+    lastName: string,
+    adultCount: number,
+    childCount: number,
+    qrCode: string,
+  ): Promise<void> {
+    const subject = 'Votre billet Te Natira\'a - Nuna\'a Heritage';
+
+    let qrDataUrl = '';
+    try {
+      qrDataUrl = await QRCode.toDataURL(qrCode, { width: 400, margin: 2 });
+    } catch (err) {
+      this.logger.error('Failed to generate QR code for Te Natiraa ticket', err);
+    }
+
+    const htmlContent = this.getTeNatiraaTicketTemplate(
+      firstName,
+      lastName,
+      adultCount,
+      childCount,
+      qrDataUrl,
+    );
+    const textContent = this.getTeNatiraaTicketTextTemplate(
+      firstName,
+      lastName,
+      adultCount,
+      childCount,
+      qrCode,
+    );
+
+    await this.sendEmail(email, subject, htmlContent, textContent);
+  }
+
+  private getTeNatiraaTicketTemplate(
+    firstName: string,
+    lastName: string,
+    adultCount: number,
+    childCount: number,
+    qrDataUrl: string,
+  ): string {
+    return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billet Te Natira'a</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f4;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 40px 20px;">
+        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Te Natira'a</h1>
+              <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 16px;">Nuna'a Heritage</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px 30px; text-align: center;">
+              <p style="margin: 0 0 20px 0; color: #333333; font-size: 18px; font-weight: 600;">
+                Bonjour ${firstName} ${lastName},
+              </p>
+              <p style="margin: 0 0 30px 0; color: #333333; font-size: 16px; line-height: 1.6;">
+                Votre inscription au Te Natira'a est confirmée. Présentez ce billet à l'entrée.
+              </p>
+              <div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Adultes : ${adultCount}</p>
+                <p style="margin: 0; color: #666; font-size: 14px;">Enfants : ${childCount}</p>
+              </div>
+              ${qrDataUrl ? `<div style="margin: 30px 0; text-align: center;"><img src="${qrDataUrl}" alt="QR Code" style="width: 300px; height: 300px; max-width: 100%;" /></div>` : ''}
+              <p style="margin: 30px 0 0 0; color: #999999; font-size: 12px; line-height: 1.6;">
+                Samedi 11 avril à 8h00 - Vallée de Tipaerui
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 20px 30px; background-color: #f8f9fa; border-radius: 0 0 8px 8px; text-align: center;">
+              <p style="margin: 0; color: #666666; font-size: 12px;">
+                © ${new Date().getFullYear()} Nuna'a Heritage. Tous droits réservés.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+  }
+
+  private getTeNatiraaTicketTextTemplate(
+    firstName: string,
+    lastName: string,
+    adultCount: number,
+    childCount: number,
+    qrCode: string,
+  ): string {
+    return `
+Bonjour ${firstName} ${lastName},
+
+Votre inscription au Te Natira'a est confirmée. Présentez ce billet à l'entrée.
+
+Adultes : ${adultCount}
+Enfants : ${childCount}
+
+Code QR : ${qrCode}
+
+Samedi 11 avril à 8h00 - Vallée de Tipaerui
+
+© ${new Date().getFullYear()} Nuna'a Heritage. Tous droits réservés.
     `.trim();
   }
 }

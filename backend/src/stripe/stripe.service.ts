@@ -8,11 +8,26 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import Stripe from 'stripe';
+import { v4 as uuidv4 } from 'uuid';
 import { StripePayment, StripePack, StripePaymentStatus } from '../entities/stripe-payment.entity';
 import { User, UserRole } from '../entities/user.entity';
 import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
+import { TeNatiraaRegistration, TeNatiraaRegistrationStatus } from '../entities/te-natiraa-registration.entity';
+import { EmailService } from '../email/email.service';
 
 type PackCode = 'teOhi' | 'umete';
+
+export interface CreateTeNatiraaCheckoutParams {
+  firstName: string;
+  lastName: string;
+  email: string;
+  adultCount: number;
+  childCount: number;
+  userId: number | null;
+  isMember: boolean;
+  successUrl: string;
+  cancelUrl: string;
+}
 
 @Injectable()
 export class StripeService {
@@ -25,7 +40,10 @@ export class StripeService {
     private usersRepository: Repository<User>,
     @InjectRepository(Transaction)
     private transactionsRepository: Repository<Transaction>,
+    @InjectRepository(TeNatiraaRegistration)
+    private teNatiraaRegistrationsRepository: Repository<TeNatiraaRegistration>,
     private dataSource: DataSource,
+    private emailService: EmailService,
   ) {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) {
@@ -75,6 +93,87 @@ export class StripeService {
       return priceId;
     }
     throw new BadRequestException('Invalid pack');
+  }
+
+  async createTeNatiraaCheckoutSession(params: CreateTeNatiraaCheckoutParams) {
+    const priceId = params.isMember
+      ? process.env.STRIPE_TENATIRAA_PRICE_MEMBER_ID
+      : process.env.STRIPE_TENATIRAA_PRICE_PUBLIC_ID;
+
+    if (!priceId) {
+      throw new InternalServerErrorException(
+        params.isMember
+          ? 'STRIPE_TENATIRAA_PRICE_MEMBER_ID is not configured'
+          : 'STRIPE_TENATIRAA_PRICE_PUBLIC_ID is not configured',
+      );
+    }
+
+    const quantity = Math.max(1, params.adultCount);
+
+    const session = await this.stripe.checkout.sessions.create({
+      mode: 'payment',
+      customer_email: params.email,
+      line_items: [
+        {
+          price: priceId,
+          quantity,
+        },
+      ],
+      success_url: params.successUrl,
+      cancel_url: params.cancelUrl,
+      metadata: {
+        type: 'teNatiraa',
+        email: params.email,
+        firstName: params.firstName,
+        lastName: params.lastName,
+        adultCount: params.adultCount.toString(),
+        childCount: params.childCount.toString(),
+        userId: params.userId?.toString() ?? '',
+        isMember: params.isMember.toString(),
+      },
+    });
+
+    return {
+      sessionId: session.id,
+      url: session.url,
+    };
+  }
+
+  private async processTeNatiraaCheckoutCompleted(session: Stripe.Checkout.Session) {
+    const metadata = session.metadata || {};
+    const email = metadata.email as string;
+    const firstName = metadata.firstName as string;
+    const lastName = metadata.lastName as string;
+    const adultCount = parseInt(metadata.adultCount || '0', 10);
+    const childCount = parseInt(metadata.childCount || '0', 10);
+    const userId = metadata.userId ? parseInt(metadata.userId, 10) : null;
+
+    if (!email || !firstName || !lastName) {
+      console.error('[Stripe Webhook] Te Natiraa: missing required metadata', { metadata });
+      throw new BadRequestException('Missing required metadata for Te Natiraa registration');
+    }
+
+    const qrCode = uuidv4();
+
+    const registration = this.teNatiraaRegistrationsRepository.create({
+      firstName,
+      lastName,
+      email,
+      adultCount,
+      childCount,
+      userId: userId || null,
+      stripeSessionId: session.id,
+      qrCode,
+      status: TeNatiraaRegistrationStatus.PAID,
+    });
+
+    await this.teNatiraaRegistrationsRepository.save(registration);
+
+    await this.emailService.sendTeNatiraaTicket(email, firstName, lastName, adultCount, childCount, qrCode);
+
+    console.log(`[Stripe Webhook] Te Natiraa registration created: ${registration.id}, email sent to ${email}`);
+
+    return registration;
   }
 
   async createCheckoutSession(userId: number, pack: PackCode) {
@@ -144,6 +243,12 @@ export class StripeService {
   }
 
   private async processCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
+    // Te Natira'a registration (one-time payment)
+    if (session.metadata?.type === 'teNatiraa') {
+      return this.processTeNatiraaCheckoutCompleted(session);
+    }
+
+    // Cotisation (subscription)
     const userId = parseInt(session.metadata?.userId || '0', 10);
     if (!userId) {
       console.error(`[Stripe Webhook] Missing userId in session metadata`, { metadata: session.metadata });
@@ -263,6 +368,29 @@ export class StripeService {
     // Handle subscription updates if needed
     // For now, we just log it
     console.log('Subscription updated:', subscription.id);
+  }
+
+  async processTeNatiraaBySessionId(sessionId: string) {
+    const session = await this.stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== 'paid') {
+      throw new BadRequestException(
+        `Le paiement n'est pas encore confirmé (statut: ${session.payment_status})`,
+      );
+    }
+
+    if (session.metadata?.type !== 'teNatiraa') {
+      throw new BadRequestException('Cette session n\'est pas une inscription Te Natira\'a');
+    }
+
+    const existing = await this.teNatiraaRegistrationsRepository.findOne({
+      where: { stripeSessionId: sessionId },
+    });
+    if (existing) {
+      return { alreadyProcessed: true, registration: existing };
+    }
+
+    return this.processTeNatiraaCheckoutCompleted(session);
   }
 
   async processPendingPaymentBySessionId(sessionId: string) {

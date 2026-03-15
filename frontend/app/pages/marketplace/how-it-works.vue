@@ -143,7 +143,7 @@ definePageMeta({
               </li>
               <li class="flex items-start gap-2">
                 <span class="mt-1 text-primary-400">-</span>
-                <span><strong>La participation auTe Natira'a </strong>Vous fait automatiquement gagner 10 Pūpū 🐚</span>
+                <span><strong>La participation au Te Natira'a </strong>Vous fait automatiquement gagner 10 Pūpū 🐚</span>
               </li>
               <li class="flex items-start gap-2">
                 <span class="mt-1 text-primary-400">-</span>

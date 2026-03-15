@@ -24,6 +24,7 @@ import { PollOption } from '../entities/poll-option.entity';
 import { PollResponse } from '../entities/poll-response.entity';
 import { Conversation } from '../entities/conversation.entity';
 import { Message } from '../entities/message.entity';
+import { TeNatiraaRegistration } from '../entities/te-natiraa-registration.entity';
 
 @Module({
   imports: [
@@ -34,11 +35,11 @@ import { Message } from '../entities/message.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'nunaheritage',
-      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message],
+      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
-    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message]),
+    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration]),
   ],
   exports: [TypeOrmModule],
 })

@@ -21,6 +21,7 @@ import { TodosModule } from './todos/todos.module';
 import { PollsModule } from './polls/polls.module';
 import { MessagesModule } from './messages/messages.module';
 import { AdminAgentModule } from './admin-agent/admin-agent.module';
+import { TeNatiraaModule } from './te-natiraa/te-natiraa.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AdminAgentModule } from './admin-agent/admin-agent.module';
     PollsModule,
     MessagesModule,
     AdminAgentModule,
+    TeNatiraaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

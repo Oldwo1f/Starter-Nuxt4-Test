@@ -199,6 +199,12 @@ const allAdminMenuItems = [
     to: '/admin/newsletter',
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
+  {
+    label: 'Te Natira\'a',
+    icon: 'i-heroicons-ticket',
+    to: '/admin/te-natiraa',
+    roles: ['admin', 'superadmin'], // Admin uniquement
+  },
 ]
 
 // Filtrer le menu selon le rôle de l'utilisateur
