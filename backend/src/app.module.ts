@@ -22,6 +22,7 @@ import { PollsModule } from './polls/polls.module';
 import { MessagesModule } from './messages/messages.module';
 import { AdminAgentModule } from './admin-agent/admin-agent.module';
 import { TeNatiraaModule } from './te-natiraa/te-natiraa.module';
+import { KikiriModule } from './kikiri/kikiri.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { TeNatiraaModule } from './te-natiraa/te-natiraa.module';
     MessagesModule,
     AdminAgentModule,
     TeNatiraaModule,
+    KikiriModule,
   ],
   controllers: [AppController],
   providers: [AppService],

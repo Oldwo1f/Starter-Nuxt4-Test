@@ -289,6 +289,101 @@ export class WalletService {
     });
   }
 
+  /**
+   * Débite un utilisateur vers un autre (ex: mise Kikiri)
+   */
+  async gameDebit(
+    fromUserId: number,
+    toUserId: number,
+    amount: number,
+    description: string,
+  ): Promise<Transaction> {
+    if (amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+    return await this.dataSource.transaction(async (manager) => {
+      const fromUser = await manager.findOne(User, {
+        where: { id: fromUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!fromUser) {
+        throw new NotFoundException(`User with ID ${fromUserId} not found`);
+      }
+      const fromBalance = parseFloat(fromUser.walletBalance.toString());
+      if (fromBalance < amount) {
+        throw new BadRequestException('Insufficient balance');
+      }
+      const toUser = await manager.findOne(User, {
+        where: { id: toUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!toUser) {
+        throw new NotFoundException(`User with ID ${toUserId} not found`);
+      }
+      const toBalance = parseFloat(toUser.walletBalance.toString());
+      fromUser.walletBalance = fromBalance - amount;
+      toUser.walletBalance = toBalance + amount;
+      await manager.save([fromUser, toUser]);
+      const debitTx = manager.create(Transaction, {
+        type: TransactionType.DEBIT,
+        amount,
+        balanceBefore: fromBalance,
+        balanceAfter: fromBalance - amount,
+        status: TransactionStatus.COMPLETED,
+        fromUserId,
+        toUserId,
+        description: description.trim(),
+      });
+      return await manager.save(debitTx);
+    });
+  }
+
+  /**
+   * Crédite un utilisateur depuis un autre (ex: gain Kikiri)
+   */
+  async gameCredit(
+    fromUserId: number,
+    toUserId: number,
+    amount: number,
+    description: string,
+  ): Promise<Transaction> {
+    if (amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+    return await this.dataSource.transaction(async (manager) => {
+      const fromUser = await manager.findOne(User, {
+        where: { id: fromUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!fromUser) {
+        throw new NotFoundException(`User with ID ${fromUserId} not found`);
+      }
+      const toUser = await manager.findOne(User, {
+        where: { id: toUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!toUser) {
+        throw new NotFoundException(`User with ID ${toUserId} not found`);
+      }
+      const fromBalance = parseFloat(fromUser.walletBalance.toString());
+      const toBalance = parseFloat(toUser.walletBalance.toString());
+      fromUser.walletBalance = fromBalance - amount;
+      toUser.walletBalance = toBalance + amount;
+      await manager.save([fromUser, toUser]);
+      const creditTx = manager.create(Transaction, {
+        type: TransactionType.CREDIT,
+        amount,
+        balanceBefore: toBalance,
+        balanceAfter: toBalance + amount,
+        status: TransactionStatus.COMPLETED,
+        fromUserId,
+        toUserId,
+        description: description.trim(),
+      });
+      return await manager.save(creditTx);
+    });
+  }
+
   async searchUsersForTransfer(searchTerm: string, limit: number = 20): Promise<User[]> {
     const queryBuilder = this.userRepository.createQueryBuilder('user');
 

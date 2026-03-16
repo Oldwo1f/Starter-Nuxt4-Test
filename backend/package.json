@@ -45,7 +45,8 @@
     "restore:superadmin": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-restore-superadmin.ts",
     "generate:todos-seed": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/generate-todos-seed.ts",
     "seed:todos-safe": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/seeds/run-seed-safe.ts",
-    "reset:users": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/scripts/reset-users.ts"
+    "reset:users": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/scripts/reset-users.ts",
+    "migrate:kikiri": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-kikiri.ts"
   },
   "dependencies": {
     "@getbrevo/brevo": "^4.0.1",
@@ -55,6 +56,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.0.0",
+    "@nestjs/schedule": "^6.1.1",
     "@nestjs/swagger": "^11.2.3",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.0.0",

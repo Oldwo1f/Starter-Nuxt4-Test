@@ -26,6 +26,9 @@ import { Conversation } from '../entities/conversation.entity';
 import { Message } from '../entities/message.entity';
 import { TeNatiraaRegistration } from '../entities/te-natiraa-registration.entity';
 import { TeNatiraaEvent } from '../entities/te-natiraa-event.entity';
+import { KikiriDraw } from '../entities/kikiri-draw.entity';
+import { KikiriBet } from '../entities/kikiri-bet.entity';
+import { KikiriChatMessage } from '../entities/kikiri-chat-message.entity';
 
 @Module({
   imports: [
@@ -36,11 +39,11 @@ import { TeNatiraaEvent } from '../entities/te-natiraa-event.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'nunaheritage',
-      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent],
+      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent, KikiriDraw, KikiriBet, KikiriChatMessage],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
-    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent]),
+    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent, KikiriDraw, KikiriBet, KikiriChatMessage]),
   ],
   exports: [TypeOrmModule],
 })

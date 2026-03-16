@@ -108,6 +108,12 @@ const heritageMenuItems = computed<MenuItem[]>(() => [
     icon: 'i-heroicons-academic-cap',
     active: route.path.startsWith('/academy'),
   },
+  {
+    label: 'Jeux',
+    to: '/games',
+    icon: 'i-heroicons-play',
+    active: route.path.startsWith('/games'),
+  },
 ])
 
 // Menu pour la section Marketplace

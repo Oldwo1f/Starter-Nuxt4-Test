@@ -1,0 +1,207 @@
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
+} from '@nestjs/websockets';
+import { Server } from 'socket.io';
+import { Socket } from 'socket.io';
+import { JwtService } from '@nestjs/jwt';
+import { Logger } from '@nestjs/common';
+import { KikiriService } from './kikiri.service';
+import { WalletService } from '../wallet/wallet.service';
+import { PlaceBetDto } from './dto/place-bet.dto';
+import { ChatMessageDto } from './dto/chat-message.dto';
+
+const KIKIRI_ROOM = 'kikiri:lobby';
+
+@WebSocketGateway({
+  namespace: '/kikiri',
+  cors: {
+    origin:
+      process.env.NODE_ENV !== 'production'
+        ? ['http://localhost:3000', 'http://127.0.0.1:3000', process.env.FRONTEND_URL].filter(Boolean)
+        : process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  },
+})
+export class KikiriGateway {
+  @WebSocketServer()
+  server: Server;
+
+  private readonly logger = new Logger(KikiriGateway.name);
+
+  constructor(
+    private jwtService: JwtService,
+    private kikiriService: KikiriService,
+    private walletService: WalletService,
+  ) {}
+
+  afterInit() {
+    this.logger.log('KikiriGateway initialized');
+  }
+
+  async handleConnection(client: Socket) {
+    try {
+      const token =
+        client.handshake.auth?.token ||
+        client.handshake.query?.token ||
+        (client.handshake.headers?.authorization as string)?.replace('Bearer ', '');
+      if (!token) {
+        this.logger.warn(`Connection rejected: no token for socket ${client.id}`);
+        client.disconnect();
+        return;
+      }
+      const payload = await this.jwtService.verifyAsync(token);
+      const userId = payload.sub;
+      if (!userId) {
+        client.disconnect();
+        return;
+      }
+      client.data.userId = userId;
+      await client.join(KIKIRI_ROOM);
+      this.logger.log(`User ${userId} joined Kikiri lobby`);
+      const [currentDraw, drawHistoryWithResults, chatMessages] = await Promise.all([
+        this.kikiriService.getCurrentDraw(),
+        this.kikiriService.getDrawHistoryWithUserResults(userId, 10),
+        this.kikiriService.getRecentChatMessages(50),
+      ]);
+      const balance = await this.walletService.getBalance(userId);
+      client.emit('kikiri:state', {
+        currentDraw,
+        drawHistory: drawHistoryWithResults,
+        chatMessages,
+        balance,
+      });
+    } catch (error) {
+      this.logger.warn(`Connection rejected: invalid token for socket ${client.id}`);
+      client.disconnect();
+    }
+  }
+
+  handleDisconnect(client: Socket) {
+    const userId = client.data?.userId;
+    if (userId) {
+      this.logger.log(`User ${userId} left Kikiri lobby`);
+    }
+  }
+
+  emitDrawEnding(drawId: number) {
+    this.server.to(KIKIRI_ROOM).emit('kikiri:draw:ending', { drawId });
+  }
+
+  async emitNewDraw(draw: any) {
+    this.server.to(KIKIRI_ROOM).emit('kikiri:draw:new', {
+      draw: {
+        id: draw.id,
+        status: draw.status,
+        bettingEndsAt: draw.bettingEndsAt,
+        createdAt: draw.createdAt,
+      },
+    });
+  }
+
+  async emitDrawReveal(draw: any) {
+    this.server.to(KIKIRI_ROOM).emit('kikiri:draw:reveal', {
+      draw: {
+        id: draw.id,
+        dice1: draw.dice1,
+        dice2: draw.dice2,
+        dice3: draw.dice3,
+        status: draw.status,
+        resolvedAt: draw.resolvedAt,
+      },
+    });
+  }
+
+  async emitDrawResolved(draw: any) {
+    const drawPayload = {
+      id: draw.id,
+      dice1: draw.dice1,
+      dice2: draw.dice2,
+      dice3: draw.dice3,
+      status: draw.status,
+      resolvedAt: draw.resolvedAt,
+    };
+    this.server.to(KIKIRI_ROOM).emit('kikiri:draw:resolved', { draw: drawPayload });
+    const sockets = await this.server.in(KIKIRI_ROOM).fetchSockets();
+    for (const socket of sockets) {
+      const userId = socket.data?.userId;
+      if (userId) {
+        const [userNet, userBets] = await Promise.all([
+          this.kikiriService.getUserNetForDraw(draw.id, userId),
+          this.kikiriService.getUserBetsByNumberForDraw(draw.id, userId),
+        ]);
+        socket.emit('kikiri:draw:myResult', { drawId: draw.id, userNet, userBets });
+      }
+    }
+  }
+
+  @SubscribeMessage('kikiri:bet')
+  async handleBet(
+    @MessageBody() payload: PlaceBetDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data?.userId;
+    if (!userId) return { error: 'Unauthorized' };
+    try {
+      const bet = await this.kikiriService.placeBet(
+        userId,
+        payload.drawId,
+        payload.number,
+        payload.amount,
+      );
+      const balance = await this.walletService.getBalance(userId);
+      client.emit('kikiri:bet:placed', {
+        bet: {
+          id: bet.id,
+          drawId: bet.drawId,
+          number: bet.number,
+          amount: parseFloat(bet.amount.toString()),
+          result: bet.result,
+        },
+        balance,
+      });
+      return { success: true, bet, balance };
+    } catch (error: any) {
+      this.logger.error(`Bet error: ${error?.message}`);
+      client.emit('kikiri:bet:error', {
+        error: error?.message || 'Failed to place bet',
+      });
+      return { error: error?.message || 'Failed to place bet' };
+    }
+  }
+
+  @SubscribeMessage('kikiri:chat')
+  async handleChat(
+    @MessageBody() payload: ChatMessageDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data?.userId;
+    if (!userId) return { error: 'Unauthorized' };
+    try {
+      const message = await this.kikiriService.sendChatMessage(userId, payload.content);
+      const user = await this.kikiriService.getUserForChat(userId);
+      const chatPayload = {
+        id: message.id,
+        userId: message.userId,
+        content: message.content,
+        createdAt: message.createdAt,
+        user: user
+          ? {
+              id: user.id,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email,
+            }
+          : null,
+      };
+      this.server.to(KIKIRI_ROOM).emit('kikiri:chat:message', chatPayload);
+      return { success: true, message: chatPayload };
+    } catch (error: any) {
+      this.logger.error(`Chat error: ${error?.message}`);
+      return { error: error?.message || 'Failed to send message' };
+    }
+  }
+}
