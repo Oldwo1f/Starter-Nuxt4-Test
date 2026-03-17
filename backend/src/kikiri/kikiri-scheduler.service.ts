@@ -30,7 +30,8 @@ export class KikiriSchedulerService {
         await new Promise((r) => setTimeout(r, 2500));
         const revealing = await this.kikiriService.rollAndRevealDraw(currentDraw.id);
         this.kikiriGateway.emitDrawReveal(revealing);
-        await new Promise((r) => setTimeout(r, 2500));
+        // Délai pour laisser les animations (pupus perdants → banque, pupus gagnants → tas, vers solde) se terminer
+        await new Promise((r) => setTimeout(r, 10500));
     const resolved = await this.kikiriService.settleBetsAndResolveDraw(currentDraw.id);
     await this.kikiriGateway.emitDrawResolved(resolved);
     // Délai pour que la popup gain/perte disparaisse avant le nouveau tirage

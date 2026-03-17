@@ -2,6 +2,12 @@ import { io, Socket } from 'socket.io-client'
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useWalletStore } from '~/stores/useWalletStore'
 
+export interface KikiriBetByUser {
+  userId: number
+  amount: number
+  user: { id: number; firstName: string | null; avatarImage: string | null }
+}
+
 export interface KikiriDraw {
   id: number
   dice1?: number | null
@@ -13,6 +19,7 @@ export interface KikiriDraw {
   createdAt: string
   userNet?: number
   userBets?: Record<number, number>
+  allBets?: Record<number, KikiriBetByUser[]>
 }
 
 export interface KikiriChatMessage {
@@ -28,11 +35,18 @@ export interface KikiriChatMessage {
   } | null
 }
 
+export interface KikiriOnlineUser {
+  id: number
+  firstName: string | null
+  avatarImage: string | null
+}
+
 export interface KikiriState {
   currentDraw: KikiriDraw | null
   drawHistory: KikiriDraw[]
   chatMessages: KikiriChatMessage[]
   balance: number
+  onlineUsers?: KikiriOnlineUser[]
 }
 
 let kikiriSocketInstance: Socket | null = null
@@ -50,8 +64,11 @@ export const useKikiriSocket = () => {
       disconnect()
       return null
     }
-    if (kikiriSocketInstance?.connected) return kikiriSocketInstance
     const namespaceUrl = apiBaseUrl.replace(/\/$/, '') + '/kikiri'
+    if (kikiriSocketInstance?.connected) {
+      kikiriSocketInstance.emit('kikiri:requestState')
+      return kikiriSocketInstance
+    }
     kikiriSocketInstance = io(namespaceUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],
@@ -60,7 +77,10 @@ export const useKikiriSocket = () => {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
     })
-    kikiriSocketInstance.on('connect', () => console.debug('[Kikiri Socket] Connected'))
+    kikiriSocketInstance.on('connect', () => {
+      console.debug('[Kikiri Socket] Connected')
+      kikiriSocketInstance?.emit('kikiri:requestState')
+    })
     kikiriSocketInstance.on('disconnect', (r) => console.debug('[Kikiri Socket] Disconnected:', r))
     kikiriSocketInstance.on('connect_error', (e) => console.warn('[Kikiri Socket] Error:', e.message))
     return kikiriSocketInstance
@@ -83,6 +103,21 @@ export const useKikiriSocket = () => {
   const placeBet = (drawId: number, number: number, amount: number) => {
     const s = getSocket()
     if (s) s.emit('kikiri:bet', { drawId, number, amount })
+  }
+
+  const moveBet = (drawId: number, from: number, to: number) => {
+    const s = getSocket()
+    if (s) s.emit('kikiri:moveBet', { drawId, from, to })
+  }
+
+  const requestState = () => {
+    const s = getSocket()
+    if (s) s.emit('kikiri:requestState')
+  }
+
+  const requestAllBets = (drawId: number) => {
+    const s = getSocket()
+    if (s) s.emit('kikiri:requestAllBets', { drawId })
   }
 
   const sendChat = (content: string) => {
@@ -144,6 +179,24 @@ export const useKikiriSocket = () => {
     return () => {}
   }
 
+  const onAllBets = (callback: (data: { drawId: number; allBets: Record<number, KikiriBetByUser[]> }) => void) => {
+    const s = getSocket()
+    if (s) {
+      s.on('kikiri:allBets', callback)
+      return () => s.off('kikiri:allBets', callback)
+    }
+    return () => {}
+  }
+
+  const onOnlineUsers = (callback: (data: { users: KikiriOnlineUser[] }) => void) => {
+    const s = getSocket()
+    if (s) {
+      s.on('kikiri:onlineUsers', callback)
+      return () => s.off('kikiri:onlineUsers', callback)
+    }
+    return () => {}
+  }
+
   const onBetPlaced = (callback: (data: { bet: any; balance: number }) => void) => {
     const s = getSocket()
     if (s) {
@@ -180,8 +233,13 @@ export const useKikiriSocket = () => {
     disconnect,
     getSocket,
     placeBet,
+    moveBet,
+    requestState,
+    requestAllBets,
     sendChat,
     onState,
+    onAllBets,
+    onOnlineUsers,
     onDrawNew,
     onDrawEnding,
     onDrawReveal,

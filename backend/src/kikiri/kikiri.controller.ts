@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Param, UseGuards, BadRequestException, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { KikiriSchedulerService } from './kikiri-scheduler.service';
@@ -15,6 +15,12 @@ export class KikiriController {
     private kikiriService: KikiriService,
     private kikiriGateway: KikiriGateway,
   ) {}
+
+  @Get('draws/:drawId/all-bets')
+  @ApiOperation({ summary: 'Get all bets by case for a draw' })
+  async getAllBets(@Param('drawId', ParseIntPipe) drawId: number) {
+    return this.kikiriService.getAllBetsByCaseForDraw(drawId);
+  }
 
   @Post('trigger-draw')
   @ApiOperation({ summary: 'Trigger draw immediately (for testing)' })

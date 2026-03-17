@@ -12,6 +12,7 @@ import { Logger } from '@nestjs/common';
 import { KikiriService } from './kikiri.service';
 import { WalletService } from '../wallet/wallet.service';
 import { PlaceBetDto } from './dto/place-bet.dto';
+import { MoveBetDto } from './dto/move-bet.dto';
 import { ChatMessageDto } from './dto/chat-message.dto';
 
 const KIKIRI_ROOM = 'kikiri:lobby';
@@ -68,12 +69,27 @@ export class KikiriGateway {
         this.kikiriService.getRecentChatMessages(50),
       ]);
       const balance = await this.walletService.getBalance(userId);
+      let currentDrawWithBets = currentDraw;
+      if (currentDraw) {
+        const allBets = await this.kikiriService.getAllBetsByCaseForDraw(currentDraw.id);
+        currentDrawWithBets = {
+          ...currentDraw,
+          allBets: JSON.parse(JSON.stringify(allBets)),
+        } as any;
+      }
+      const sockets = await this.server.in(KIKIRI_ROOM).fetchSockets();
+      const userIds = sockets
+        .map((s) => s.data?.userId as number | undefined)
+        .filter((id): id is number => typeof id === 'number');
+      const onlineUsers = await this.kikiriService.getUsersByIds(userIds);
       client.emit('kikiri:state', {
-        currentDraw,
+        currentDraw: currentDrawWithBets,
         drawHistory: drawHistoryWithResults,
         chatMessages,
         balance,
+        onlineUsers,
       });
+      this.server.to(KIKIRI_ROOM).emit('kikiri:onlineUsers', { users: onlineUsers });
     } catch (error) {
       this.logger.warn(`Connection rejected: invalid token for socket ${client.id}`);
       client.disconnect();
@@ -85,6 +101,16 @@ export class KikiriGateway {
     if (userId) {
       this.logger.log(`User ${userId} left Kikiri lobby`);
     }
+    this.emitOnlineUsers();
+  }
+
+  private async emitOnlineUsers() {
+    const sockets = await this.server.in(KIKIRI_ROOM).fetchSockets();
+    const userIds = sockets
+      .map((s) => s.data?.userId as number | undefined)
+      .filter((id): id is number => typeof id === 'number');
+    const users = await this.kikiriService.getUsersByIds(userIds);
+    this.server.to(KIKIRI_ROOM).emit('kikiri:onlineUsers', { users });
   }
 
   emitDrawEnding(drawId: number) {
@@ -138,6 +164,51 @@ export class KikiriGateway {
     }
   }
 
+  @SubscribeMessage('kikiri:requestState')
+  async handleRequestState(@ConnectedSocket() client: Socket) {
+    const userId = client.data?.userId;
+    if (!userId) return;
+    const [currentDraw, drawHistoryWithResults, chatMessages] = await Promise.all([
+      this.kikiriService.getCurrentDraw(),
+      this.kikiriService.getDrawHistoryWithUserResults(userId, 10),
+      this.kikiriService.getRecentChatMessages(50),
+    ]);
+    const balance = await this.walletService.getBalance(userId);
+    let currentDrawWithBets = currentDraw;
+    if (currentDraw) {
+      const allBets = await this.kikiriService.getAllBetsByCaseForDraw(currentDraw.id);
+      currentDrawWithBets = {
+        ...currentDraw,
+        allBets: JSON.parse(JSON.stringify(allBets)),
+      } as any;
+    }
+    const sockets = await this.server.in(KIKIRI_ROOM).fetchSockets();
+    const userIds = sockets
+      .map((s) => s.data?.userId as number | undefined)
+      .filter((id): id is number => typeof id === 'number');
+    const users = await this.kikiriService.getUsersByIds(userIds);
+    client.emit('kikiri:state', {
+      currentDraw: currentDrawWithBets,
+      drawHistory: drawHistoryWithResults,
+      chatMessages,
+      balance,
+      onlineUsers: users,
+    });
+  }
+
+  @SubscribeMessage('kikiri:requestAllBets')
+  async handleRequestAllBets(
+    @MessageBody() payload: { drawId: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    if (!payload?.drawId) return;
+    const allBets = await this.kikiriService.getAllBetsByCaseForDraw(payload.drawId);
+    client.emit('kikiri:allBets', {
+      drawId: payload.drawId,
+      allBets: JSON.parse(JSON.stringify(allBets)),
+    });
+  }
+
   @SubscribeMessage('kikiri:bet')
   async handleBet(
     @MessageBody() payload: PlaceBetDto,
@@ -163,6 +234,9 @@ export class KikiriGateway {
         },
         balance,
       });
+      const allBets = await this.kikiriService.getAllBetsByCaseForDraw(payload.drawId);
+      const allBetsPayload = JSON.parse(JSON.stringify(allBets));
+      this.server.to(KIKIRI_ROOM).emit('kikiri:allBets', { drawId: payload.drawId, allBets: allBetsPayload });
       return { success: true, bet, balance };
     } catch (error: any) {
       this.logger.error(`Bet error: ${error?.message}`);
@@ -170,6 +244,33 @@ export class KikiriGateway {
         error: error?.message || 'Failed to place bet',
       });
       return { error: error?.message || 'Failed to place bet' };
+    }
+  }
+
+  @SubscribeMessage('kikiri:moveBet')
+  async handleMoveBet(
+    @MessageBody() payload: MoveBetDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data?.userId;
+    if (!userId) return { error: 'Unauthorized' };
+    try {
+      const bet = await this.kikiriService.moveBet(
+        userId,
+        payload.drawId,
+        payload.from,
+        payload.to,
+      );
+      const allBets = await this.kikiriService.getAllBetsByCaseForDraw(payload.drawId);
+      const allBetsPayload = JSON.parse(JSON.stringify(allBets));
+      this.server.to(KIKIRI_ROOM).emit('kikiri:allBets', { drawId: payload.drawId, allBets: allBetsPayload });
+      return { success: true, bet };
+    } catch (error: any) {
+      this.logger.error(`Move bet error: ${error?.message}`);
+      client.emit('kikiri:bet:error', {
+        error: error?.message || 'Failed to move bet',
+      });
+      return { error: error?.message || 'Failed to move bet' };
     }
   }
 

@@ -151,6 +151,32 @@ export class KikiriService {
     return await this.betRepository.save(bet);
   }
 
+  async moveBet(userId: number, drawId: number, from: number, to: number) {
+    const draw = await this.getDrawById(drawId);
+    if (draw.status !== KikiriDrawStatus.BETTING) {
+      throw new BadRequestException('Betting is closed for this draw');
+    }
+    const graceEnd = new Date(draw.bettingEndsAt.getTime() + 5000);
+    if (new Date() >= graceEnd) {
+      throw new BadRequestException('Betting period has ended');
+    }
+    if (from < 1 || from > 6 || to < 1 || to > 6) {
+      throw new BadRequestException('Number must be between 1 and 6');
+    }
+    if (from === to) {
+      throw new BadRequestException('Source and target must be different');
+    }
+    const bet = await this.betRepository.findOne({
+      where: { userId, drawId, number: from },
+      order: { id: 'ASC' },
+    });
+    if (!bet) {
+      throw new BadRequestException('No bet found on source case');
+    }
+    bet.number = to;
+    return await this.betRepository.save(bet);
+  }
+
   rollDice(): number {
     return Math.floor(Math.random() * 6) + 1;
   }
@@ -241,11 +267,63 @@ export class KikiriService {
     });
   }
 
+  async getUsersByIds(userIds: number[]) {
+    if (userIds.length === 0) return [];
+    const unique = [...new Set(userIds)];
+    const users = await this.userRepository.find({
+      where: unique.map((id) => ({ id })),
+      select: ['id', 'firstName', 'avatarImage'],
+    });
+    return users.map((u) => ({
+      id: u.id,
+      firstName: u.firstName ?? null,
+      avatarImage: u.avatarImage ?? null,
+    }));
+  }
+
   async getBetsByDraw(drawId: number) {
     return await this.betRepository.find({
       where: { drawId },
       relations: ['user'],
       order: { createdAt: 'ASC' },
     });
+  }
+
+  async getAllBetsByCaseForDraw(drawId: number) {
+    const bets = await this.betRepository.find({
+      where: { drawId },
+      relations: ['user'],
+    });
+    const byCase: Record<
+      number,
+      { userId: number; amount: number; user: { id: number; firstName: string | null; avatarImage: string | null } }[]
+    > = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+    const userSums: Record<string, number> = {};
+    for (const bet of bets) {
+      const num = Number(bet.number);
+      if (num < 1 || num > 6) continue;
+      const key = `${bet.userId}-${num}`;
+      userSums[key] = (userSums[key] || 0) + parseFloat(bet.amount.toString());
+    }
+    const seen: Record<string, boolean> = {};
+    for (const bet of bets) {
+      const num = Number(bet.number);
+      if (num < 1 || num > 6) continue;
+      const key = `${bet.userId}-${num}`;
+      if (seen[key]) continue;
+      seen[key] = true;
+      const amount = Math.round(userSums[key] || 0);
+      if (amount <= 0) continue;
+      byCase[num].push({
+        userId: bet.userId,
+        amount,
+        user: {
+          id: bet.user?.id ?? bet.userId,
+          firstName: bet.user?.firstName ?? null,
+          avatarImage: bet.user?.avatarImage ?? null,
+        },
+      });
+    }
+    return byCase;
   }
 }
