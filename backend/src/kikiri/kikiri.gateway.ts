@@ -274,6 +274,24 @@ export class KikiriGateway {
     }
   }
 
+  @SubscribeMessage('kikiri:betPreview')
+  handleBetPreview(
+    @MessageBody() payload: { drawId: number; delta: number; case: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data?.userId;
+    if (!userId || typeof userId !== 'number') return;
+    const { drawId, delta, case: caseNum } = payload ?? {};
+    if (typeof drawId !== 'number' || typeof caseNum !== 'number' || caseNum < 1 || caseNum > 6) return;
+    if (delta !== 1 && delta !== -1) return;
+    this.server.to(KIKIRI_ROOM).emit('kikiri:betPreview', {
+      drawId,
+      userId,
+      delta,
+      case: caseNum,
+    });
+  }
+
   @SubscribeMessage('kikiri:chat')
   async handleChat(
     @MessageBody() payload: ChatMessageDto,

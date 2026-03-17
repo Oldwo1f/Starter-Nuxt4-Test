@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { KikiriDraw, KikiriBetByUser } from '~/composables/useKikiriSocket'
+import type { KikiriDraw, KikiriBetByUser, KikiriOnlineUser } from '~/composables/useKikiriSocket'
 import tasseImg from '~/assets/images/tasse.png'
 import pupuImg from '~/assets/images/pupu3D.png'
 import tasPupuImg from '~/assets/images/tasPupu.png'
@@ -11,6 +11,8 @@ const props = defineProps<{
   betAmounts: Record<number, number>
   isPlacing: boolean
   allBets?: Record<number, KikiriBetByUser[]>
+  provisionalBetsByUser?: Record<number, Record<number, number>>
+  onlineUsers?: KikiriOnlineUser[]
   currentUserId?: number | null
   isNewGame?: boolean
   hasSubmittedBets?: boolean
@@ -19,6 +21,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:betAmounts': [Record<number, number>]
   'move': [{ from: number; to: number }]
+  'betPreview': [{ delta: number; case: number }]
   'animations-complete': []
   'game-ready': []
 }>()
@@ -103,6 +106,7 @@ interface FlyingPupu {
 const flyingPupus = ref<FlyingPupu[]>([])
 const flyingPupuProgress = ref(0)
 const flyingPupuStartTime = ref(0)
+const flyingPupuDelayPerUnit = ref(500)
 const casesGridRef = ref<HTMLElement | null>(null)
 const gameBoardWrapperRef = ref<HTMLElement | null>(null)
 const balanceRef = ref<HTMLElement | null>(null)
@@ -194,6 +198,7 @@ function getWinAmountPerCase(): Record<number, number> {
 
 const PER_PUPU_DELAY_MS = 500
 const PER_PUPU_DURATION_MS = 700
+const BANK_TO_WIN_MAX_DURATION_MS = 7500
 const LOST_TO_BANK_DURATION_MS = 900
 const DOME_LIFT_DURATION_MS = 1100
 const DOME_CLOSE_DURATION_MS = 800
@@ -207,7 +212,7 @@ const TO_BALANCE_TO_CUP_CLOSE_MS = 1200
 function getFlyingPupuProgress(fp: FlyingPupu): number {
   const elapsed = performance.now() - flyingPupuStartTime.value
   const idx = fp.index ?? 0
-  const startAt = idx * PER_PUPU_DELAY_MS
+  const startAt = idx * flyingPupuDelayPerUnit.value
   const p = Math.max(0, Math.min(1, (elapsed - startAt) / PER_PUPU_DURATION_MS))
   return p
 }
@@ -279,7 +284,9 @@ function startBankToWinAnimation(): number {
   flyingPupuStartTime.value = performance.now()
 
   const totalCount = toAdd.length
-  const totalDuration = totalCount * PER_PUPU_DELAY_MS + PER_PUPU_DURATION_MS + 100
+  const rawDuration = totalCount * PER_PUPU_DELAY_MS + PER_PUPU_DURATION_MS + 100
+  const totalDuration = Math.min(rawDuration, BANK_TO_WIN_MAX_DURATION_MS)
+  flyingPupuDelayPerUnit.value = totalCount > 0 ? Math.max(80, (totalDuration - PER_PUPU_DURATION_MS - 100) / totalCount) : PER_PUPU_DELAY_MS
   function animate() {
     const elapsed = performance.now() - flyingPupuStartTime.value
     flyingPupuProgress.value = elapsed
@@ -408,17 +415,52 @@ function clearAllBets() {
   betAmounts.value = {}
 }
 
-// Other players' bets per case (exclude current user)
+// Other players' bets per case (exclude current user), merged with provisional previews
 const otherBetsByCase = computed(() => {
   const all = props.allBets ?? {}
+  const provisional = props.provisionalBetsByUser ?? {}
+  const onlineUsers = props.onlineUsers ?? []
   const uid = props.currentUserId
   const result: Record<number, KikiriBetByUser[]> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }
+  const userById = Object.fromEntries(onlineUsers.map((u) => [u.id, u]))
   for (let num = 1; num <= 6; num++) {
-    const bets = all[num] ?? []
-    result[num] = uid != null ? bets.filter((b) => b.userId !== uid) : bets
+    const bets = (all[num] ?? []).filter((b) => b.userId !== uid)
+    const byUser = new Map<number, KikiriBetByUser>()
+    for (const b of bets) {
+      if (b.amount > 0) {
+        byUser.set(b.userId, { ...b })
+      }
+    }
+    for (const [userId, userProvisional] of Object.entries(provisional)) {
+      const id = Number(userId)
+      if (id === uid) continue
+      const delta = userProvisional[num] ?? 0
+      if (delta <= 0) continue
+      const existing = byUser.get(id)
+      if (existing) continue
+      const user = userById[id]
+      byUser.set(id, {
+        userId: id,
+        amount: delta,
+        user: user ? { id, firstName: user.firstName, avatarImage: user.avatarImage } : { id, firstName: null, avatarImage: null },
+      })
+    }
+    result[num] = Array.from(byUser.values())
   }
   return result
 })
+
+// Répartition des autres joueurs dans les 4 coins (max 2 par coin = 8 joueurs)
+function getOtherBetsByCorner(caseNum: number): { topLeft: KikiriBetByUser[]; topRight: KikiriBetByUser[]; bottomLeft: KikiriBetByUser[]; bottomRight: KikiriBetByUser[] } {
+  const bets = (otherBetsByCase.value[caseNum] ?? []).slice(0, 8)
+  const corners = { topLeft: [] as KikiriBetByUser[], topRight: [] as KikiriBetByUser[], bottomLeft: [] as KikiriBetByUser[], bottomRight: [] as KikiriBetByUser[] }
+  const keys = ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'] as const
+  bets.forEach((b, i) => {
+    const corner = keys[i % 4]
+    if (corners[corner].length < 2) corners[corner].push(b)
+  })
+  return corners
+}
 
 // Drag & drop
 const DRAG_TYPE = 'application/x-kikiri-pupu'
@@ -514,6 +556,7 @@ function onBalanceDrop(e: DragEvent) {
   const src = dragSource.value
   if (!src || src.source !== 'cell' || src.num == null) return
   removeBet(src.num)
+  emit('betPreview', { delta: -1, case: src.num })
 }
 
 function onCellDrop(e: DragEvent, targetNum: number) {
@@ -523,6 +566,7 @@ function onCellDrop(e: DragEvent, targetNum: number) {
   if (!src) return
   if (src.source === 'balance') {
     addBet(targetNum)
+    emit('betPreview', { delta: 1, case: targetNum })
   } else if (src.source === 'cell' && src.num != null && src.num !== targetNum) {
     const from = src.num
     const to = targetNum
@@ -531,6 +575,8 @@ function onCellDrop(e: DragEvent, targetNum: number) {
     next[to] = (next[to] ?? 0) + 1
     betAmounts.value = next
     emit('move', { from, to })
+    emit('betPreview', { delta: -1, case: from })
+    emit('betPreview', { delta: 1, case: to })
   }
 }
 
@@ -1104,45 +1150,57 @@ onUnmounted(() => {
                 @dragleave="onCellDragLeave"
                 @drop="onCellDrop($event, num)"
               >
-                <!-- Other players' bets (sides, grayed, with avatar) -->
-                <div
-                  v-if="(otherBetsByCase[num] ?? []).length > 0 && !shouldHidePupusOnCase(num)"
-                  class="absolute left-1 top-1/2 -translate-y-1/2 flex flex-col gap-1 pointer-events-none"
-                >
+                <!-- Other players' bets : 4 coins (top-left, top-right, bottom-left, bottom-right), max 2 joueurs par coin -->
+                <template v-if="(otherBetsByCase[num] ?? []).length > 0 && !shouldHidePupusOnCase(num)">
                   <div
-                    v-for="b in otherBetsByCase[num]"
-                    :key="`${num}-${b.userId}`"
-                    class="flex items-center gap-1"
+                    v-for="(players, corner) in getOtherBetsByCorner(num)"
+                    :key="`${num}-${corner}`"
+                    v-show="players.length > 0"
+                    class="absolute flex flex-col gap-0.5 pointer-events-none"
+                    :class="{
+                      'left-1 top-1': corner === 'topLeft',
+                      'right-1 top-1': corner === 'topRight',
+                      'left-1 bottom-1': corner === 'bottomLeft',
+                      'right-1 bottom-1': corner === 'bottomRight',
+                    }"
                   >
-                    <img
-                      v-if="b.user?.avatarImage"
-                      :src="getImageUrl(b.user.avatarImage)"
-                      :alt="b.user.firstName ?? ''"
-                      class="w-5 h-5 rounded-full border border-amber-800 object-cover opacity-60 grayscale flex-shrink-0"
-                    />
                     <div
-                      v-else
-                      class="w-5 h-5 rounded-full border border-amber-800 bg-amber-700/60 flex items-center justify-center text-[10px] font-bold text-amber-200 opacity-60 flex-shrink-0"
+                      v-for="b in players"
+                      :key="`${num}-${corner}-${b.userId}`"
+                      class="flex items-center gap-1"
+                      :class="corner.startsWith('right') ? 'flex-row-reverse' : ''"
                     >
-                      {{ (b.user?.firstName ?? '?')[0] }}
-                    </div>
-                    <div class="flex items-center -ml-1 kikiri-pupu-3d-on-board">
-                      <template v-if="b.amount > 5">
-                        <span class="text-xs font-bold text-amber-200/70">{{ b.amount }}</span>
-                        <img :src="pupuImg" alt="" class="w-6 h-6" />
-                      </template>
-                      <template v-else>
-                        <img
-                          v-for="i in b.amount"
-                          :key="i"
-                          :src="pupuImg"
-                          alt=""
-                          class="w-6 h-6 -ml-1 first:ml-0"
-                        />
-                      </template>
+                      <img
+                        v-if="b.user?.avatarImage"
+                        :src="getImageUrl(b.user.avatarImage)"
+                        :alt="b.user.firstName ?? ''"
+                        class="w-[30px] h-[30px] rounded-full border border-amber-800 object-cover flex-shrink-0"
+                      />
+                      <div
+                        v-else
+                        class="w-[30px] h-[30px] rounded-full border border-amber-800 bg-amber-700/60 flex items-center justify-center text-xs font-bold text-amber-200 flex-shrink-0"
+                      >
+                        {{ (b.user?.firstName ?? '?')[0] }}
+                      </div>
+                      <div class="flex items-center pupu-stack kikiri-pupu-3d-on-board opacity-60 grayscale" :class="corner.startsWith('right') ? 'flex-row-reverse' : ''">
+                        <template v-if="b.amount > 5">
+                          <span class="text-xs font-bold text-amber-200/70">{{ b.amount }}</span>
+                          <img :src="pupuImg" alt="" class="w-6 h-6" />
+                        </template>
+                        <template v-else>
+                          <div
+                            v-for="(_, i) in b.amount"
+                            :key="i"
+                            class="pupu-stack-item"
+                            :style="{ transform: getPupuStackItemTransform(i) }"
+                          >
+                            <img :src="pupuImg" alt="" class="w-6 h-6 flex-shrink-0" />
+                          </div>
+                        </template>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </template>
                 <!-- User's pupu (center) - 3D sur le plateau -->
                 <div
                   v-show="!shouldHidePupusOnCase(num)"

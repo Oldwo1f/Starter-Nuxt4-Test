@@ -110,6 +110,11 @@ export const useKikiriSocket = () => {
     if (s) s.emit('kikiri:moveBet', { drawId, from, to })
   }
 
+  const emitBetPreview = (drawId: number, delta: number, caseNum: number) => {
+    const s = getSocket()
+    if (s) s.emit('kikiri:betPreview', { drawId, delta, case: caseNum })
+  }
+
   const requestState = () => {
     const s = getSocket()
     if (s) s.emit('kikiri:requestState')
@@ -188,6 +193,15 @@ export const useKikiriSocket = () => {
     return () => {}
   }
 
+  const onBetPreview = (callback: (data: { drawId: number; userId: number; delta: number; case: number }) => void) => {
+    const s = getSocket()
+    if (s) {
+      s.on('kikiri:betPreview', callback)
+      return () => s.off('kikiri:betPreview', callback)
+    }
+    return () => {}
+  }
+
   const onOnlineUsers = (callback: (data: { users: KikiriOnlineUser[] }) => void) => {
     const s = getSocket()
     if (s) {
@@ -234,11 +248,13 @@ export const useKikiriSocket = () => {
     getSocket,
     placeBet,
     moveBet,
+    emitBetPreview,
     requestState,
     requestAllBets,
     sendChat,
     onState,
     onAllBets,
+    onBetPreview,
     onOnlineUsers,
     onDrawNew,
     onDrawEnding,

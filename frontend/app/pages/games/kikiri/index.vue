@@ -22,6 +22,7 @@ const {
   disconnect,
   placeBet,
   moveBet,
+  emitBetPreview,
   requestState,
   sendChat,
   onState,
@@ -35,6 +36,7 @@ const {
   onBetError,
   onChatMessage,
   onAllBets,
+  onBetPreview,
 } = useKikiriSocket()
 
 const currentDraw = ref<KikiriDraw | null>(null)
@@ -52,6 +54,7 @@ const isPlacing = ref(false)
 const lastKnownUserBets = ref<Record<number, number>>({})
 
 const betAmounts = ref<Record<number, number>>({})
+const provisionalBetsByUser = ref<Record<number, Record<number, number>>>({})
 const lastResultNotification = ref<{ userNet: number; drawId: number } | null>(null)
 const pendingResultNotification = ref<{
   userNet: number
@@ -76,6 +79,8 @@ let resultFallbackTimeout: ReturnType<typeof setTimeout> | null = null
 function onBetMove({ from, to }: { from: number; to: number }) {
   const draw = currentDraw.value
   if (!draw || draw.status !== 'betting' || hasSubmittedForCurrentDraw.value) return
+  emitBetPreview(draw.id, -1, from)
+  emitBetPreview(draw.id, 1, to)
   const knownOnSource = lastKnownUserBets.value[from] ?? 0
   if (knownOnSource > 0) {
     moveBet(draw.id, from, to)
@@ -85,6 +90,13 @@ function onBetMove({ from, to }: { from: number; to: number }) {
       [to]: (lastKnownUserBets.value[to] ?? 0) + 1,
     }
   }
+}
+
+function onBetPreviewEvent({ delta, case: caseNum }: { delta: number; case: number }) {
+  const draw = currentDraw.value
+  const uid = authStore.user?.id
+  if (!draw || draw.status !== 'betting' || !uid) return
+  emitBetPreview(draw.id, delta, caseNum)
 }
 
 function onBoardAnimationsComplete() {
@@ -241,19 +253,23 @@ onMounted(() => {
     onlineUsers.value = users
   })
   onDrawNew(({ draw }) => {
+    if (pendingResultNotification.value) {
+      onBoardAnimationsComplete()
+    }
+    if (resultFallbackTimeout) {
+      clearTimeout(resultFallbackTimeout)
+      resultFallbackTimeout = null
+    }
     currentDraw.value = draw
     hasSubmittedForCurrentDraw.value = false
     hasTriggeredFinishAtZero.value = false
     lastKnownUserBets.value = {}
     betAmounts.value = {}
+    provisionalBetsByUser.value = {}
     pendingResultNotification.value = null
     balanceFrozenAtResult.value = null
     gameReady.value = false
     isNewGame.value = true
-    if (resultFallbackTimeout) {
-      clearTimeout(resultFallbackTimeout)
-      resultFallbackTimeout = null
-    }
     updateCountdown()
   })
   onDrawEnding(({ drawId }) => {
@@ -261,6 +277,7 @@ onMounted(() => {
   })
   onDrawReveal(({ draw }) => {
     currentDraw.value = { ...currentDraw.value!, ...draw }
+    provisionalBetsByUser.value = {}
   })
   onDrawResolved(({ draw }) => {
     currentDraw.value = { ...currentDraw.value!, ...draw }
@@ -304,6 +321,28 @@ onMounted(() => {
   onAllBets(({ drawId, allBets }) => {
     if (currentDraw.value?.id === drawId) {
       currentDraw.value = { ...currentDraw.value, allBets }
+    }
+  })
+  onBetPreview(({ drawId, userId, delta, case: caseNum }) => {
+    const uid = authStore.user?.id
+    if (uid != null && userId === uid) return
+    if (currentDraw.value?.id !== drawId) return
+    const userMap = { ...(provisionalBetsByUser.value[userId] ?? {}) }
+    const current = userMap[caseNum] ?? 0
+    const next = current + delta
+    if (next === 0) {
+      delete userMap[caseNum]
+      if (Object.keys(userMap).length === 0) {
+        const { [userId]: _, ...rest } = provisionalBetsByUser.value
+        provisionalBetsByUser.value = rest
+      } else {
+        provisionalBetsByUser.value = { ...provisionalBetsByUser.value, [userId]: userMap }
+      }
+    } else {
+      provisionalBetsByUser.value = {
+        ...provisionalBetsByUser.value,
+        [userId]: { ...userMap, [caseNum]: next },
+      }
     }
   })
 
@@ -377,9 +416,12 @@ onUnmounted(() => {
             v-model:bet-amounts="betAmounts"
             :is-placing="isPlacing"
             :all-bets="currentDraw?.allBets"
+            :provisional-bets-by-user="provisionalBetsByUser"
+            :online-users="onlineUsers"
             :current-user-id="authStore.user?.id"
             @animations-complete="onBoardAnimationsComplete"
             @move="onBetMove"
+            @bet-preview="onBetPreviewEvent"
             :is-new-game="isNewGame"
             @game-ready="gameReady = true; isNewGame = false"
           />
