@@ -50,10 +50,15 @@
     "migrate:kikiri-config": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-kikiri-config.ts",
     "migrate:kikiri-betting-duration": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-kikiri-betting-duration.ts",
     "migrate:kikiri-post-resolution-delay": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-kikiri-post-resolution-delay.ts",
+    "migrate:consolidated": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-consolidated.ts",
+    "migrate:bingo": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-bingo.ts",
     "migrate:bingo-fix-roundid": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-bingo-fix-roundid.ts",
+    "migrate:bingo-grid-price": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-bingo-grid-price.ts",
+    "migrate:bingo-winner-ids": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-bingo-winner-ids.ts",
     "migrate:jiji": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-jiji.ts",
     "migrate:game-period-winners": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-game-period-winners.ts",
-    "migrate:bingo-ended-at": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-bingo-ended-at.ts"
+    "migrate:bingo-ended-at": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-bingo-ended-at.ts",
+    "migrate:all": "bash scripts/run-all-migrations.sh"
   },
   "dependencies": {
     "@getbrevo/brevo": "^4.0.1",

@@ -40,6 +40,10 @@ COPY --from=builder /app/nest-cli.json ./
 # Copy migrations directory for migration scripts
 COPY migrations ./migrations
 
+# Copy scripts for migration runner
+COPY scripts ./scripts
+RUN chmod +x scripts/run-all-migrations.sh
+
 # Create uploads directory
 RUN mkdir -p uploads && chmod 777 uploads
 
