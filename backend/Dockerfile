@@ -17,8 +17,8 @@ COPY src ./src
 # Build the application
 RUN npm run build
 
-# Verify build output exists (fail fast if build produced nothing)
-RUN test -f /app/dist/src/main.js || (echo "ERROR: dist/src/main.js not found after build" && exit 1)
+# Verify build output exists (when only src/ is copied, output is dist/main.js)
+RUN test -f /app/dist/main.js || (echo "ERROR: dist/main.js not found" && ls -laR /app/dist/ && exit 1)
 
 # Production stage
 FROM node:20-alpine AS runner
@@ -65,4 +65,5 @@ ENV NODE_ENV=production
 ENV PORT=8081
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/src/main.js"]
+# Docker build only copies src/, so output is dist/main.js (not dist/src/main.js)
+CMD ["node", "dist/main.js"]
