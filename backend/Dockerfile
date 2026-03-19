@@ -17,6 +17,9 @@ COPY src ./src
 # Build the application
 RUN npm run build
 
+# Verify build output exists (fail fast if build produced nothing)
+RUN test -f /app/dist/src/main.js || (echo "ERROR: dist/src/main.js not found after build" && exit 1)
+
 # Production stage
 FROM node:20-alpine AS runner
 
