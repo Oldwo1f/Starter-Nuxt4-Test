@@ -29,6 +29,16 @@ import { TeNatiraaEvent } from '../entities/te-natiraa-event.entity';
 import { KikiriDraw } from '../entities/kikiri-draw.entity';
 import { KikiriBet } from '../entities/kikiri-bet.entity';
 import { KikiriChatMessage } from '../entities/kikiri-chat-message.entity';
+import { KikiriConfig } from '../entities/kikiri-config.entity';
+import { KikiriSession } from '../entities/kikiri-session.entity';
+import { BingoConfig } from '../entities/bingo-config.entity';
+import { BingoSession } from '../entities/bingo-session.entity';
+import { BingoRound } from '../entities/bingo-round.entity';
+import { BingoGrid } from '../entities/bingo-grid.entity';
+import { BingoChatMessage } from '../entities/bingo-chat-message.entity';
+import { JijiTransaction } from '../entities/jiji-transaction.entity';
+import { JijiWeeklyCredit } from '../entities/jiji-weekly-credit.entity';
+import { GamePeriodWinner } from '../entities/game-period-winner.entity';
 
 @Module({
   imports: [
@@ -39,11 +49,11 @@ import { KikiriChatMessage } from '../entities/kikiri-chat-message.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'nunaheritage',
-      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent, KikiriDraw, KikiriBet, KikiriChatMessage],
+      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent, KikiriDraw, KikiriBet, KikiriChatMessage, KikiriConfig, KikiriSession, BingoConfig, BingoSession, BingoRound, BingoGrid, BingoChatMessage, JijiTransaction, JijiWeeklyCredit, GamePeriodWinner],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
-    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent, KikiriDraw, KikiriBet, KikiriChatMessage]),
+    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent, KikiriDraw, KikiriBet, KikiriChatMessage, KikiriConfig, KikiriSession, BingoConfig, BingoSession, BingoRound, BingoGrid, BingoChatMessage, JijiTransaction, JijiWeeklyCredit, GamePeriodWinner]),
   ],
   exports: [TypeOrmModule],
 })

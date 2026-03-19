@@ -2,12 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BlogPost, BlogStatus } from '../entities/blog-post.entity';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class BlogService {
+  private readonly frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
   constructor(
     @InjectRepository(BlogPost)
     private blogPostRepository: Repository<BlogPost>,
+    private emailService: EmailService,
   ) {}
 
   async create(
@@ -201,6 +205,56 @@ export class BlogService {
   async remove(id: number): Promise<void> {
     const blogPost = await this.findOne(id);
     await this.blogPostRepository.remove(blogPost);
+  }
+
+  async approve(id: number): Promise<BlogPost> {
+    const blogPost = await this.findOne(id, false);
+    if (blogPost.status !== BlogStatus.PENDING) {
+      throw new Error('Seuls les articles en attente peuvent être approuvés');
+    }
+    blogPost.status = BlogStatus.ACTIVE;
+    if (!blogPost.publishedAt) {
+      blogPost.publishedAt = new Date();
+    }
+    const saved = await this.blogPostRepository.save(blogPost);
+
+    if (blogPost.author?.email) {
+      try {
+        const articleUrl = `${this.frontendUrl}/blog/${id}`;
+        await this.emailService.sendBlogArticleApproved(
+          blogPost.author.email,
+          blogPost.author.firstName ?? null,
+          blogPost.title,
+          articleUrl,
+        );
+      } catch (err) {
+        console.error('Failed to send blog approval email:', err);
+      }
+    }
+    return saved;
+  }
+
+  async reject(id: number, reason: string): Promise<BlogPost> {
+    const blogPost = await this.findOne(id, false);
+    if (blogPost.status !== BlogStatus.PENDING) {
+      throw new Error('Seuls les articles en attente peuvent être rejetés');
+    }
+    blogPost.status = BlogStatus.DRAFT;
+    const saved = await this.blogPostRepository.save(blogPost);
+
+    if (blogPost.author?.email) {
+      try {
+        await this.emailService.sendBlogArticleRejected(
+          blogPost.author.email,
+          blogPost.author.firstName ?? null,
+          blogPost.title,
+          reason || '',
+        );
+      } catch (err) {
+        console.error('Failed to send blog rejection email:', err);
+      }
+    }
+    return saved;
   }
 }
 

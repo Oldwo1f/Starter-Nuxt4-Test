@@ -466,6 +466,96 @@ Ce lien est valide pendant 1 heure. Si vous n'avez pas demandé de réinitialisa
     `.trim();
   }
 
+  async sendBlogArticleApproved(
+    email: string,
+    firstName: string | null,
+    articleTitle: string,
+    articleUrl: string,
+  ): Promise<void> {
+    const subject = 'Votre article a été approuvé - Nuna Heritage';
+    const greeting = firstName ? `Bonjour ${firstName},` : 'Bonjour,';
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Article approuvé</title></head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f4;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr><td style="padding: 40px 20px;">
+      <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <tr><td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">Article approuvé</h1>
+        </td></tr>
+        <tr><td style="padding: 40px 30px;">
+          <p style="margin: 0 0 20px 0; color: #333; font-size: 16px; line-height: 1.6;">${greeting}</p>
+          <p style="margin: 0 0 20px 0; color: #333; font-size: 16px; line-height: 1.6;">
+            Bonne nouvelle ! Votre article <strong>« ${this.escapeHtml(articleTitle)} »</strong> a été approuvé par notre équipe de modération et est maintenant publié sur le blog.
+          </p>
+          <table role="presentation" style="width: 100%; margin: 30px 0;"><tr><td style="text-align: center;">
+            <a href="${articleUrl}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">Voir mon article</a>
+          </td></tr></table>
+          <p style="margin: 20px 0 0 0; color: #999; font-size: 12px;">© ${new Date().getFullYear()} Nuna Heritage.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`.trim();
+    const textContent = `${greeting}\n\nVotre article « ${articleTitle} » a été approuvé et est maintenant publié.\n\nVoir l'article : ${articleUrl}\n\n© ${new Date().getFullYear()} Nuna Heritage.`;
+    await this.sendEmail(email, subject, htmlContent, textContent);
+  }
+
+  async sendBlogArticleRejected(
+    email: string,
+    firstName: string | null,
+    articleTitle: string,
+    rejectionReason: string,
+  ): Promise<void> {
+    const subject = 'Votre article nécessite des modifications - Nuna Heritage';
+    const greeting = firstName ? `Bonjour ${firstName},` : 'Bonjour,';
+    const reasonHtml = rejectionReason
+      ? `<p style="margin: 0 0 20px 0; color: #333; font-size: 16px; line-height: 1.6;"><strong>Raison du rejet :</strong></p><p style="margin: 0 0 20px 0; padding: 16px; background: #fef2f2; border-radius: 6px; color: #991b1b; font-size: 15px; line-height: 1.6;">${this.escapeHtml(rejectionReason)}</p>`
+      : '';
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Article non publié</title></head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f4;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr><td style="padding: 40px 20px;">
+      <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <tr><td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 8px 8px 0 0;">
+          <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">Article non publié</h1>
+        </td></tr>
+        <tr><td style="padding: 40px 30px;">
+          <p style="margin: 0 0 20px 0; color: #333; font-size: 16px; line-height: 1.6;">${greeting}</p>
+          <p style="margin: 0 0 20px 0; color: #333; font-size: 16px; line-height: 1.6;">
+            Votre article <strong>« ${this.escapeHtml(articleTitle)} »</strong> n'a pas pu être publié pour le moment. Notre équipe de modération vous invite à apporter des modifications avant de le resoumettre.
+          </p>
+          ${reasonHtml}
+          <p style="margin: 20px 0 0 0; color: #666; font-size: 14px; line-height: 1.6;">
+            Vous pouvez modifier votre article depuis votre espace compte (Mes articles) et le soumettre à nouveau pour modération.
+          </p>
+          <p style="margin: 20px 0 0 0; color: #999; font-size: 12px;">© ${new Date().getFullYear()} Nuna Heritage.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`.trim();
+    const reasonText = rejectionReason ? `\n\nRaison du rejet :\n${rejectionReason}` : '';
+    const textContent = `${greeting}\n\nVotre article « ${articleTitle} » n'a pas pu être publié.${reasonText}\n\nVous pouvez le modifier depuis votre espace compte et le resoumettre.\n\n© ${new Date().getFullYear()} Nuna Heritage.`;
+    await this.sendEmail(email, subject, htmlContent, textContent);
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   private getTeNatiraaTicketTextTemplate(
     firstName: string,
     lastName: string,

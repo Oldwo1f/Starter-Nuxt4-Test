@@ -10,19 +10,6 @@ const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
 const authStore = useAuthStore()
 const toast = useToast()
-const router = useRouter()
-
-onMounted(() => {
-  const role = authStore.user?.role?.toLowerCase()
-  if (role === 'moderator') {
-    router.push('/admin/dashboard')
-    toast.add({
-      title: 'Accès refusé',
-      description: 'Vous n\'avez pas les permissions nécessaires.',
-      color: 'red',
-    })
-  }
-})
 
 interface Registration {
   id: number

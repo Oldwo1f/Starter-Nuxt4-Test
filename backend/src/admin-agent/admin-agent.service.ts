@@ -12,6 +12,11 @@ import { BillingService } from '../billing/billing.service';
 import { WalletService } from '../wallet/wallet.service';
 import { ReferralService } from '../referral/referral.service';
 import { MarketplaceService } from '../marketplace/marketplace.service';
+import { BingoConfigService } from '../bingo/bingo-config.service';
+import { KikiriConfigService } from '../kikiri/kikiri-config.service';
+import { BingoSchedulerService } from '../bingo/bingo-scheduler.service';
+import { KikiriSchedulerService } from '../kikiri/kikiri-scheduler.service';
+import { TeNatiraaService } from '../te-natiraa/te-natiraa.service';
 import { UserRole } from '../entities/user.entity';
 import {
   listUsersTool,
@@ -161,6 +166,24 @@ import {
   executeUpdateListing,
   executeDeleteListing,
 } from './tools/marketplace.tools';
+import {
+  getGameConfigTool,
+  updateGameConfigTool,
+  openGameTool,
+  closeGameTool,
+  executeGetGameConfig,
+  executeUpdateGameConfig,
+  executeOpenGame,
+  executeCloseGame,
+} from './tools/games.tools';
+import {
+  listTeNatiraaRegistrationsTool,
+  getTeNatiraaRegistrationsGroupedTool,
+  listTeNatiraaEventsTool,
+  executeListTeNatiraaRegistrations,
+  executeGetTeNatiraaRegistrationsGrouped,
+  executeListTeNatiraaEvents,
+} from './tools/te-natiraa.tools';
 
 const SYSTEM_PROMPT = `Tu es un assistant d'administration pour le site Nuna Heritage. L'utilisateur t'accède via un chat et tu l'aides à gérer l'ensemble du site.
 
@@ -191,7 +214,9 @@ Exemples : "trouve Marie", "c'est qui Dupont ?", "liste les Jean" → utilise li
 **Billing** (admin/superadmin) : get_pending_bank_verifications, confirm_bank_verification, get_pending_legacy_verifications, confirm_legacy_verification, reject_legacy_verification
 **Wallet** (admin/superadmin) : admin_credit_user
 **Parrainage** : get_referral_stats, get_referral_code
-**Marketplace** : list_listings, get_listing, update_listing, delete_listing`;
+**Marketplace** : list_listings, get_listing, update_listing, delete_listing
+**Jeux (Bingo, Kikiri)** : get_game_config (game), update_game_config, open_game (game), close_game (game). Pour ouvrir/fermer : open_game ou close_game. Pour modifier horaires/vitesse : update_game_config.
+**Te Natira'a** : list_te_natiraa_registrations (page, limit, eventId), get_te_natiraa_registrations_grouped (affiche inscriptions par événement, format propre), list_te_natiraa_events`;
 
 const TOOLS = [
   listUsersTool,
@@ -256,6 +281,13 @@ const TOOLS = [
   getListingTool,
   updateListingTool,
   deleteListingTool,
+  getGameConfigTool,
+  updateGameConfigTool,
+  openGameTool,
+  closeGameTool,
+  listTeNatiraaRegistrationsTool,
+  getTeNatiraaRegistrationsGroupedTool,
+  listTeNatiraaEventsTool,
 ];
 
 export interface ChatMessage {
@@ -280,6 +312,11 @@ export class AdminAgentService {
     private readonly walletService: WalletService,
     private readonly referralService: ReferralService,
     private readonly marketplaceService: MarketplaceService,
+    private readonly bingoConfigService: BingoConfigService,
+    private readonly kikiriConfigService: KikiriConfigService,
+    private readonly bingoSchedulerService: BingoSchedulerService,
+    private readonly kikiriSchedulerService: KikiriSchedulerService,
+    private readonly teNatiraaService: TeNatiraaService,
   ) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (apiKey) {
@@ -505,6 +542,43 @@ export class AdminAgentService {
         return executeUpdateListing(this.marketplaceService, { id: currentUser.id, role: currentUser.role }, args as Parameters<typeof executeUpdateListing>[2]);
       case 'delete_listing':
         return executeDeleteListing(this.marketplaceService, { id: currentUser.id, role: currentUser.role }, args as { id: number });
+      case 'get_game_config':
+        return executeGetGameConfig(
+          this.bingoConfigService,
+          this.kikiriConfigService,
+          args as { game: 'bingo' | 'kikiri' },
+        );
+      case 'update_game_config':
+        return executeUpdateGameConfig(
+          this.bingoConfigService,
+          this.kikiriConfigService,
+          this.bingoSchedulerService,
+          this.kikiriSchedulerService,
+          args as Parameters<typeof executeUpdateGameConfig>[4],
+        );
+      case 'open_game':
+        return executeOpenGame(
+          this.bingoConfigService,
+          this.kikiriConfigService,
+          this.bingoSchedulerService,
+          this.kikiriSchedulerService,
+          args as { game: 'bingo' | 'kikiri' },
+        );
+      case 'close_game':
+        return executeCloseGame(
+          this.bingoConfigService,
+          this.kikiriConfigService,
+          args as { game: 'bingo' | 'kikiri' },
+        );
+      case 'list_te_natiraa_registrations':
+        return executeListTeNatiraaRegistrations(
+          this.teNatiraaService,
+          args as { page?: number; limit?: number; eventId?: number },
+        );
+      case 'get_te_natiraa_registrations_grouped':
+        return executeGetTeNatiraaRegistrationsGrouped(this.teNatiraaService);
+      case 'list_te_natiraa_events':
+        return executeListTeNatiraaEvents(this.teNatiraaService);
       default:
         return JSON.stringify({ error: `Outil inconnu: ${name}` });
     }

@@ -2,11 +2,15 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
+import {
+  JijiTransaction,
+  JijiTransactionType,
+  JijiTransactionStatus,
+} from '../entities/jiji-transaction.entity';
 import { User } from '../entities/user.entity';
 import { Listing, ListingStatus } from '../entities/listing.entity';
 
@@ -19,6 +23,8 @@ export class WalletService {
     private userRepository: Repository<User>,
     @InjectRepository(Listing)
     private listingRepository: Repository<Listing>,
+    @InjectRepository(JijiTransaction)
+    private jijiTransactionRepository: Repository<JijiTransaction>,
     private dataSource: DataSource,
   ) {}
 
@@ -30,6 +36,16 @@ export class WalletService {
       throw new NotFoundException(`User with ID ${userId} not found`);
     }
     return parseFloat(user.walletBalance.toString());
+  }
+
+  async getJijiBalance(userId: number): Promise<number> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+    return parseFloat(user.jijiBalance?.toString?.() ?? '0');
   }
 
   async getTransactions(
@@ -467,6 +483,222 @@ export class WalletService {
       });
 
       return await manager.save(creditTransaction);
+    });
+  }
+
+  /**
+   * Débite le solde Jiji d'un utilisateur vers un autre (ex: mise Kikiri, achat grille Bingo)
+   */
+  async gameDebitJiji(
+    fromUserId: number,
+    toUserId: number,
+    amount: number,
+    description: string,
+  ): Promise<JijiTransaction> {
+    if (amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+    return await this.dataSource.transaction(async (manager) => {
+      const fromUser = await manager.findOne(User, {
+        where: { id: fromUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!fromUser) {
+        throw new NotFoundException(`User with ID ${fromUserId} not found`);
+      }
+      const fromBalance = parseFloat(fromUser.jijiBalance?.toString?.() ?? '0');
+      if (fromBalance < amount) {
+        throw new BadRequestException('Solde Jiji insuffisant');
+      }
+      const toUser = await manager.findOne(User, {
+        where: { id: toUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!toUser) {
+        throw new NotFoundException(`User with ID ${toUserId} not found`);
+      }
+      const toBalance = parseFloat(toUser.jijiBalance?.toString?.() ?? '0');
+      fromUser.jijiBalance = fromBalance - amount;
+      toUser.jijiBalance = toBalance + amount;
+      await manager.save([fromUser, toUser]);
+      const debitTx = manager.create(JijiTransaction, {
+        type: JijiTransactionType.DEBIT,
+        amount,
+        balanceBefore: fromBalance,
+        balanceAfter: fromBalance - amount,
+        status: JijiTransactionStatus.COMPLETED,
+        fromUserId,
+        toUserId,
+        description: description.trim(),
+      });
+      return await manager.save(debitTx);
+    });
+  }
+
+  /**
+   * Crédite le solde Jiji d'un utilisateur depuis un autre (ex: gain Kikiri, jackpot Bingo)
+   */
+  async gameCreditJiji(
+    fromUserId: number,
+    toUserId: number,
+    amount: number,
+    description: string,
+  ): Promise<JijiTransaction> {
+    if (amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+    return await this.dataSource.transaction(async (manager) => {
+      const fromUser = await manager.findOne(User, {
+        where: { id: fromUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!fromUser) {
+        throw new NotFoundException(`User with ID ${fromUserId} not found`);
+      }
+      const toUser = await manager.findOne(User, {
+        where: { id: toUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!toUser) {
+        throw new NotFoundException(`User with ID ${toUserId} not found`);
+      }
+      const fromBalance = parseFloat(fromUser.jijiBalance?.toString?.() ?? '0');
+      const toBalance = parseFloat(toUser.jijiBalance?.toString?.() ?? '0');
+      fromUser.jijiBalance = fromBalance - amount;
+      toUser.jijiBalance = toBalance + amount;
+      await manager.save([fromUser, toUser]);
+      const creditTx = manager.create(JijiTransaction, {
+        type: JijiTransactionType.CREDIT,
+        amount,
+        balanceBefore: toBalance,
+        balanceAfter: toBalance + amount,
+        status: JijiTransactionStatus.COMPLETED,
+        fromUserId,
+        toUserId,
+        description: description.trim(),
+      });
+      return await manager.save(creditTx);
+    });
+  }
+
+  /**
+   * Crédite le solde Jiji d'un utilisateur (crédit système: inscription, Te Ohi, Umete)
+   * @param manager Optional - si fourni, exécute dans le contexte de transaction existant
+   */
+  async creditJijiSystem(
+    toUserId: number,
+    amount: number,
+    description: string,
+    manager?: EntityManager,
+  ): Promise<JijiTransaction> {
+    if (amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+    const run = async (m: EntityManager) => {
+      const toUser = await m.findOne(User, {
+        where: { id: toUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!toUser) {
+        throw new NotFoundException(`User with ID ${toUserId} not found`);
+      }
+      const toBalance = parseFloat(toUser.jijiBalance?.toString?.() ?? '0');
+      const balanceAfter = toBalance + amount;
+      toUser.jijiBalance = balanceAfter;
+      await m.save(toUser);
+      const creditTx = m.create(JijiTransaction, {
+        type: JijiTransactionType.CREDIT,
+        amount,
+        balanceBefore: toBalance,
+        balanceAfter,
+        status: JijiTransactionStatus.COMPLETED,
+        fromUserId: null,
+        toUserId,
+        description: description.trim(),
+      });
+      return await m.save(creditTx);
+    };
+    if (manager) {
+      return run(manager);
+    }
+    return this.dataSource.transaction(run);
+  }
+
+  /**
+   * Crédite le solde Jiji d'un utilisateur (crédit hebdomadaire système)
+   */
+  async creditJijiWeekly(
+    toUserId: number,
+    amount: number,
+    description: string,
+  ): Promise<JijiTransaction> {
+    if (amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+    return await this.dataSource.transaction(async (manager) => {
+      const toUser = await manager.findOne(User, {
+        where: { id: toUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!toUser) {
+        throw new NotFoundException(`User with ID ${toUserId} not found`);
+      }
+      const toBalance = parseFloat(toUser.jijiBalance?.toString?.() ?? '0');
+      const balanceAfter = toBalance + amount;
+      toUser.jijiBalance = balanceAfter;
+      await manager.save(toUser);
+      const creditTx = manager.create(JijiTransaction, {
+        type: JijiTransactionType.WEEKLY_CREDIT,
+        amount,
+        balanceBefore: toBalance,
+        balanceAfter,
+        status: JijiTransactionStatus.COMPLETED,
+        fromUserId: null,
+        toUserId,
+        description: description.trim(),
+      });
+      return await manager.save(creditTx);
+    });
+  }
+
+  /**
+   * Crédite le solde Jiji d'un utilisateur depuis l'admin (transaction système)
+   */
+  async adminCreditJiji(
+    adminUserId: number,
+    targetUserId: number,
+    amount: number,
+    description: string,
+  ): Promise<JijiTransaction> {
+    if (amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+    if (!description || description.trim().length === 0) {
+      throw new BadRequestException('Description is required');
+    }
+    return await this.dataSource.transaction(async (manager) => {
+      const targetUser = await manager.findOne(User, {
+        where: { id: targetUserId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!targetUser) {
+        throw new NotFoundException(`User with ID ${targetUserId} not found`);
+      }
+      const balanceBefore = parseFloat(targetUser.jijiBalance?.toString?.() ?? '0');
+      const balanceAfter = balanceBefore + amount;
+      targetUser.jijiBalance = balanceAfter;
+      await manager.save(targetUser);
+      const creditTx = manager.create(JijiTransaction, {
+        type: JijiTransactionType.CREDIT,
+        amount,
+        balanceBefore,
+        balanceAfter,
+        status: JijiTransactionStatus.COMPLETED,
+        fromUserId: adminUserId,
+        toUserId: targetUserId,
+        description: `[Nuna'a Heritage] ${description.trim()}`,
+      });
+      return await manager.save(creditTx);
     });
   }
 }

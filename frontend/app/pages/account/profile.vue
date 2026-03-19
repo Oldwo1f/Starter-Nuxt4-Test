@@ -25,7 +25,7 @@ const fetchData = async () => {
   if (authStore.isAuthenticated) {
     await Promise.all([
       authStore.fetchProfile(),
-      walletStore.fetchBalance(),
+      Promise.all([walletStore.fetchBalance(), walletStore.fetchJijiBalance()]),
       fetchStats(),
     ])
   }
@@ -641,6 +641,18 @@ onMounted(() => {
           </div>
           <UButton to="/account/wallet" variant="ghost" size="sm" class="mt-2">
             Voir le portefeuille
+          </UButton>
+        </div>
+      </UCard>
+      <UCard class="bg-gradient-to-r from-amber-500/20 to-amber-600/20">
+        <div class="text-center">
+          <div class="mb-2 text-sm text-white/60">Jetons Jiji</div>
+            <div class="mb-2 flex items-center justify-center gap-2 text-3xl font-bold text-amber-500">
+              <JijiIcon size="md" />
+              <span>{{ Math.round(walletStore.jijiBalance) }}</span>
+            </div>
+          <UButton to="/games/bingo" variant="ghost" size="sm" class="mt-2">
+            Jouer
           </UButton>
         </div>
       </UCard>

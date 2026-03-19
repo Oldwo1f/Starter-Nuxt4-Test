@@ -110,6 +110,32 @@ export class WalletController {
     return { balance };
   }
 
+  @Get('jiji-balance')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get Jiji balance',
+    description: 'Get the current Jiji (game tokens) balance for Bingo and Kikiri (requires authentication)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Jiji balance retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        jijiBalance: {
+          type: 'number',
+          example: 1000,
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getJijiBalance(@Request() req) {
+    const jijiBalance = await this.walletService.getJijiBalance(req.user.id);
+    return { jijiBalance };
+  }
+
   @Get('transactions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
@@ -219,6 +245,34 @@ export class WalletController {
     @Request() req,
   ) {
     return this.walletService.adminCreditUser(
+      req.user.id,
+      userId,
+      creditDto.amount,
+      creditDto.description,
+    );
+  }
+
+  @Post('admin/credit-jiji/:userId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Credit Jiji to user (Admin only)',
+    description: 'Credit Jiji (game tokens) to a user. Admin only.',
+  })
+  @ApiParam({ name: 'userId', type: 'number', description: 'User ID to credit' })
+  @ApiBody({ type: AdminCreditDto })
+  @ApiResponse({ status: 201, description: 'User credited successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request (invalid amount, missing description, etc.)' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async adminCreditJiji(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body() creditDto: AdminCreditDto,
+    @Request() req,
+  ) {
+    return this.walletService.adminCreditJiji(
       req.user.id,
       userId,
       creditDto.amount,

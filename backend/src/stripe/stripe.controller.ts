@@ -70,6 +70,6 @@ export class StripeController {
     @CurrentUser() user: any,
     @Param('sessionId') sessionId: string,
   ) {
-    return this.stripeService.processPendingPaymentBySessionId(sessionId);
+    return this.stripeService.processPendingPaymentBySessionId(sessionId, user.id);
   }
 }

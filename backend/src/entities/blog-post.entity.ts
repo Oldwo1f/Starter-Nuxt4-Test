@@ -11,6 +11,7 @@ import { User } from './user.entity';
 
 export enum BlogStatus {
   DRAFT = 'draft',
+  PENDING = 'pending',
   ACTIVE = 'active',
   ARCHIVED = 'archived',
 }

@@ -2,7 +2,12 @@
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useWalletStore } from '~/stores/useWalletStore'
 import { useKikiriSocket } from '~/composables/useKikiriSocket'
-import type { KikiriDraw, KikiriChatMessage, KikiriOnlineUser } from '~/composables/useKikiriSocket'
+import type { KikiriDraw, KikiriChatMessage, KikiriOnlineUser, KikiriBetByUser } from '~/composables/useKikiriSocket'
+
+/** Chat en drawer à droite sur écrans < 1024px */
+const isChatDrawerOpen = ref(false)
+/** Nombre de messages non lus (drawer fermé) - uniquement messages des autres */
+const unreadChatCount = ref(0)
 
 definePageMeta({
   layout: 'default',
@@ -17,16 +22,79 @@ const { getImageUrl } = useApi()
 const walletStore = useWalletStore()
 const toast = useToast()
 
+interface KikiriStatus {
+  isOpen: boolean
+  mode: 'manual' | 'cruise'
+  manualEnabled: boolean
+  openHour: number
+  openMinute: number
+  closeHour: number
+  closeMinute: number
+  nextOpenAt: string | null
+}
+
+const kikiriStatus = ref<KikiriStatus | null>(null)
+const statusLoading = ref(true)
+const countdownToOpenSeconds = ref<number | null>(null)
+
+const closedMessage = computed(() => {
+  const s = kikiriStatus.value
+  if (!s) return null
+  if (s.mode === 'manual') {
+    return 'Revenez plus tard, le jeu est désactivé.'
+  }
+  if (s.nextOpenAt) {
+    const hh = new Date(s.nextOpenAt).getHours().toString().padStart(2, '0')
+    const mm = new Date(s.nextOpenAt).getMinutes().toString().padStart(2, '0')
+    return `La table de kikiri ouvre à ${hh}:${mm}`
+  }
+  return 'Revenez plus tard.'
+})
+
+const countdownToOpenFormatted = computed(() => {
+  const sec = countdownToOpenSeconds.value
+  if (sec === null || sec < 0) return null
+  const h = Math.floor(sec / 3600)
+  const m = Math.floor((sec % 3600) / 60)
+  const s = sec % 60
+  const parts = [h, m, s].map((n) => n.toString().padStart(2, '0'))
+  return parts.join(':')
+})
+
+function updateCountdownToOpen() {
+  const s = kikiriStatus.value
+  if (!s?.nextOpenAt || s.mode !== 'cruise') {
+    countdownToOpenSeconds.value = null
+    return
+  }
+  const diffMs = new Date(s.nextOpenAt).getTime() - Date.now()
+  countdownToOpenSeconds.value = Math.max(0, Math.ceil(diffMs / 1000))
+}
+
+function deriveUserBetsFromAllBets(
+  allBets: Record<number, KikiriBetByUser[]> | undefined,
+  userId: number | undefined,
+): Record<number, number> {
+  if (!allBets || userId == null) return {}
+  const result: Record<number, number> = {}
+  for (let num = 1; num <= 6; num++) {
+    const bets = allBets[num] ?? []
+    const mine = bets.find((b) => b.userId === userId)
+    if (mine && mine.amount > 0) result[num] = mine.amount
+  }
+  return result
+}
+
 const {
   connect,
   disconnect,
   placeBet,
   moveBet,
   emitBetPreview,
-  requestState,
   sendChat,
   onState,
   onOnlineUsers,
+  onDrawStartingSoon,
   onDrawNew,
   onDrawEnding,
   onDrawReveal,
@@ -37,6 +105,8 @@ const {
   onChatMessage,
   onAllBets,
   onBetPreview,
+  onTableClosingAfterDraw,
+  onTableClosed,
 } = useKikiriSocket()
 
 const currentDraw = ref<KikiriDraw | null>(null)
@@ -47,7 +117,6 @@ const balance = ref(0)
 const countdown = ref<number | null>(null)
 const chatInput = ref('')
 const hasSubmittedForCurrentDraw = ref(false)
-const hasTriggeredFinishAtZero = ref(false)
 const isFinishLoading = ref(false)
 const isTriggerLoading = ref(false)
 const isPlacing = ref(false)
@@ -65,6 +134,25 @@ const balanceFrozenAtResult = ref<number | null>(null)
 const gameReady = ref(false)
 const isNewGame = ref(false)
 const hasReceivedState = ref(false)
+const tableClosingAfterDraw = ref(false)
+const tableClosedTransition = ref(false)
+const animationsCompleteForCurrentDraw = ref(false)
+/** Compteur 5s "partie va commencer" (étape 2) - null = inactif */
+const preGameCountdown = ref<number | null>(null)
+
+/** Afficher "La prochaine partie commence bientôt..." après la pop de résultat, avant startingSoon */
+const showNextGameSoonMessage = computed(
+  () =>
+    currentDraw.value?.status === 'resolved' &&
+    !lastResultNotification.value &&
+    preGameCountdown.value == null,
+)
+
+const TABLE_CLOSED_TRANSITION_MS = 6000
+
+watch(isChatDrawerOpen, (open) => {
+  if (open) unreadChatCount.value = 0
+})
 
 const totalBetAmount = computed(() =>
   [1, 2, 3, 4, 5, 6].reduce((a, n) => a + (betAmounts.value[n] ?? 0), 0),
@@ -99,33 +187,36 @@ function onBetPreviewEvent({ delta, case: caseNum }: { delta: number; case: numb
   emitBetPreview(draw.id, delta, caseNum)
 }
 
-function onBoardAnimationsComplete() {
-  if (pendingResultNotification.value) {
-    const { userNet, totalBetAtResult } = pendingResultNotification.value
-    const base = balanceFrozenAtResult.value ?? balance.value
-    if (userNet < 0) {
-      balance.value = base
-    } else {
-      balance.value = base + (userNet === 0 ? totalBetAtResult : userNet)
-      requestState()
-      walletStore.fetchBalance()
-    }
-    balanceFrozenAtResult.value = null
-    if (resultFallbackTimeout) {
-      clearTimeout(resultFallbackTimeout)
-      resultFallbackTimeout = null
-    }
-    if (resultNotificationTimeout) clearTimeout(resultNotificationTimeout)
-    lastResultNotification.value = {
-      userNet: pendingResultNotification.value.userNet,
-      drawId: pendingResultNotification.value.drawId,
-    }
-    pendingResultNotification.value = null
-    resultNotificationTimeout = setTimeout(() => {
-      lastResultNotification.value = null
-      resultNotificationTimeout = null
-    }, 4000)
+function tryShowResultNotification() {
+  if (!pendingResultNotification.value) return
+  const { userNet, totalBetAtResult } = pendingResultNotification.value
+  const base = balanceFrozenAtResult.value ?? balance.value
+  if (userNet < 0) {
+    balance.value = base
+  } else {
+    balance.value = base + (userNet === 0 ? totalBetAtResult : userNet + totalBetAtResult)
   }
+  nextTick(() => walletStore.fetchJijiBalance())
+  balanceFrozenAtResult.value = null
+  if (resultFallbackTimeout) {
+    clearTimeout(resultFallbackTimeout)
+    resultFallbackTimeout = null
+  }
+  if (resultNotificationTimeout) clearTimeout(resultNotificationTimeout)
+  lastResultNotification.value = {
+    userNet: pendingResultNotification.value.userNet,
+    drawId: pendingResultNotification.value.drawId,
+  }
+  pendingResultNotification.value = null
+  resultNotificationTimeout = setTimeout(() => {
+    lastResultNotification.value = null
+    resultNotificationTimeout = null
+  }, 4000)
+}
+
+function onBoardAnimationsComplete() {
+  animationsCompleteForCurrentDraw.value = true
+  tryShowResultNotification()
 }
 
 const canBet = computed(() => currentDraw.value?.status === 'betting')
@@ -173,6 +264,8 @@ const finishDraw = async () => {
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
+      // Ne pas afficher si un autre client a déjà fini le tirage (race condition normale)
+      if (err.message === 'Draw already resolved or in progress') return
       toast.add({ title: 'Erreur', description: err.message || 'Impossible de finir le tirage', color: 'error' })
     }
   } catch (e) {
@@ -220,6 +313,7 @@ const countdownFormatted = computed(() => {
 })
 
 const updateCountdown = () => {
+  if (preGameCountdown.value != null) return
   const draw = currentDraw.value
   if (!draw || draw.status !== 'betting' || !draw.bettingEndsAt) {
     countdown.value = null
@@ -228,49 +322,78 @@ const updateCountdown = () => {
   const end = new Date(draw.bettingEndsAt).getTime()
   const diff = Math.max(0, Math.ceil((end - Date.now()) / 1000))
   countdown.value = diff
-  if (diff <= 0 && !hasTriggeredFinishAtZero.value) {
-    hasTriggeredFinishAtZero.value = true
-    finishDraw()
-  }
 }
 
 let countdownInterval: ReturnType<typeof setInterval> | null = null
+let preGameCountdownInterval: ReturnType<typeof setInterval> | null = null
+let statusPollInterval: ReturnType<typeof setInterval> | null = null
+let countdownToOpenInterval: ReturnType<typeof setInterval> | null = null
+let tableClosedTransitionTimeout: ReturnType<typeof setTimeout> | null = null
 
-onMounted(() => {
+function setupGame() {
   connect()
   onState((s) => {
+    const stateDrawId = s.currentDraw?.id
+    const ourDrawId = currentDraw.value?.id
+    const stateIsStale = ourDrawId != null && stateDrawId != null && ourDrawId > stateDrawId
+    if (stateIsStale) return
+    if (s.currentDraw?.status === 'betting') preGameCountdown.value = null
+    const hasLocalBets = totalBetAmount.value > 0 && currentDraw.value?.status === 'betting'
     hasReceivedState.value = true
     currentDraw.value = s.currentDraw
     drawHistory.value = s.drawHistory ?? []
     chatMessages.value = s.chatMessages ?? []
-    balance.value = s.balance ?? 0
+    if (!pendingResultNotification.value) balance.value = s.balance ?? 0
     onlineUsers.value = s.onlineUsers ?? []
-    lastKnownUserBets.value = { ...(s.currentDraw?.userBets ?? {}) }
-    betAmounts.value = { ...lastKnownUserBets.value }
+    if (!hasLocalBets) {
+      const userBets = s.currentDraw?.userBets ?? deriveUserBetsFromAllBets(s.currentDraw?.allBets, authStore.user?.id)
+      lastKnownUserBets.value = { ...userBets }
+      betAmounts.value = { ...lastKnownUserBets.value }
+    }
     updateCountdown()
   })
   onOnlineUsers(({ users }) => {
     onlineUsers.value = users
   })
+  onDrawStartingSoon(() => {
+    if (preGameCountdownInterval) clearInterval(preGameCountdownInterval)
+    preGameCountdown.value = 5
+    preGameCountdownInterval = setInterval(() => {
+      if (preGameCountdown.value == null) return
+      preGameCountdown.value = preGameCountdown.value! - 1
+      if (preGameCountdown.value <= 0) {
+        preGameCountdown.value = null
+        if (preGameCountdownInterval) {
+          clearInterval(preGameCountdownInterval)
+          preGameCountdownInterval = null
+        }
+      }
+    }, 1000)
+  })
   onDrawNew(({ draw }) => {
-    if (pendingResultNotification.value) {
-      onBoardAnimationsComplete()
-    }
+    preGameCountdown.value = null
+    const pendingResult = pendingResultNotification.value
     if (resultFallbackTimeout) {
       clearTimeout(resultFallbackTimeout)
       resultFallbackTimeout = null
     }
+    pendingResultNotification.value = null
+    animationsCompleteForCurrentDraw.value = false
     currentDraw.value = draw
     hasSubmittedForCurrentDraw.value = false
-    hasTriggeredFinishAtZero.value = false
     lastKnownUserBets.value = {}
     betAmounts.value = {}
     provisionalBetsByUser.value = {}
-    pendingResultNotification.value = null
     balanceFrozenAtResult.value = null
     gameReady.value = false
     isNewGame.value = true
     updateCountdown()
+    if (pendingResult) {
+      nextTick(() => {
+        pendingResultNotification.value = pendingResult
+        tryShowResultNotification()
+      })
+    }
   })
   onDrawEnding(({ drawId }) => {
     placeBets(true)
@@ -295,33 +418,91 @@ onMounted(() => {
         drawHistory.value = [{ ...d, id: drawId, userNet, userBets } as KikiriDraw, ...drawHistory.value]
       }
     }
+    const totalBetAtResult = totalBetAmount.value
+
+    // Pas de popup si le joueur n'a pas misé : aller directement au message d'attente
+    if (userNet === 0 && totalBetAtResult === 0) {
+      balanceFrozenAtResult.value = null
+      if (resultFallbackTimeout) {
+        clearTimeout(resultFallbackTimeout)
+        resultFallbackTimeout = null
+      }
+      return
+    }
+
     balanceFrozenAtResult.value = balance.value
 
-    // Stocker le résultat ; la popup et la mise à jour du solde s'afficheront quand le plateau aura fini ses animations
+    // Stocker le résultat ; affichage dès que les animations du plateau sont terminées
     pendingResultNotification.value = {
       userNet,
       drawId,
-      totalBetAtResult: totalBetAmount.value,
+      totalBetAtResult,
     }
     if (resultFallbackTimeout) clearTimeout(resultFallbackTimeout)
     resultFallbackTimeout = setTimeout(() => {
       resultFallbackTimeout = null
-      if (pendingResultNotification.value) onBoardAnimationsComplete()
+      tryShowResultNotification()
     }, 15000)
+    if (animationsCompleteForCurrentDraw.value) {
+      tryShowResultNotification()
+    }
   })
   onBetPlaced(({ balance: b }) => {
     balance.value = b
   })
   onBetError(({ error }) => {
-    toast.add({ title: 'Mise refusée', description: error, color: 'error' })
+    const err = typeof error === 'string' ? error : String(error ?? '')
+    if (/draft already resolving|draw already resolved|in progress/i.test(err)) {
+      return
+    }
+    const msg = err || 'Mise refusée'
+    try {
+      toast.add({ title: 'Mise refusée', description: msg, color: 'error' })
+    } catch {
+      // Ignorer les erreurs internes du toaster
+    }
   })
   onChatMessage((msg) => {
     chatMessages.value = [...chatMessages.value, msg]
+    if (!isChatDrawerOpen.value && msg.userId !== authStore.user?.id) {
+      unreadChatCount.value++
+    }
   })
   onAllBets(({ drawId, allBets }) => {
     if (currentDraw.value?.id === drawId) {
       currentDraw.value = { ...currentDraw.value, allBets }
     }
+  })
+  onTableClosingAfterDraw(() => {
+    tableClosingAfterDraw.value = true
+    toast.add({
+      title: 'Fermeture programmée',
+      description: 'La table sera fermée après ce tirage. Vos gains seront encaissés.',
+      color: 'warning',
+      icon: 'i-heroicons-information-circle',
+    })
+  })
+  onTableClosed(() => {
+    tableClosingAfterDraw.value = false
+    tableClosedTransition.value = true
+    toast.add({
+      title: 'Table fermée',
+      description: 'Merci d\'avoir joué ! La table rouvrira à la prochaine session.',
+      color: 'neutral',
+      icon: 'i-heroicons-check-circle',
+    })
+    tableClosedTransitionTimeout = setTimeout(() => {
+      tableClosedTransitionTimeout = null
+      tableClosedTransition.value = false
+      if (kikiriStatus.value) {
+        kikiriStatus.value = { ...kikiriStatus.value, isOpen: false }
+      }
+      disconnect()
+      updateCountdownToOpen()
+      if (countdownToOpenInterval) clearInterval(countdownToOpenInterval)
+      countdownToOpenInterval = setInterval(updateCountdownToOpen, 1000)
+      if (!statusPollInterval) statusPollInterval = setInterval(pollStatusAndConnectIfOpen, 10000)
+    }, TABLE_CLOSED_TRANSITION_MS)
   })
   onBetPreview(({ drawId, userId, delta, case: caseNum }) => {
     const uid = authStore.user?.id
@@ -356,24 +537,175 @@ onMounted(() => {
   }
   window.addEventListener('keydown', handleKeydown)
   onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
+}
+
+async function pollStatusAndConnectIfOpen() {
+  try {
+    const status = await $fetch<KikiriStatus>(`${apiBaseUrl}/kikiri/status`)
+    if (status.isOpen) {
+      if (statusPollInterval) {
+        clearInterval(statusPollInterval)
+        statusPollInterval = null
+      }
+      if (countdownToOpenInterval) {
+        clearInterval(countdownToOpenInterval)
+        countdownToOpenInterval = null
+      }
+      kikiriStatus.value = status
+      toast.add({
+        title: 'La table est ouverte !',
+        description: 'Bienvenue à la table de kikiri.',
+        color: 'success',
+        icon: 'i-heroicons-check-circle',
+      })
+      setupGame()
+    } else {
+      kikiriStatus.value = status
+      updateCountdownToOpen()
+    }
+  } catch {
+    // Ignorer les erreurs de poll
+  }
+}
+
+onMounted(async () => {
+  statusLoading.value = true
+  try {
+    kikiriStatus.value = await $fetch<KikiriStatus>(`${apiBaseUrl}/kikiri/status`)
+  } catch {
+    kikiriStatus.value = { isOpen: false, mode: 'manual', manualEnabled: false, openHour: 9, openMinute: 0, closeHour: 18, closeMinute: 0, nextOpenAt: null }
+  } finally {
+    statusLoading.value = false
+  }
+
+  if (!kikiriStatus.value?.isOpen) {
+    updateCountdownToOpen()
+    countdownToOpenInterval = setInterval(updateCountdownToOpen, 1000)
+    statusPollInterval = setInterval(pollStatusAndConnectIfOpen, 10000)
+    return
+  }
+
+  setupGame()
 })
 
 onUnmounted(() => {
   if (countdownInterval) clearInterval(countdownInterval)
+  if (preGameCountdownInterval) clearInterval(preGameCountdownInterval)
+  if (countdownToOpenInterval) clearInterval(countdownToOpenInterval)
+  if (statusPollInterval) clearInterval(statusPollInterval)
   if (resultNotificationTimeout) clearTimeout(resultNotificationTimeout)
   if (resultFallbackTimeout) clearTimeout(resultFallbackTimeout)
+  if (tableClosedTransitionTimeout) clearTimeout(tableClosedTransitionTimeout)
   disconnect()
 })
 </script>
 
 <template>
   <div class="container mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold text-white mb-6">
-      Kikiri
-    </h1>
-    <div class="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold text-white">
+        Kikiri
+      </h1>
+      <UDrawer
+        v-if="kikiriStatus?.isOpen || tableClosedTransition"
+        v-model:open="isChatDrawerOpen"
+        direction="right"
+        :handle="false"
+        :ui="{
+          content: 'h-full',
+          container: 'max-w-[min(100vw-2rem,380px)] w-full flex flex-col h-full min-h-0 overflow-hidden p-0',
+          body: 'flex-1 min-h-0 flex flex-col overflow-hidden p-4'
+        }"
+      >
+        <div class="relative inline-flex lg:hidden shrink-0">
+          <UButton
+            color="primary"
+            variant="outline"
+            icon="i-heroicons-chat-bubble-left-right"
+            size="sm"
+            label="Chat"
+            aria-label="Ouvrir le chat"
+          />
+          <UBadge
+            v-if="unreadChatCount > 0"
+            color="primary"
+            variant="solid"
+            size="xs"
+            class="absolute -top-1 -right-1 min-w-[1.25rem] h-5 text-[10px] leading-none !rounded-full justify-center px-1.5"
+          >
+            {{ unreadChatCount > 99 ? '99+' : unreadChatCount }}
+          </UBadge>
+        </div>
+        <template #body>
+          <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <KikiriChatPanel
+              v-model:input="chatInput"
+              :messages="chatMessages"
+              :current-user-id="authStore.user?.id"
+              compact
+              @send="sendChatMessage"
+            />
+          </div>
+        </template>
+      </UDrawer>
+    </div>
+
+    <div v-if="statusLoading" class="flex items-center justify-center py-24">
+      <div class="w-10 h-10 border-2 border-amber-500/60 border-t-amber-400 rounded-full animate-spin" />
+    </div>
+
+    <div v-else-if="!kikiriStatus?.isOpen && !tableClosedTransition" class="flex flex-col items-center justify-center py-24 text-center">
+      <div class="rounded-xl bg-amber-900/30 border border-amber-700/40 px-8 py-6 max-w-md space-y-4">
+        <p class="text-lg text-amber-200">
+          {{ closedMessage }}
+        </p>
+        <div
+          v-if="kikiriStatus?.mode === 'cruise' && countdownToOpenFormatted"
+          class="space-y-1"
+        >
+          <p class="text-sm text-amber-300/80">Ouverture dans</p>
+          <p class="text-3xl font-mono font-bold text-amber-300 tabular-nums">
+            {{ countdownToOpenFormatted }}
+          </p>
+        </div>
+        <p class="text-sm text-amber-300/80 flex items-center justify-center gap-2">
+          <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          En attente de l'ouverture… Vous serez notifié automatiquement.
+        </p>
+      </div>
+    </div>
+
+    <div v-else class="relative">
+      <!-- Overlay transition après fermeture : laisser voir le résultat quelques secondes -->
+      <Transition name="fade">
+        <div
+          v-if="tableClosedTransition"
+          class="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-xl bg-amber-950/95 backdrop-blur-sm"
+        >
+          <UIcon name="i-heroicons-check-circle" class="h-16 w-16 text-amber-400 mb-4" />
+          <p class="text-xl font-medium text-amber-200">
+            Table fermée
+          </p>
+          <p class="text-amber-300/90 mt-1">
+            Merci d'avoir joué ! À bientôt.
+          </p>
+        </div>
+      </Transition>
+      <div
+        class="grid gap-6 lg:grid-cols-[1fr_320px] min-[1536px]:grid-cols-[minmax(0,0.65fr)_minmax(360px,1fr)] min-[1920px]:grid-cols-[1fr_320px]"
+      >
       <!-- Colonne gauche : plateau + boutons + derniers tirages -->
       <div class="space-y-4">
+        <!-- Bannière fermeture programmée -->
+        <div
+          v-if="tableClosingAfterDraw"
+          class="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-600/30 border border-amber-500/50"
+        >
+          <UIcon name="i-heroicons-information-circle" class="h-6 w-6 text-amber-400 shrink-0" />
+          <p class="text-amber-200 font-medium">
+            La table sera fermée après ce tirage. Vos gains seront encaissés normalement.
+          </p>
+        </div>
         <!-- Joueurs en ligne -->
         <div class="flex items-center gap-3 px-4 py-2 rounded-xl bg-amber-900/30 border border-amber-700/40">
           <div class="flex -space-x-2">
@@ -408,6 +740,7 @@ onUnmounted(() => {
             <div class="w-8 h-8 border-2 border-amber-500/60 border-t-amber-400 rounded-full animate-spin" />
           </div>
           <KikiriGameBoard
+            :key="currentDraw?.id ?? 'none'"
             v-show="hasReceivedState"
             :draw="currentDraw"
             :can-bet="!!canBet"
@@ -423,55 +756,95 @@ onUnmounted(() => {
             @move="onBetMove"
             @bet-preview="onBetPreviewEvent"
             :is-new-game="isNewGame"
+            :cup-close-requested="preGameCountdown != null"
             @game-ready="gameReady = true; isNewGame = false"
-          />
-          <!-- Bannière gain/perte sous les dés -->
-          <Transition
-            enter-active-class="transition duration-300 ease-out"
-            enter-from-class="opacity-0 scale-95 translate-y-2"
-            enter-to-class="opacity-100 scale-100 translate-y-0"
-            leave-active-class="transition duration-200 ease-in"
-            leave-from-class="opacity-100 scale-100"
-            leave-to-class="opacity-0 scale-95"
           >
-            <div
-              v-if="lastResultNotification"
-              class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
-            >
-              <div
-                class="px-8 py-4 rounded-xl text-2xl font-bold shadow-lg animate-pulse -translate-y-24"
-                :class="[
-                  lastResultNotification.userNet > 0
-                    ? 'bg-green-500/90 text-white'
-                    : lastResultNotification.userNet < 0
-                      ? 'bg-red-500/90 text-white'
-                      : 'bg-white/20 text-white',
-                ]"
-              >
-                {{ lastResultNotification.userNet > 0 ? '+' : '' }}{{ lastResultNotification.userNet }} 🐚
+            <template #board-overlay>
+              <!-- Conteneur fixe : pré-partie 5s, résultat, ou compteur de paris -->
+              <div class="grid min-w-[120px] min-h-[44px]">
+                <div class="col-start-1 row-start-1 flex items-center justify-center">
+                  <Transition
+                    enter-active-class="transition duration-300 ease-out"
+                    enter-from-class="opacity-0 scale-95 translate-y-2"
+                    enter-to-class="opacity-100 scale-100 translate-y-0"
+                    leave-active-class="transition duration-200 ease-in"
+                    leave-from-class="opacity-100 scale-100"
+                    leave-to-class="opacity-0 scale-95"
+                  >
+                    <div
+                      v-if="lastResultNotification"
+                      class="px-3 py-1.5 text-base min-[600px]:px-4 min-[600px]:py-2 min-[600px]:text-lg lg:px-8 lg:py-4 lg:text-2xl rounded-xl font-bold shadow-lg animate-pulse"
+                      :class="[
+                        lastResultNotification.userNet > 0
+                          ? 'bg-green-500/90 text-white'
+                          : lastResultNotification.userNet < 0
+                            ? 'bg-red-500/90 text-white'
+                            : 'bg-white/20 text-white',
+                      ]"
+                    >
+                      <span class="inline-flex items-center gap-1.5">
+                        {{ lastResultNotification.userNet === 0 ? 'ORA' : (lastResultNotification.userNet > 0 ? '+' : '') + lastResultNotification.userNet }}
+                        <JijiIcon size="sm" />
+                      </span>
+                    </div>
+                  </Transition>
+                </div>
+                <div class="col-start-1 row-start-1 flex items-center justify-center z-10">
+                  <!-- Étape 2 : compteur 5s "partie va commencer" -->
+                  <div
+                    v-if="preGameCountdown != null"
+                    class="px-3 py-1.5 text-sm min-[600px]:px-4 min-[600px]:py-2 min-[600px]:text-base lg:px-6 lg:py-3 lg:text-lg rounded-xl font-bold shadow-lg bg-amber-600/90 text-white font-mono animate-pulse"
+                  >
+                    Prochaine partie dans {{ preGameCountdown }}
+                  </div>
+                  <!-- Après la pop de résultat : en attente du serveur -->
+                  <div
+                    v-else-if="showNextGameSoonMessage"
+                    class="px-3 py-1.5 text-sm min-[600px]:px-4 min-[600px]:py-2 min-[600px]:text-base lg:px-6 lg:py-3 lg:text-lg rounded-xl font-medium shadow-lg bg-amber-800/80 text-amber-100"
+                  >
+                    La prochaine partie commence bientôt
+                    <span class="kikiri-ellipsis">
+                      <span>.</span><span>.</span><span>.</span>
+                    </span>
+                  </div>
+                  <!-- Étape 4 : compteur de paris -->
+                  <div
+                    v-else-if="countdownFormatted && canBet && !lastResultNotification"
+                    class="px-3 py-1.5 text-base min-[600px]:px-4 min-[600px]:py-2 min-[600px]:text-lg lg:px-8 lg:py-4 lg:text-2xl rounded-xl font-bold shadow-lg bg-black/50 text-white font-mono"
+                  >
+                    {{ countdownFormatted }}
+                  </div>
+                </div>
               </div>
-            </div>
-          </Transition>
-          <!-- Compteur sous la coupelle (même position que la notification gain) -->
-          <div
-            v-if="countdownFormatted && canBet && !lastResultNotification && gameReady"
-            class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
-          >
-            <div class="px-8 py-4 rounded-xl text-2xl font-bold shadow-lg bg-black/50 text-white font-mono -translate-y-24">
-              {{ countdownFormatted }}
-            </div>
-          </div>
+            </template>
+          </KikiriGameBoard>
         </div>
         <KikiriResultsHistory :draws="drawHistory" />
       </div>
-      <!-- Colonne droite : chat -->
-      <div>
+      <!-- Colonne droite : chat (visible lg+) -->
+      <div class="hidden lg:block w-full min-w-0 shrink-0 min-h-[80vh]">
         <KikiriChatPanel
           v-model:input="chatInput"
           :messages="chatMessages"
+          :current-user-id="authStore.user?.id"
           @send="sendChatMessage"
         />
       </div>
     </div>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.kikiri-ellipsis span {
+  animation: kikiri-ellipsis-dot 1.4s ease-in-out infinite;
+  opacity: 0;
+}
+.kikiri-ellipsis span:nth-child(1) { animation-delay: 0s; }
+.kikiri-ellipsis span:nth-child(2) { animation-delay: 0.2s; }
+.kikiri-ellipsis span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes kikiri-ellipsis-dot {
+  0%, 20% { opacity: 0; }
+  50%, 100% { opacity: 1; }
+}
+</style>

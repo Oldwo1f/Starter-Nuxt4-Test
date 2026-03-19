@@ -4,7 +4,8 @@ import logoUrl from '~/assets/images/logo-nuna-heritage.png'
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useMessagesStore } from '~/stores/useMessagesStore'
 
-const { appName, tagline } = useAppInfo()
+const { appName } = useAppInfo()
+const isDrawerOpen = ref(false)
 const authStore = useAuthStore()
 const messagesStore = useMessagesStore()
 
@@ -216,41 +217,25 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
   ]
 })
 
-// Mobile menu items
-const mobileMenuItems = computed<DropdownMenuItem[][]>(() => {
-  const items: DropdownMenuItem[] = activeMenuItems.value.map((item) => {
-    if (item.external) {
-      return {
-        label: item.label,
-        icon: item.icon,
-        href: item.to,
-        target: item.target || '_blank',
-        rel: 'noopener noreferrer',
-      }
-    }
-    return {
-      label: item.label,
-      icon: item.icon,
-      to: item.to,
-    }
-  })
-
-  return [items]
-})
+const isActive = (item: MenuItem) => item.active
 </script>
 
 <template>
   <header class="border-b border-white/10 bg-black/20 backdrop-blur">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-      <div class="flex items-center gap-3">
-        <NuxtLink to="/" class="flex items-center gap-3">
-          <img :src="logoUrl" :alt="appName" class="h-10 w-auto" />
-          <div class="leading-tight">
-            <div class="font-semibold">{{ appName }}</div>
-            <div class="text-xs text-white/60">
-              {{ tagline }}
-            </div>
-          </div>
+      <div class="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+        <!-- Burger mobile (drawer) -->
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-heroicons-bars-3"
+          size="sm"
+          class="md:hidden flex-shrink-0"
+          @click="isDrawerOpen = true"
+        />
+        <NuxtLink to="/" class="flex items-center gap-3 min-w-0">
+          <img :src="logoUrl" :alt="appName" class="h-10 w-auto flex-shrink-0" />
+          <div class="font-semibold hidden sm:block truncate">{{ appName }}</div>
         </NuxtLink>
       </div>
 
@@ -292,16 +277,107 @@ const mobileMenuItems = computed<DropdownMenuItem[][]>(() => {
         </template>
       </nav>
 
-      <!-- Mobile Menu -->
-      <UDropdownMenu :items="mobileMenuItems" class="md:hidden">
-        <UButton
-          color="neutral"
-          variant="ghost"
-          icon="i-heroicons-bars-3"
-        />
-      </UDropdownMenu>
+      <!-- Mobile Menu: Drawer à gauche (comme layout account) -->
+      <UDrawer
+        v-model:open="isDrawerOpen"
+        direction="left"
+        :handle="false"
+      >
+        <template #content>
+          <div class="flex flex-col h-full bg-gray-900">
+            <!-- Logo / Header -->
+            <div class="p-4 border-b border-white/10">
+              <div class="flex items-center justify-between">
+                <NuxtLink
+                  to="/"
+                  class="flex items-center gap-3"
+                  @click="isDrawerOpen = false"
+                >
+                  <img :src="logoUrl" :alt="appName" class="h-8 w-auto" />
+                  <span class="font-semibold text-sm">{{ appName }}</span>
+                </NuxtLink>
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-heroicons-x-mark"
+                  @click="isDrawerOpen = false"
+                />
+              </div>
+            </div>
 
-      <!-- Auth Section -->
+            <!-- Navigation -->
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+              <template v-for="item in activeMenuItems" :key="item.to || item.label">
+                <a
+                  v-if="item.external"
+                  :href="item.to"
+                  :target="item.target || '_blank'"
+                  rel="noopener noreferrer"
+                  :class="[
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                    isActive(item)
+                      ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
+                      : 'text-white/70 hover:bg-white/10 hover:text-white',
+                  ]"
+                  @click="isDrawerOpen = false"
+                >
+                  <UIcon :name="item.icon" class="w-5 h-5 flex-shrink-0" />
+                  <span class="truncate flex-1">{{ item.label }}</span>
+                </a>
+                <NuxtLink
+                  v-else
+                  :to="item.to"
+                  :class="[
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                    isActive(item)
+                      ? 'bg-primary-500/20 text-primary-400 border border-primary-500/30'
+                      : 'text-white/70 hover:bg-white/10 hover:text-white',
+                  ]"
+                  @click="isDrawerOpen = false"
+                >
+                  <UIcon :name="item.icon" class="w-5 h-5 flex-shrink-0" />
+                  <span class="truncate flex-1">{{ item.label }}</span>
+                </NuxtLink>
+              </template>
+            </nav>
+
+            <!-- Auth en bas du drawer (mobile) -->
+            <div class="p-4 border-t border-white/10">
+              <UButton
+                v-if="!authStore.isAuthenticated"
+                to="/login"
+                color="primary"
+                variant="solid"
+                icon="i-heroicons-lock-closed"
+                size="sm"
+                class="w-full justify-center"
+                @click="isDrawerOpen = false"
+              >
+                Connexion
+              </UButton>
+              <NuxtLink
+                v-else
+                to="/account"
+                class="block"
+                @click="isDrawerOpen = false"
+              >
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-heroicons-user-circle"
+                  size="sm"
+                  class="w-full justify-start"
+                >
+                  Mon espace
+                </UButton>
+              </NuxtLink>
+            </div>
+          </div>
+        </template>
+      </UDrawer>
+
+      <!-- Auth Section (Connexion cachée sur mobile, présente dans le drawer) -->
       <div class="flex items-center gap-2">
         <UButton
           v-if="!authStore.isAuthenticated"
@@ -310,8 +386,9 @@ const mobileMenuItems = computed<DropdownMenuItem[][]>(() => {
           variant="solid"
           icon="i-heroicons-lock-closed"
           size="sm"
+          class="hidden sm:flex"
         >
-          <span class="hidden sm:inline">Connexion</span>
+          Connexion
         </UButton>
         <template v-else>
           <NuxtLink

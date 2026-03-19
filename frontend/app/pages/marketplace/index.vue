@@ -300,6 +300,7 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
 <template>
   <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
     <ProfileIncompleteBanner />
+    <HowItWorksBanner />
     
     <!-- Header -->
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -330,8 +331,7 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
           icon="i-heroicons-plus-circle"
           :disabled="!isProfileComplete"
         >
-          <span class="hidden sm:inline">Créer une annonce</span>
-          <span class="sm:hidden">Créer</span>
+          Créer une annonce
         </UButton>
         <UButton
           v-else-if="authStore.isAuthenticated && !canCreateListing"

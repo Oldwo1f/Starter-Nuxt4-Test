@@ -4,8 +4,11 @@ import {
   Column,
   CreateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { KikiriBet } from './kikiri-bet.entity';
+import { KikiriSession } from './kikiri-session.entity';
 
 export enum KikiriDrawStatus {
   BETTING = 'betting',
@@ -42,6 +45,13 @@ export class KikiriDraw {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ nullable: true })
+  sessionId: number | null;
+
+  @ManyToOne(() => KikiriSession, (s) => s.draws, { nullable: true })
+  @JoinColumn({ name: 'sessionId' })
+  session: KikiriSession | null;
 
   @OneToMany(() => KikiriBet, (bet) => bet.draw)
   bets: KikiriBet[];

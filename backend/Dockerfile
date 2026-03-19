@@ -58,4 +58,4 @@ ENV NODE_ENV=production
 ENV PORT=8081
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]

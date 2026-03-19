@@ -19,8 +19,12 @@ import {
 } from '../entities/legacy-payment-verification.entity';
 import { User, UserRole } from '../entities/user.entity';
 import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
+import { WalletService } from '../wallet/wallet.service';
 
 type PackCode = 'teOhi' | 'umete';
+
+const JIJI_TEOHI = 2000;
+const JIJI_UMETE = 5000;
 
 @Injectable()
 export class BillingService {
@@ -34,6 +38,7 @@ export class BillingService {
     @InjectRepository(Transaction)
     private transactionsRepository: Repository<Transaction>,
     private dataSource: DataSource,
+    private walletService: WalletService,
   ) {}
 
   private getAmountForPack(pack: PackCode): number {
@@ -413,6 +418,16 @@ export class BillingService {
       });
       await transactionsRepo.save(transaction);
 
+      // Grant Jiji d'inscription (2000 Te Ohi, 5000 Umete)
+      const packCode = payment.pack === BankTransferPack.TE_OHI ? 'teOhi' : 'umete';
+      const jijiAmount = packCode === 'teOhi' ? JIJI_TEOHI : JIJI_UMETE;
+      await this.walletService.creditJijiSystem(
+        user.id,
+        jijiAmount,
+        `Jiji inscription - Cotisation ${packCode === 'teOhi' ? 'Te Ohi' : 'Umete'}`,
+        manager,
+      );
+
       freshPayment.pupuInscriptionReceived = true;
       await paymentsRepo.save(freshPayment);
     });
@@ -444,6 +459,14 @@ export class BillingService {
       description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation ${pack === 'teOhi' ? 'Te Ohi' : 'Umete'}`,
     });
     await this.transactionsRepository.save(transaction);
+
+    // Grant Jiji d'inscription (2000 Te Ohi, 5000 Umete)
+    const jijiAmount = pack === 'teOhi' ? JIJI_TEOHI : JIJI_UMETE;
+    await this.walletService.creditJijiSystem(
+      userId,
+      jijiAmount,
+      `Jiji inscription - Cotisation ${pack === 'teOhi' ? 'Te Ohi' : 'Umete'}`,
+    );
   }
 
   // Legacy payment verification methods
@@ -637,9 +660,9 @@ export class BillingService {
       }
       user.paidAccessExpiresAt = next;
 
-      // Grant Pūpū d'inscription (50 for Te Ohi)
+      // Grant Pūpū d'inscription (50 for Te Ohi) and Jiji (2000 Te Ohi, 5000 Umete)
       if (!freshVerification.pupuInscriptionReceived) {
-        const pupuAmount = 50; // Always Te Ohi for legacy
+        const pupuAmount = 50; // Always Te Ohi for legacy Pūpū
         const balanceBefore = parseFloat(user.walletBalance.toString());
         const balanceAfter = balanceBefore + pupuAmount;
         user.walletBalance = balanceAfter;
@@ -657,6 +680,15 @@ export class BillingService {
           description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation Te Ohi (Legacy)`,
         });
         await transactionsRepo.save(transaction);
+
+        // Grant Jiji: 2000 for Te Ohi (MEMBER), 5000 for Umete (PREMIUM)
+        const jijiAmount = finalRole === UserRole.PREMIUM ? JIJI_UMETE : JIJI_TEOHI;
+        await this.walletService.creditJijiSystem(
+          user.id,
+          jijiAmount,
+          `Jiji inscription - Cotisation ${finalRole === UserRole.PREMIUM ? 'Umete' : 'Te Ohi'} (Legacy)`,
+          manager,
+        );
 
         freshVerification.pupuInscriptionReceived = true;
         await legacyRepo.save(freshVerification);

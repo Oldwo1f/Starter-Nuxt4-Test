@@ -134,6 +134,10 @@ export const useReferralStore = defineStore('referral', () => {
 
   const getReferralLink = () => {
     if (!referralCode.value) return ''
+    // Use actual origin when on client (works in dev and production)
+    if (import.meta.client) {
+      return `${window.location.origin}/register?ref=${referralCode.value}`
+    }
     const config = useRuntimeConfig()
     const frontendUrl = config.public.frontendUrl || 'http://localhost:3000'
     return `${frontendUrl}/register?ref=${referralCode.value}`

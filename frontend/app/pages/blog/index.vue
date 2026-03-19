@@ -3,7 +3,11 @@ definePageMeta({
   layout: 'default',
 })
 
+import { useAuthStore } from '~/stores/useAuthStore'
+
 const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
+const authStore = useAuthStore()
+const { canCreateBlogPost } = useMemberCheck()
 const route = useRoute()
 
 // Pagination
@@ -112,11 +116,22 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-    <div class="mb-8 text-center">
-      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Blog</h1>
-      <p class="mx-auto max-w-2xl text-lg text-white/70">
-        Découvrez nos articles, actualités et ressources sur la communauté Nuna'a Heritage
-      </p>
+    <div class="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:items-start">
+      <div class="text-center sm:text-left">
+        <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Blog</h1>
+        <p class="mx-auto max-w-2xl text-lg text-white/70 sm:mx-0">
+          Découvrez nos articles, actualités et ressources sur la communauté Nuna'a Heritage
+        </p>
+      </div>
+      <UButton
+        v-if="authStore.isAuthenticated && canCreateBlogPost"
+        :to="{ path: '/account/articles', query: { create: '1' } }"
+        color="primary"
+        icon="i-heroicons-plus"
+        size="lg"
+      >
+        Créer un article
+      </UButton>
     </div>
 
     <div v-if="isLoading" class="flex justify-center py-12">

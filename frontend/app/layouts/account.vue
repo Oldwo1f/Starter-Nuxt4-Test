@@ -150,6 +150,11 @@ const accountMenuItems = [
     to: '/account/listings',
   },
   {
+    label: 'Mes articles',
+    icon: 'i-heroicons-document-text',
+    to: '/account/articles',
+  },
+  {
     label: 'Mon portefeuille',
     icon: 'i-heroicons-wallet',
     to: '/account/wallet',

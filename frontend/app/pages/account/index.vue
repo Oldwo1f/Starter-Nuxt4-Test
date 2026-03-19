@@ -16,7 +16,7 @@ const marketplaceStore = useMarketplaceStore()
 const toast = useToast()
 const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
 const { isProfileComplete } = useProfileValidation()
-const { canCreateListing } = useMemberCheck()
+const { canCreateListing, canCreateBlogPost } = useMemberCheck()
 
 // Stats
 const stats = ref({
@@ -39,8 +39,11 @@ const fetchData = async () => {
 
   isLoading.value = true
   try {
-    // Fetch balance
-    await walletStore.fetchBalance()
+    // Fetch balances
+    await Promise.all([
+      walletStore.fetchBalance(),
+      walletStore.fetchJijiBalance(),
+    ])
     stats.value.balance = walletStore.balance
 
     // Fetch user listings
@@ -133,6 +136,19 @@ onMounted(() => {
           </div>
         </UCard>
 
+        <UCard class="bg-gradient-to-r from-amber-500/20 to-amber-600/20">
+          <div class="text-center">
+            <div class="mb-2 text-sm text-white/60">Jetons Jiji</div>
+            <div class="mb-2 flex items-center justify-center gap-2 text-3xl font-bold text-amber-500">
+              <JijiIcon size="md" />
+              <span>{{ Math.round(walletStore.jijiBalance) }}</span>
+            </div>
+            <UButton to="/games/bingo" variant="ghost" size="sm" class="mt-2">
+              Jouer
+            </UButton>
+          </div>
+        </UCard>
+
         <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <div class="text-center">
             <div class="mb-2 text-sm text-white/60">Annonces actives</div>
@@ -200,6 +216,17 @@ onMounted(() => {
           </UButton>
           <UButton to="/account/listings" variant="outline" icon="i-heroicons-rectangle-stack">
             Gérer mes annonces
+          </UButton>
+          <UButton
+            v-if="canCreateBlogPost"
+            :to="{ path: '/account/articles', query: { create: '1' } }"
+            variant="outline"
+            icon="i-heroicons-document-text"
+          >
+            Écrire un article
+          </UButton>
+          <UButton to="/account/articles" variant="outline" icon="i-heroicons-document-text">
+            Mes articles
           </UButton>
         </div>
       </UCard>

@@ -13,8 +13,6 @@ definePageMeta({
 const referralStore = useReferralStore()
 const { getImageUrl } = useApi()
 const router = useRouter()
-const config = useRuntimeConfig()
-const frontendUrl = config.public.frontendUrl || 'http://localhost:3000'
 
 // State
 const copied = ref(false)

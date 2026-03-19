@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
@@ -23,9 +24,13 @@ import { MessagesModule } from './messages/messages.module';
 import { AdminAgentModule } from './admin-agent/admin-agent.module';
 import { TeNatiraaModule } from './te-natiraa/te-natiraa.module';
 import { KikiriModule } from './kikiri/kikiri.module';
+import { BingoModule } from './bingo/bingo.module';
+import { JijiModule } from './jiji/jiji.module';
+import { GamesModule } from './games/games.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     DatabaseModule,
     UsersModule,
     AuthModule,
@@ -48,6 +53,9 @@ import { KikiriModule } from './kikiri/kikiri.module';
     AdminAgentModule,
     TeNatiraaModule,
     KikiriModule,
+    BingoModule,
+    JijiModule,
+    GamesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

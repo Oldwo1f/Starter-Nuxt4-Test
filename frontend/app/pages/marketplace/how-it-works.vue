@@ -2,6 +2,14 @@
 definePageMeta({
   layout: 'marketplace',
 })
+
+const STORAGE_KEY = 'marketplace_how_it_works_visited'
+
+onMounted(() => {
+  if (import.meta.client) {
+    localStorage.setItem(STORAGE_KEY, 'true')
+  }
+})
 </script>
 
 <template>

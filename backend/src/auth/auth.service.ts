@@ -5,10 +5,13 @@ import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { ReferralService } from '../referral/referral.service';
 import { EmailService } from '../email/email.service';
+import { WalletService } from '../wallet/wallet.service';
 import { User } from '../entities/user.entity';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import * as crypto from 'crypto';
 import axios from 'axios';
+
+const JIJI_REGISTRATION = 1000;
 
 @Injectable()
 export class AuthService {
@@ -17,6 +20,7 @@ export class AuthService {
     private jwtService: JwtService,
     private referralService: ReferralService,
     private emailService: EmailService,
+    private walletService: WalletService,
     @InjectRepository(RefreshToken)
     private refreshTokenRepository: Repository<RefreshToken>,
   ) {}
@@ -57,6 +61,9 @@ export class AuthService {
         isActive: user.isActive,
         paidAccessExpiresAt: user.paidAccessExpiresAt,
         phoneNumber: user.phoneNumber,
+        commune: user.commune,
+        contactPreferences: user.contactPreferences,
+        tradingPreferences: user.tradingPreferences,
       },
     };
   }
@@ -138,6 +145,9 @@ export class AuthService {
         isActive: user.isActive,
         paidAccessExpiresAt: user.paidAccessExpiresAt,
         phoneNumber: user.phoneNumber,
+        commune: user.commune,
+        contactPreferences: user.contactPreferences,
+        tradingPreferences: user.tradingPreferences,
       },
     };
   }
@@ -189,6 +199,17 @@ export class AuthService {
         // Ne pas bloquer l'inscription si le code est invalide, juste logger
         console.warn(`Invalid referral code during registration: ${referralCode}`, error);
       }
+    }
+
+    // Crédit Jiji d'inscription (1000 jetons)
+    try {
+      await this.walletService.creditJijiSystem(
+        user.id,
+        JIJI_REGISTRATION,
+        'Jiji inscription - Inscription',
+      );
+    } catch (error) {
+      console.error(`Failed to credit Jiji on registration for user ${user.id}:`, error);
     }
 
     // Envoyer l'email de vérification

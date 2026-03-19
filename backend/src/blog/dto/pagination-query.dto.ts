@@ -33,7 +33,7 @@ export class BlogPaginationQueryDto {
   @IsInt()
   authorId?: number;
 
-  @ApiPropertyOptional({ description: 'Filter by status (admin only)', enum: ['draft', 'active', 'archived'] })
+  @ApiPropertyOptional({ description: 'Filter by status (admin/members)', enum: ['draft', 'pending', 'active', 'archived'] })
   @IsOptional()
   @IsString()
   status?: string;

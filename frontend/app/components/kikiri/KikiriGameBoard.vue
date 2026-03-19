@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { KikiriDraw, KikiriBetByUser, KikiriOnlineUser } from '~/composables/useKikiriSocket'
 import tasseImg from '~/assets/images/tasse.png'
-import pupuImg from '~/assets/images/pupu3D.png'
-import tasPupuImg from '~/assets/images/tasPupu.png'
+import jijiTokenImg from '~/assets/images/jiji_perspective.png'
+import tasJijiImg from '~/assets/images/tas_jiji.png'
+import bipSound from '~/assets/BIP.wav'
 
 const props = defineProps<{
   draw: KikiriDraw | null
@@ -16,6 +17,8 @@ const props = defineProps<{
   currentUserId?: number | null
   isNewGame?: boolean
   hasSubmittedBets?: boolean
+  /** true quand le serveur a envoyé startingSoon : fermer la tasse et la garder fermée jusqu'à la révélation */
+  cupCloseRequested?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -49,13 +52,12 @@ type ResolutionPhase =
   | 'bank-to-win'
   | 'pile-visible'
   | 'to-balance'
-  | 'cup-close'
 
 const resolutionPhase = ref<ResolutionPhase>('idle')
 
 const numbers = [1, 2, 3, 4, 5, 6]
 
-const tasPupuImageRef = ref<HTMLImageElement | null>(null)
+const tasJijiImageRef = ref<HTMLImageElement | null>(null)
 
 const isRevealed = computed(() => {
   if (!props.draw) return false
@@ -82,11 +84,13 @@ const losingCases = computed(() =>
 )
 
 function shouldHidePupusOnCase(caseNum: number): boolean {
+  // Après distribution : garder les jetons cachés jusqu'à la nouvelle partie (éviter la réapparition magique)
+  if (resolutionPhase.value === 'idle' && props.draw?.status === 'resolved') return true
   if (resolutionPhase.value === 'idle' || resolutionPhase.value === 'dice-reveal' || resolutionPhase.value === 'cup-lift') return false
   if (resolutionPhase.value === 'lost-to-bank' || resolutionPhase.value === 'bank-to-win' || resolutionPhase.value === 'pile-visible') {
     return losingCases.value.includes(caseNum)
   }
-  if (resolutionPhase.value === 'to-balance' || resolutionPhase.value === 'cup-close') {
+  if (resolutionPhase.value === 'to-balance') {
     return true
   }
   return false
@@ -111,15 +115,37 @@ const casesGridRef = ref<HTMLElement | null>(null)
 const gameBoardWrapperRef = ref<HTMLElement | null>(null)
 const balanceRef = ref<HTMLElement | null>(null)
 
+const KIKIRI_HIDE_TIPS_KEY = 'nunaheritage-kikiri-hide-tips'
+const hideTipsPermanently = ref(false)
+const tipsDismissed = ref(false)
+const showTips = computed(() => !hideTipsPermanently.value && !tipsDismissed.value)
+
+onMounted(() => {
+  if (typeof localStorage !== 'undefined') {
+    hideTipsPermanently.value = localStorage.getItem(KIKIRI_HIDE_TIPS_KEY) === '1'
+  }
+})
+
+function closeTips() {
+  tipsDismissed.value = true
+}
+
+function hideTipsForever() {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(KIKIRI_HIDE_TIPS_KEY, '1')
+  }
+  hideTipsPermanently.value = true
+}
+
 function getBankPositions(containerRect: DOMRect) {
   const cw = containerRect.width
   const ch = containerRect.height
   const width = cw * 0.242
-  const img = tasPupuImageRef.value
+  const img = tasJijiImageRef.value
   const height = img ? (img.naturalHeight / img.naturalWidth) * width : width * 0.6
   const y = ch * 0.08
-  const leftX = cw * 0.06
-  const rightX = cw * 0.72 - 12
+  const leftX = cw * 0.06 + 5 // +5px rapproché de la tasse
+  const rightX = cw * 0.72 - 32 // -32 = -12 base - 20px rapproché de la tasse
   return {
     left: { x: leftX + width / 2, y: y + height / 2 },
     right: { x: rightX + width / 2, y: y + height / 2 },
@@ -190,7 +216,7 @@ function getWinAmountPerCase(): Record<number, number> {
   for (const num of winningCases.value) {
     const count = dice.filter((x) => x === num).length
     const multiplier = 1 + count
-    const staked = betAmounts.value[num] ?? 0
+    const staked = Math.max(betAmounts.value[num] ?? 0, myBetsFromAllBets.value[num] ?? 0)
     result[num] = Math.round((staked * multiplier - staked) * 100) / 100
   }
   return result
@@ -202,8 +228,7 @@ const BANK_TO_WIN_MAX_DURATION_MS = 7500
 const LOST_TO_BANK_DURATION_MS = 900
 const DOME_LIFT_DURATION_MS = 1100
 const DOME_CLOSE_DURATION_MS = 800
-const DOME_OPEN_DURATION_MS = 700
-const CUP_SHAKE_DURATION_MS = 600
+const CUP_SHAKE_DURATION_MS = 1000
 const TO_BALANCE_DURATION_MS = 950
 const PILE_VISIBLE_PAUSE_MS = 500
 const DICE_TO_CUP_LIFT_DELAY_MS = 300
@@ -223,9 +248,24 @@ function hasFlyingPupuArrived(fp: FlyingPupu): boolean {
   return getFlyingPupuProgress(fp) >= ARRIVED_THRESHOLD
 }
 
+const myBetsFromAllBets = computed(() => {
+  const all = props.allBets ?? {}
+  const uid = props.currentUserId
+  if (uid == null) return {} as Record<number, number>
+  const result: Record<number, number> = {}
+  for (let num = 1; num <= 6; num++) {
+    const bets = all[num] ?? []
+    const mine = bets.find((b) => b.userId === uid)
+    if (mine && mine.amount > 0) result[num] = mine.amount
+  }
+  return result
+})
+
 function getDisplayedPileCount(caseNum: number): number {
   if (resolutionPhase.value !== 'bank-to-win' && resolutionPhase.value !== 'pile-visible') {
-    return betAmounts.value[caseNum] ?? 0
+    const fromBetAmounts = betAmounts.value[caseNum] ?? 0
+    const fromAllBets = myBetsFromAllBets.value[caseNum] ?? 0
+    return Math.max(fromBetAmounts, fromAllBets)
   }
   flyingPupuProgress.value
   const staked = betAmounts.value[caseNum] ?? 0
@@ -375,12 +415,16 @@ function scheduleCupCloseAndEmit() {
   cupCloseScheduled.value = true
   emit('animations-complete')
   setTimeout(() => {
-    resolutionPhase.value = 'cup-close'
+    resolutionPhase.value = 'idle'
+    // La tasse reste levée : pas de cup-close ni réapparition
   }, TO_BALANCE_TO_CUP_CLOSE_MS)
 }
 
 const totalBetAmount = computed(() => {
-  return numbers.reduce((a, n) => a + (betAmounts.value[n] || 0), 0)
+  return numbers.reduce(
+    (a, n) => a + Math.max(betAmounts.value[n] || 0, myBetsFromAllBets.value[n] || 0),
+    0,
+  )
 })
 
 const displayedBalance = computed(() => {
@@ -395,17 +439,20 @@ const displayedBalance = computed(() => {
   return Math.max(0, bal - totalBetAmount.value)
 })
 
-const addBet = (num: number) => {
-  if (!props.canBet || props.isPlacing) return
+const addBet = (num: number, amount = 1): number => {
+  if (!props.canBet || props.isPlacing) return 0
   const total = totalBetAmount.value
-  if (total >= Math.round(props.balance)) return
-  const current = betAmounts.value[num] || 0
-  betAmounts.value = { ...betAmounts.value, [num]: current + 1 }
+  const maxAdd = Math.max(0, Math.round(props.balance) - total)
+  const toAdd = Math.min(amount, maxAdd)
+  if (toAdd <= 0) return 0
+  const current = Math.max(betAmounts.value[num] || 0, myBetsFromAllBets.value[num] || 0)
+  betAmounts.value = { ...betAmounts.value, [num]: current + toAdd }
+  return toAdd
 }
 
 const removeBet = (num: number) => {
   if (!props.canBet || props.isPlacing) return
-  const current = betAmounts.value[num] || 0
+  const current = Math.max(betAmounts.value[num] || 0, myBetsFromAllBets.value[num] || 0)
   if (current <= 0) return
   betAmounts.value = { ...betAmounts.value, [num]: current - 1 }
 }
@@ -464,17 +511,17 @@ function getOtherBetsByCorner(caseNum: number): { topLeft: KikiriBetByUser[]; to
 
 // Drag & drop
 const DRAG_TYPE = 'application/x-kikiri-pupu'
-const dragSource = ref<{ source: 'balance' | 'cell'; num?: number } | null>(null)
+const dragSource = ref<{ source: 'balance' | 'cell'; num?: number; amount?: number } | null>(null)
 const dragOverCell = ref<number | null>(null)
 const dragOverBalance = ref(false)
 
-function getDragData(source: 'balance' | 'cell', num?: number): string {
-  return JSON.stringify({ source, num })
+function getDragData(source: 'balance' | 'cell', num?: number, amount?: number): string {
+  return JSON.stringify({ source, num, amount })
 }
 
-function parseDragData(data: string): { source: 'balance' | 'cell'; num?: number } | null {
+function parseDragData(data: string): { source: 'balance' | 'cell'; num?: number; amount?: number } | null {
   try {
-    return JSON.parse(data) as { source: 'balance' | 'cell'; num?: number }
+    return JSON.parse(data) as { source: 'balance' | 'cell'; num?: number; amount?: number }
   } catch {
     return null
   }
@@ -483,18 +530,21 @@ function parseDragData(data: string): { source: 'balance' | 'cell'; num?: number
 function isCellValidDropTarget(cellNum: number): boolean {
   const src = dragSource.value
   if (!src) return false
-  if (src.source === 'balance') return displayedBalance.value > 0
+  if (src.source === 'balance') {
+    const amount = src.amount ?? 1
+    return displayedBalance.value >= amount
+  }
   if (src.source === 'cell' && src.num != null) return src.num !== cellNum
   return false
 }
 
-function onBalanceDragStart(e: DragEvent) {
-  if (!props.canBet || props.isPlacing || displayedBalance.value <= 0) {
+function onBalanceDragStart(e: DragEvent, amount = 1) {
+  if (!props.canBet || props.isPlacing || displayedBalance.value < amount) {
     e.preventDefault()
     return
   }
-  dragSource.value = { source: 'balance' }
-  e.dataTransfer?.setData(DRAG_TYPE, getDragData('balance'))
+  dragSource.value = { source: 'balance', amount }
+  e.dataTransfer?.setData(DRAG_TYPE, getDragData('balance', undefined, amount))
   e.dataTransfer!.effectAllowed = 'move'
 }
 
@@ -514,6 +564,12 @@ function onDragEnd() {
   dragOverBalance.value = false
 }
 
+function onCellDragEnter(e: DragEvent, num: number) {
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'move'
+  dragOverCell.value = isCellValidDropTarget(num) ? num : null
+}
+
 function onCellDragOver(e: DragEvent, num: number) {
   e.preventDefault()
   e.dataTransfer!.dropEffect = 'move'
@@ -525,6 +581,15 @@ function onCellDragLeave(e: DragEvent) {
   const related = e.relatedTarget as Node | null
   if (!related || !cell.contains(related)) {
     dragOverCell.value = null
+  }
+}
+
+function onBalanceDragEnter(e: DragEvent) {
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'move'
+  const src = dragSource.value
+  if (src?.source === 'cell' && src.num != null) {
+    dragOverBalance.value = true
   }
 }
 
@@ -565,8 +630,9 @@ function onCellDrop(e: DragEvent, targetNum: number) {
   const src = dragSource.value
   if (!src) return
   if (src.source === 'balance') {
-    addBet(targetNum)
-    emit('betPreview', { delta: 1, case: targetNum })
+    const amount = src.amount ?? 1
+    const added = addBet(targetNum, amount)
+    if (added > 0) emit('betPreview', { delta: added, case: targetNum })
   } else if (src.source === 'cell' && src.num != null && src.num !== targetNum) {
     const from = src.num
     const to = targetNum
@@ -699,8 +765,8 @@ function drawBankPupuPiles(ctx: CanvasRenderingContext2D, cw: number, ch: number
   const width = cw * 0.242
   const height = (img.naturalHeight / img.naturalWidth) * width
   const y = ch * 0.08
-  const leftX = cw * 0.06
-  const rightX = cw * 0.72 - 12
+  const leftX = cw * 0.06 + 5 // +5px rapproché de la tasse
+  const rightX = cw * 0.72 - 32 // -32 = -12 base - 20px rapproché de la tasse
 
   ctx.drawImage(img, leftX, y, width, height)
   ctx.save()
@@ -798,17 +864,18 @@ function drawBoard(ctx: CanvasRenderingContext2D, cw: number, ch: number, highli
   ctx.lineWidth = 3
   ctx.stroke()
 
-  drawBankPupuPiles(ctx, cw, ch, tasPupuImageRef.value)
+  drawBankPupuPiles(ctx, cw, ch, tasJijiImageRef.value)
 
   const domeCenterX = cw / 2
-  const domeCenterY = ch * 0.15 + 45
+  const isMobile = cw < 640
+  const domeCenterY = isMobile ? ch * 0.10 + 25 : ch * 0.15 + 45
   const diceSize = Math.min(cw, ch) * 0.18
   const diceGap = diceSize * -0.12
 
   const totalDiceWidth = diceSize * 3 + diceGap * 2
   const diceStartX = domeCenterX - totalDiceWidth / 2 + diceSize / 2 + diceGap / 2
 
-  const shouldDrawDice = isRevealed.value || (props.draw?.status === 'betting' && bettingDice.value)
+  const shouldDrawDice = (isRevealed.value || (props.draw?.status === 'betting' && bettingDice.value)) && !cupShaking.value
   if (shouldDrawDice) {
     for (let i = 0; i < 3; i++) {
       const dcx = diceStartX + i * (diceSize + diceGap)
@@ -860,11 +927,13 @@ function drawCaseNumbers(ctx: CanvasRenderingContext2D, cw: number, ch: number) 
   }
 }
 
-const cupClosing = ref(false)
 const cupCloseScheduled = ref(false)
-const cupOpening = ref(false)
+const cupClosing = ref(false)
+/** Tasse fermée pour la prochaine partie : reste visible jusqu'à la révélation */
+const cupClosedForNextGame = ref(false)
 const cupShaking = ref(false)
 const domeShakeX = ref(0)
+const pendingRevealing = ref(false)
 
 function animateDomeLift() {
   if (!isAnimating.value) return
@@ -885,48 +954,32 @@ function animateDomeLift() {
   draw()
 }
 
+const DOME_CLOSE_START_OFFSET = -120
+
 function animateDomeClose() {
   if (!cupClosing.value) return
   const elapsed = performance.now() - animationStartTime.value
   const progress = Math.min(elapsed / DOME_CLOSE_DURATION_MS, 1)
   const easeIn = Math.pow(progress, 2)
 
-  domeOffsetY.value = -120 * easeIn
-  domeOpacity.value = 1 - easeIn
+  // Tasse se baisse : de haut (invisible) vers 0 (bas, visible, couvre les dés)
+  domeOffsetY.value = DOME_CLOSE_START_OFFSET + -DOME_CLOSE_START_OFFSET * easeIn
+  domeOpacity.value = easeIn
 
   if (progress < 1) {
     requestAnimationFrame(animateDomeClose)
   } else {
     cupClosing.value = false
-    domeOffsetY.value = -120
-    domeOpacity.value = 0
-  }
-  draw()
-}
-
-function animateDomeOpen() {
-  if (!cupOpening.value) return
-  const elapsed = performance.now() - animationStartTime.value
-  const progress = Math.min(elapsed / DOME_OPEN_DURATION_MS, 1)
-  const easeOut = 1 - Math.pow(1 - progress, 2)
-
-  domeOffsetY.value = -120 + 120 * easeOut
-  domeOpacity.value = easeOut
-
-  if (progress < 1) {
-    requestAnimationFrame(animateDomeOpen)
-  } else {
-    cupOpening.value = false
     domeOffsetY.value = 0
     domeOpacity.value = 1
-    startCupShake()
+    cupClosedForNextGame.value = true
   }
   draw()
 }
 
 function playBipSound() {
   try {
-    const audio = new Audio('/BIP.wav')
+    const audio = new Audio(bipSound)
     audio.volume = 0.7
     audio.play().catch(() => {
       try {
@@ -958,21 +1011,35 @@ function animateCupShake() {
   if (!cupShaking.value) return
   const elapsed = performance.now() - animationStartTime.value
   const progress = Math.min(elapsed / CUP_SHAKE_DURATION_MS, 1)
-  const shakeAmount = 8
+  const shakeAmount = 18
   const decay = 1 - progress
-  domeShakeX.value = Math.sin(elapsed * 0.03) * shakeAmount * decay
+  domeShakeX.value = Math.sin(elapsed * 0.04) * shakeAmount * decay
 
   if (progress < 1) {
     requestAnimationFrame(animateCupShake)
   } else {
     cupShaking.value = false
     domeShakeX.value = 0
-    bettingDice.value = [
-      Math.floor(Math.random() * 6) + 1,
-      Math.floor(Math.random() * 6) + 1,
-      Math.floor(Math.random() * 6) + 1,
-    ]
-    emit('game-ready')
+    if (pendingRevealing.value) {
+      pendingRevealing.value = false
+      bettingDice.value = null
+      domeOffsetY.value = 0
+      domeOpacity.value = 1
+      isAnimating.value = true
+      resolutionPhase.value = 'dice-reveal'
+      setTimeout(() => {
+        resolutionPhase.value = 'cup-lift'
+        animationStartTime.value = performance.now()
+        requestAnimationFrame(animateDomeLift)
+      }, DICE_TO_CUP_LIFT_DELAY_MS)
+    } else {
+      bettingDice.value = [
+        Math.floor(Math.random() * 6) + 1,
+        Math.floor(Math.random() * 6) + 1,
+        Math.floor(Math.random() * 6) + 1,
+      ]
+      emit('game-ready')
+    }
   }
   draw()
 }
@@ -1019,80 +1086,120 @@ function draw() {
   drawBoard(ctx, rect.width, rect.height, dragOverCell.value)
 }
 
-watch([() => props.draw, dice, domeOffsetY, domeOpacity, domeShakeX, tasPupuImageRef, dragOverCell, resolutionPhase], () => {
+watch([() => props.draw, dice, domeOffsetY, domeOpacity, domeShakeX, tasJijiImageRef, dragOverCell, resolutionPhase, cupClosing, cupShaking], () => {
   draw()
 }, { deep: true })
 
-watch(() => props.draw?.status, (status) => {
-  if (!props.draw) {
-    domeOffsetY.value = 0
-    domeOpacity.value = 1
-    domeShakeX.value = 0
-    isAnimating.value = false
-    cupClosing.value = false
-    cupCloseScheduled.value = false
-    cupOpening.value = false
-    cupShaking.value = false
-    bettingDice.value = null
+watch(() => props.draw?.id, (newId, oldId) => {
+  if (newId != null && oldId != null && newId !== oldId && props.draw?.status === 'betting') {
     resolutionPhase.value = 'idle'
     flyingPupus.value = []
-  } else if (status === 'betting') {
-    isAnimating.value = false
-    cupClosing.value = false
-    cupCloseScheduled.value = false
-    cupShaking.value = false
-    domeShakeX.value = 0
-    resolutionPhase.value = 'idle'
-    flyingPupus.value = []
-    if (props.isNewGame) {
-      bettingDice.value = null
-      cupOpening.value = true
-      domeOffsetY.value = -120
-      domeOpacity.value = 0
-      animationStartTime.value = performance.now()
-      requestAnimationFrame(animateDomeOpen)
-    } else {
-      bettingDice.value = [
-        Math.floor(Math.random() * 6) + 1,
-        Math.floor(Math.random() * 6) + 1,
-        Math.floor(Math.random() * 6) + 1,
-      ]
-      cupOpening.value = false
-      domeOffsetY.value = 0
-      domeOpacity.value = 1
-      emit('game-ready')
-    }
-  } else if (status === 'revealing' && resolutionPhase.value === 'idle') {
-    cupOpening.value = false
-    cupShaking.value = false
-    domeShakeX.value = 0
-    bettingDice.value = null
-    domeOffsetY.value = 0
-    domeOpacity.value = 1
-    isAnimating.value = true
-    resolutionPhase.value = 'dice-reveal'
-    setTimeout(() => {
-      resolutionPhase.value = 'cup-lift'
-      animationStartTime.value = performance.now()
-      requestAnimationFrame(animateDomeLift)
-    }, DICE_TO_CUP_LIFT_DELAY_MS)
-  } else if (status === 'resolved' && resolutionPhase.value !== 'cup-close') {
-    const phase = resolutionPhase.value
-    if (phase === 'to-balance') {
-      scheduleCupCloseAndEmit()
-    }
   }
 })
+
+
+function runBettingSetupIfNeeded() {
+  if (!props.draw || props.draw.status !== 'betting') return
+  const inNewGameAnimation = cupClosing.value || cupShaking.value
+  if (inNewGameAnimation) return
+  const waitingForResolution = resolutionPhase.value === 'to-balance'
+  if (waitingForResolution || cupClosing.value) {
+    return
+  }
+  cupShaking.value = false
+  domeShakeX.value = 0
+  if (props.isNewGame) {
+    // Shake au DÉBUT de la partie (draw:new vient d'arriver)
+    bettingDice.value = null
+    domeOffsetY.value = 0
+    domeOpacity.value = 1
+    startCupShake()
+  } else {
+    bettingDice.value = [
+      Math.floor(Math.random() * 6) + 1,
+      Math.floor(Math.random() * 6) + 1,
+      Math.floor(Math.random() * 6) + 1,
+    ]
+    domeOffsetY.value = 0
+    domeOpacity.value = 1
+    emit('game-ready')
+  }
+}
+
+watch(
+  () => props.draw?.status,
+  (status) => {
+    if (!props.draw) {
+      domeOffsetY.value = 0
+      domeOpacity.value = 1
+      domeShakeX.value = 0
+      isAnimating.value = false
+      cupCloseScheduled.value = false
+      cupClosing.value = false
+      cupClosedForNextGame.value = false
+      cupShaking.value = false
+      pendingRevealing.value = false
+      bettingDice.value = null
+      resolutionPhase.value = 'idle'
+      flyingPupus.value = []
+    } else if (status === 'betting') {
+      isAnimating.value = false
+      cupCloseScheduled.value = false
+      resolutionPhase.value = 'idle'
+      flyingPupus.value = []
+      runBettingSetupIfNeeded()
+    } else if (status === 'revealing' && resolutionPhase.value === 'idle') {
+      cupClosedForNextGame.value = false
+      const inNewGameAnimation = cupClosing.value || cupShaking.value
+      if (inNewGameAnimation) {
+        pendingRevealing.value = true
+      } else {
+        cupShaking.value = false
+        domeShakeX.value = 0
+        bettingDice.value = null
+        domeOffsetY.value = 0
+        domeOpacity.value = 1
+        isAnimating.value = true
+        resolutionPhase.value = 'dice-reveal'
+        setTimeout(() => {
+          resolutionPhase.value = 'cup-lift'
+          animationStartTime.value = performance.now()
+          requestAnimationFrame(animateDomeLift)
+        }, DICE_TO_CUP_LIFT_DELAY_MS)
+      }
+    } else if (status === 'resolved') {
+      const phase = resolutionPhase.value
+      if (phase === 'to-balance') {
+        scheduleCupCloseAndEmit()
+      }
+    }
+  },
+  { immediate: true },
+)
+
+// Quand isNewGame passe à true (après onDrawNew), lancer l'animation si onState a déjà mis le draw en betting
+watch(() => props.isNewGame, (isNew) => {
+  if (isNew) runBettingSetupIfNeeded()
+}, { immediate: true })
+
+// Quand le serveur annonce startingSoon : fermer la tasse (elle reste fermée jusqu'à la révélation)
+watch(() => props.cupCloseRequested, (requested) => {
+  if (requested && !cupClosing.value && (domeOffsetY.value < 0 || domeOpacity.value < 1)) {
+    cupClosing.value = true
+    animationStartTime.value = performance.now()
+    requestAnimationFrame(animateDomeClose)
+  }
+}, { immediate: true })
 
 let resizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
   const img = new Image()
   img.onload = () => {
-    tasPupuImageRef.value = img
+    tasJijiImageRef.value = img
     draw()
   }
-  img.src = tasPupuImg
+  img.src = tasJijiImg
 
   draw()
   resizeObserver = new ResizeObserver(() => draw())
@@ -1110,6 +1217,12 @@ onUnmounted(() => {
 <template>
   <div ref="gameBoardWrapperRef" class="relative w-full space-y-4">
     <div ref="containerRef" class="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-black/30">
+      <!-- Overlay (compteur, résultat) : positionné entre tasse et cases, 40% hauteur plateau -->
+      <div class="absolute inset-0 z-[20] pointer-events-none flex items-center justify-center">
+        <div class="absolute top-[calc(40%+10px)] md:top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <slot name="board-overlay" />
+        </div>
+      </div>
       <div class="kikiri-perspective-container">
         <div class="kikiri-board-3d">
           <div
@@ -1122,7 +1235,7 @@ onUnmounted(() => {
             class="block w-full h-full relative z-[1] pointer-events-none"
           />
           <div
-            v-show="!isRevealed || isAnimating || cupClosing || cupOpening || cupShaking"
+            v-show="!isRevealed || isAnimating || cupClosing || cupShaking || cupClosedForNextGame"
             class="absolute pointer-events-none transition-none z-10"
             :style="{
               left: '50%',
@@ -1146,6 +1259,7 @@ onUnmounted(() => {
                   'cursor-pointer': canBet && !isPlacing,
                   'kikiri-case-top-row': num <= 3,
                 }"
+                @dragenter="onCellDragEnter($event, num)"
                 @dragover="onCellDragOver($event, num)"
                 @dragleave="onCellDragLeave"
                 @drop="onCellDrop($event, num)"
@@ -1174,18 +1288,20 @@ onUnmounted(() => {
                         v-if="b.user?.avatarImage"
                         :src="getImageUrl(b.user.avatarImage)"
                         :alt="b.user.firstName ?? ''"
-                        class="w-[30px] h-[30px] rounded-full border border-amber-800 object-cover flex-shrink-0"
+                        class="w-[15px] h-[15px] md:w-[30px] md:h-[30px] rounded-full border border-amber-800 object-cover flex-shrink-0"
                       />
                       <div
                         v-else
-                        class="w-[30px] h-[30px] rounded-full border border-amber-800 bg-amber-700/60 flex items-center justify-center text-xs font-bold text-amber-200 flex-shrink-0"
+                        class="w-[15px] h-[15px] md:w-[30px] md:h-[30px] rounded-full border border-amber-800 bg-amber-700/60 flex items-center justify-center text-[10px] md:text-xs font-bold text-amber-200 flex-shrink-0"
                       >
                         {{ (b.user?.firstName ?? '?')[0] }}
                       </div>
                       <div class="flex items-center pupu-stack kikiri-pupu-3d-on-board opacity-60 grayscale" :class="corner.startsWith('right') ? 'flex-row-reverse' : ''">
-                        <template v-if="b.amount > 5">
-                          <span class="text-xs font-bold text-amber-200/70">{{ b.amount }}</span>
-                          <img :src="pupuImg" alt="" class="w-6 h-6" />
+                        <template v-if="b.amount >= 5">
+                          <div class="relative flex-shrink-0">
+                            <img :src="jijiTokenImg" alt="" class="w-3 h-3 md:w-6 md:h-6 block" />
+                            <span class="absolute inset-0 flex items-center justify-center text-xs md:text-sm font-extrabold text-amber-200/70 pointer-events-none -translate-y-[3px] [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">{{ b.amount }}</span>
+                          </div>
                         </template>
                         <template v-else>
                           <div
@@ -1194,7 +1310,7 @@ onUnmounted(() => {
                             class="pupu-stack-item"
                             :style="{ transform: getPupuStackItemTransform(i) }"
                           >
-                            <img :src="pupuImg" alt="" class="w-6 h-6 flex-shrink-0" />
+                            <img :src="jijiTokenImg" alt="" class="w-3 h-3 md:w-6 md:h-6 flex-shrink-0" />
                           </div>
                         </template>
                       </div>
@@ -1205,18 +1321,24 @@ onUnmounted(() => {
                 <div
                   v-show="!shouldHidePupusOnCase(num)"
                   class="flex items-center justify-center pupu-stack kikiri-pupu-3d-on-board"
+                  :class="{ 'kikiri-touch-draggable': canBet && !isPlacing }"
                 >
-                  <template v-if="getDisplayedPileCount(num) > 5">
-                    <span class="text-xl font-bold text-amber-100">{{ getDisplayedPileCount(num) }}</span>
-                    <img
-                      :src="pupuImg"
-                      alt=""
-                      class="w-[3.75rem] h-[3.75rem] flex-shrink-0 select-none"
-                      :class="canBet && !isPlacing && (betAmounts[num] || 0) > 0 ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'"
-                      :draggable="!!(canBet && !isPlacing && (betAmounts[num] || 0) > 0)"
-                      @dragstart="onCellDragStart($event, num)"
-                      @dragend="onDragEnd"
-                    />
+                  <template v-if="getDisplayedPileCount(num) >= 5">
+                    <div class="relative flex-shrink-0">
+                      <img
+                        :src="jijiTokenImg"
+                        alt=""
+                        class="w-[1.875rem] h-[1.875rem] md:w-[3.75rem] md:h-[3.75rem] block"
+                        :class="[
+                          canBet && !isPlacing && (betAmounts[num] || 0) > 0 ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none',
+                          canBet && !isPlacing && (betAmounts[num] || 0) > 0 ? 'kikiri-touch-draggable' : '',
+                        ]"
+                        :draggable="!!(canBet && !isPlacing && (betAmounts[num] || 0) > 0)"
+                        @dragstart="onCellDragStart($event, num)"
+                        @dragend="onDragEnd"
+                      />
+                      <span class="absolute inset-0 flex items-center justify-center text-lg md:text-2xl font-extrabold text-amber-100 pointer-events-none -translate-y-[3px] [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">{{ getDisplayedPileCount(num) }}</span>
+                    </div>
                   </template>
                   <template v-else>
                     <div
@@ -1226,10 +1348,13 @@ onUnmounted(() => {
                       :style="{ transform: getPupuStackItemTransform(i) }"
                     >
                       <img
-                        :src="pupuImg"
+                        :src="jijiTokenImg"
                         alt=""
-                        class="w-9 h-9 select-none flex-shrink-0"
-                        :class="canBet && !isPlacing ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'"
+                        class="w-[18px] h-[18px] md:w-9 md:h-9 flex-shrink-0"
+                        :class="[
+                          canBet && !isPlacing ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none',
+                          canBet && !isPlacing ? 'kikiri-touch-draggable' : '',
+                        ]"
                         :draggable="!!(canBet && !isPlacing)"
                         @dragstart="onCellDragStart($event, num)"
                         @dragend="onDragEnd"
@@ -1252,14 +1377,14 @@ onUnmounted(() => {
       <div
         v-for="fp in flyingPupus.filter((f) => f.index == null || !hasFlyingPupuArrived(f))"
         :key="fp.id"
-        class="absolute w-9 h-9 kikiri-pupu-3d-on-board"
+        class="absolute w-[18px] h-[18px] md:w-9 md:h-9 kikiri-pupu-3d-on-board"
         :style="{
           left: (fp.fromX + (fp.toX - fp.fromX) * (fp.index != null ? getFlyingPupuProgress(fp) : flyingPupuProgress)) + 'px',
           top: (fp.fromY + (fp.toY - fp.fromY) * (fp.index != null ? getFlyingPupuProgress(fp) : flyingPupuProgress)) + 'px',
           transform: 'translate(-50%, -50%)',
         }"
       >
-        <img :src="pupuImg" alt="" class="w-full h-full" />
+        <img :src="jijiTokenImg" alt="" class="w-full h-full" />
       </div>
     </div>
 
@@ -1271,22 +1396,25 @@ onUnmounted(() => {
         canBet && !isPlacing && displayedBalance > 0 ? 'hover:border-blue-600/60' : '',
         dragOverBalance ? 'kikiri-balance-drop-target' : '',
       ]"
+      @dragenter="onBalanceDragEnter"
       @dragover="onBalanceDragOver"
       @dragleave="onBalanceDragLeave"
       @drop="onBalanceDrop"
     >
       <div class="flex items-center justify-center gap-4 flex-1">
-      <span class="text-xl font-bold text-blue-100">Mon solde :</span>
+      <span class="text-xl font-bold text-blue-100 flex items-center gap-2">Mon solde <JijiIcon size="sm" /> : {{ displayedBalance }}</span>
       <div
-        class="pupu-stack flex items-center"
-        :class="canBet && !isPlacing && displayedBalance > 0 ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'"
+        class="pupu-stack flex items-center ml-6 md:ml-10"
+        :class="[
+          canBet && !isPlacing && displayedBalance > 0 ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none',
+          canBet && !isPlacing && displayedBalance > 0 ? 'kikiri-touch-draggable' : '',
+        ]"
         :draggable="!!(canBet && !isPlacing && displayedBalance > 0)"
-        @dragstart="onBalanceDragStart"
+        @dragstart="onBalanceDragStart($event, 1)"
         @dragend="onDragEnd"
       >
-        <template v-if="displayedBalance > 5">
-          <span class="text-xl font-bold text-blue-100">{{ displayedBalance }}</span>
-          <img :src="pupuImg" alt="Pupu" class="w-10 h-10 select-none" />
+        <template v-if="displayedBalance >= 5">
+          <img :src="jijiTokenImg" alt="Jiji" class="w-10 h-10 block" :class="canBet && !isPlacing && displayedBalance > 0 ? 'kikiri-touch-draggable' : ''" />
         </template>
         <template v-else-if="displayedBalance > 0">
           <div
@@ -1295,24 +1423,88 @@ onUnmounted(() => {
             class="pupu-stack-item"
             :style="{ transform: getPupuStackItemTransform(i) }"
           >
-            <img :src="pupuImg" alt="Pupu" class="w-8 h-8 select-none" />
+            <img :src="jijiTokenImg" alt="Jiji" class="w-8 h-8" :class="canBet && !isPlacing && displayedBalance > 0 ? 'kikiri-touch-draggable' : ''" />
           </div>
         </template>
         <template v-else>
-          <span class="text-xl font-bold text-blue-100">{{ displayedBalance }}</span>
-          <img :src="pupuImg" alt="Pupu" class="w-10 h-10 select-none opacity-50" />
+          <img :src="jijiTokenImg" alt="Jiji" class="w-10 h-10 opacity-50" />
         </template>
+      </div>
+      <!-- Jeton 5 : drag 5 jetons d'un coup -->
+      <div
+        v-if="displayedBalance >= 5"
+        class="pupu-stack flex items-center ml-2"
+        :class="[
+          canBet && !isPlacing && displayedBalance >= 5 ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none',
+          canBet && !isPlacing && displayedBalance >= 5 ? 'kikiri-touch-draggable' : '',
+        ]"
+        :draggable="!!(canBet && !isPlacing && displayedBalance >= 5)"
+        @dragstart="onBalanceDragStart($event, 5)"
+        @dragend="onDragEnd"
+      >
+        <div class="relative flex-shrink-0">
+          <img :src="jijiTokenImg" alt="Jiji x5" class="w-10 h-10 block" :class="canBet && !isPlacing && displayedBalance >= 5 ? 'kikiri-touch-draggable' : ''" />
+          <span class="absolute inset-0 flex items-center justify-center text-xl font-extrabold text-blue-100 pointer-events-none -translate-y-[3px] [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">5</span>
+        </div>
+      </div>
+      <!-- Jeton 10 : drag 10 jetons d'un coup -->
+      <div
+        v-if="displayedBalance >= 10"
+        class="pupu-stack flex items-center ml-2"
+        :class="[
+          canBet && !isPlacing && displayedBalance >= 10 ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none',
+          canBet && !isPlacing && displayedBalance >= 10 ? 'kikiri-touch-draggable' : '',
+        ]"
+        :draggable="!!(canBet && !isPlacing && displayedBalance >= 10)"
+        @dragstart="onBalanceDragStart($event, 10)"
+        @dragend="onDragEnd"
+      >
+        <div class="relative flex-shrink-0">
+          <img :src="jijiTokenImg" alt="Jiji x10" class="w-10 h-10 block" :class="canBet && !isPlacing && displayedBalance >= 10 ? 'kikiri-touch-draggable' : ''" />
+          <span class="absolute inset-0 flex items-center justify-center text-xl font-extrabold text-blue-100 pointer-events-none -translate-y-[3px] [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">10</span>
+        </div>
       </div>
       </div>
     <button
       v-if="canBet && totalBetAmount > 0"
       type="button"
-      class="flex-shrink-0 px-4 py-2 rounded-lg border-2 border-red-600 bg-red-700 text-white font-bold text-sm hover:bg-red-600 hover:border-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      class="hidden md:block flex-shrink-0 px-4 py-2 rounded-lg border-2 border-red-600 bg-red-700 text-white font-bold text-sm hover:bg-red-600 hover:border-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       :disabled="isPlacing"
       @click="clearAllBets"
     >
       Retirer tout
     </button>
+    </div>
+
+    <!-- Règles / Tips Kikiri -->
+    <div
+      v-if="showTips"
+      class="mt-4 px-4 py-3 rounded-xl border border-amber-600/50 bg-amber-900/30 text-amber-100 text-sm space-y-2"
+    >
+      <p class="font-medium text-amber-200">Règles / Conseils</p>
+      <ul class="list-disc list-inside space-y-1 text-amber-100/90">
+        <li>Pour miser, faites glisser des jetons <JijiIcon size="xs" class="inline align-middle" /> de votre solde sur le plateau.</li>
+        <li>Vous pouvez déplacer vos jetons <JijiIcon size="xs" class="inline align-middle" /> sur le plateau ou encore les ramener dans votre solde avant la fin du décompte.</li>
+        <li>À la fin du décompte, tous les jetons <JijiIcon size="xs" class="inline align-middle" /> présents sur le plateau sont considérés comme misés.</li>
+        <li>Si vous avez une déconnexion ou si vous quittez la page avant la fin du décompte, vos jetons <JijiIcon size="xs" class="inline align-middle" /> ne seront pas misés sur ce tirage.</li>
+        <li>On ne peut pas encore déplacer les jetons <JijiIcon size="xs" class="inline align-middle" /> des autres joueurs (Taviri opo).</li>
+      </ul>
+      <div class="flex gap-2 pt-2">
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-lg border border-amber-600/60 bg-amber-800/50 text-amber-100 text-xs font-medium hover:bg-amber-800/70 transition-colors"
+          @click="closeTips"
+        >
+          Fermer
+        </button>
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded-lg border border-amber-600/60 bg-amber-800/50 text-amber-100 text-xs font-medium hover:bg-amber-800/70 transition-colors"
+          @click="hideTipsForever"
+        >
+          Ne plus afficher
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -1413,6 +1605,12 @@ onUnmounted(() => {
   border-color: rgba(59, 130, 246, 0.9);
   background-color: rgba(30, 58, 138, 0.5);
   box-shadow: inset 0 0 12px rgba(96, 165, 250, 0.2);
+}
+
+/* Mobile: empêcher le scroll pendant le drag (touch-action) */
+.kikiri-touch-draggable {
+  touch-action: none;
+  -ms-touch-action: none;
 }
 
 </style>

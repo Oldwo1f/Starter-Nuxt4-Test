@@ -88,6 +88,9 @@ export class User {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   walletBalance: number; // Solde en Pūpū
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  jijiBalance: number; // Solde en Jiji (jetons de jeux)
+
   @Column({ type: 'varchar', nullable: true, unique: true })
   referralCode: string | null; // Code de parrainage unique
 

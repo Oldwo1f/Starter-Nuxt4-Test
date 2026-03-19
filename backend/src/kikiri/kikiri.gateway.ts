@@ -68,13 +68,17 @@ export class KikiriGateway {
         this.kikiriService.getDrawHistoryWithUserResults(userId, 10),
         this.kikiriService.getRecentChatMessages(50),
       ]);
-      const balance = await this.walletService.getBalance(userId);
+      const balance = await this.walletService.getJijiBalance(userId);
       let currentDrawWithBets = currentDraw;
       if (currentDraw) {
-        const allBets = await this.kikiriService.getAllBetsByCaseForDraw(currentDraw.id);
+        const [allBets, userBets] = await Promise.all([
+          this.kikiriService.getAllBetsByCaseForDraw(currentDraw.id),
+          this.kikiriService.getUserBetsByNumberForDraw(currentDraw.id, userId),
+        ]);
         currentDrawWithBets = {
           ...currentDraw,
           allBets: JSON.parse(JSON.stringify(allBets)),
+          userBets,
         } as any;
       }
       const sockets = await this.server.in(KIKIRI_ROOM).fetchSockets();
@@ -113,8 +117,23 @@ export class KikiriGateway {
     this.server.to(KIKIRI_ROOM).emit('kikiri:onlineUsers', { users });
   }
 
+  /** Étape 1 : annonce qu'une nouvelle partie va commencer (compteur 5s côté client) */
+  emitDrawStartingSoon() {
+    this.server.to(KIKIRI_ROOM).emit('kikiri:draw:startingSoon');
+  }
+
   emitDrawEnding(drawId: number) {
     this.server.to(KIKIRI_ROOM).emit('kikiri:draw:ending', { drawId });
+  }
+
+  /** Notifie les joueurs que la table sera fermée après le tirage en cours */
+  emitTableClosingAfterDraw() {
+    this.server.to(KIKIRI_ROOM).emit('kikiri:tableClosingAfterDraw');
+  }
+
+  /** Notifie les joueurs que la table est fermée (après résolution du dernier tirage) */
+  emitTableClosed() {
+    this.server.to(KIKIRI_ROOM).emit('kikiri:tableClosed');
   }
 
   async emitNewDraw(draw: any) {
@@ -173,13 +192,17 @@ export class KikiriGateway {
       this.kikiriService.getDrawHistoryWithUserResults(userId, 10),
       this.kikiriService.getRecentChatMessages(50),
     ]);
-    const balance = await this.walletService.getBalance(userId);
+    const balance = await this.walletService.getJijiBalance(userId);
     let currentDrawWithBets = currentDraw;
     if (currentDraw) {
-      const allBets = await this.kikiriService.getAllBetsByCaseForDraw(currentDraw.id);
+      const [allBets, userBets] = await Promise.all([
+        this.kikiriService.getAllBetsByCaseForDraw(currentDraw.id),
+        this.kikiriService.getUserBetsByNumberForDraw(currentDraw.id, userId),
+      ]);
       currentDrawWithBets = {
         ...currentDraw,
         allBets: JSON.parse(JSON.stringify(allBets)),
+        userBets,
       } as any;
     }
     const sockets = await this.server.in(KIKIRI_ROOM).fetchSockets();
@@ -223,7 +246,7 @@ export class KikiriGateway {
         payload.number,
         payload.amount,
       );
-      const balance = await this.walletService.getBalance(userId);
+      const balance = await this.walletService.getJijiBalance(userId);
       client.emit('kikiri:bet:placed', {
         bet: {
           id: bet.id,
@@ -283,7 +306,7 @@ export class KikiriGateway {
     if (!userId || typeof userId !== 'number') return;
     const { drawId, delta, case: caseNum } = payload ?? {};
     if (typeof drawId !== 'number' || typeof caseNum !== 'number' || caseNum < 1 || caseNum > 6) return;
-    if (delta !== 1 && delta !== -1) return;
+    if (typeof delta !== 'number' || delta === 0 || !Number.isInteger(delta)) return;
     this.server.to(KIKIRI_ROOM).emit('kikiri:betPreview', {
       drawId,
       userId,
@@ -313,6 +336,7 @@ export class KikiriGateway {
               firstName: user.firstName,
               lastName: user.lastName,
               email: user.email,
+              avatarImage: user.avatarImage,
             }
           : null,
       };

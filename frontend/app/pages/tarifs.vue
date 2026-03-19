@@ -98,7 +98,9 @@ const teOhiPack = {
     'Accès aux goodies et aux partenaires',
     'Accès à Nuna\'a Troc',
     '🐚 50 Pūpū offerts',
+    { text: '+ 2 000', unit: '/ semaine', icon: 'jiji' },
     'Te Natira\'a à prix membre',
+    'Liste Crypto expertisées #1',
   ],
   buttonLabel: authStore.isAuthenticated ? 'Déjà membre' : 'Choisir ce pack',
   buttonAction: () => {
@@ -118,9 +120,10 @@ const umetePack = {
   features: [
     'Tout du pack Te Ohi +',
     '+ 🐚 50 Pūpū offerts (100 au total)',
+    { text: '+ 4 000', unit: '/ semaine', icon: 'jiji' },
     'Cours avancés de l\'Academy débloqués',
     'Goodies premium débloqués',
-    'Liste Crypto expertisées #1',
+    'Liste Crypto expertisées #2',
   ],
   buttonLabel: authStore.isAuthenticated ? 'Passer Premium' : 'Choisir ce pack',
   buttonAction: () => {
@@ -319,7 +322,16 @@ const vipInvestPacks = [
                     name="i-heroicons-check-circle"
                     class="mt-0.5 h-5 w-5 shrink-0 text-primary-400"
                   />
-                  <span class="text-white/80">{{ feature }}</span>
+                  <span class="inline-flex items-center gap-1.5 text-white/80">
+                    <template v-if="typeof feature === 'object' && feature.icon === 'jiji'">
+                      {{ feature.text }}
+                      <JijiIcon size="sm" class="inline" />
+                      {{ feature.unit }}
+                    </template>
+                    <template v-else>
+                      {{ feature }}
+                    </template>
+                  </span>
                 </li>
               </ul>
 
@@ -391,7 +403,16 @@ const vipInvestPacks = [
                     name="i-heroicons-check-circle"
                     class="mt-0.5 h-5 w-5 shrink-0 text-primary-400"
                   />
-                  <span class="text-white/80">{{ feature }}</span>
+                  <span class="inline-flex items-center gap-1.5 text-white/80">
+                    <template v-if="typeof feature === 'object' && feature.icon === 'jiji'">
+                      {{ feature.text }}
+                      <JijiIcon size="sm" class="inline" />
+                      {{ feature.unit }}
+                    </template>
+                    <template v-else>
+                      {{ feature }}
+                    </template>
+                  </span>
                 </li>
               </ul>
 

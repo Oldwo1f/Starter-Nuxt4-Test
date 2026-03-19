@@ -12,6 +12,9 @@ import {
   UseInterceptors,
   UploadedFiles,
   ParseIntPipe,
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -56,7 +59,7 @@ export class CreateBlogDto {
   @IsNotEmpty()
   content: string;
 
-  @ApiProperty({ description: 'Status: draft, active, archived', required: false, enum: BlogStatus })
+  @ApiProperty({ description: 'Status: draft, pending, active, archived', required: false, enum: BlogStatus })
   @IsOptional()
   @IsEnum(BlogStatus)
   status?: BlogStatus;
@@ -109,7 +112,7 @@ export class UpdateBlogDto {
   @IsOptional()
   images?: string[];
 
-  @ApiProperty({ description: 'Status: draft, active, archived', required: false, enum: BlogStatus })
+  @ApiProperty({ description: 'Status: draft, pending, active, archived', required: false, enum: BlogStatus })
   @IsOptional()
   @IsEnum(BlogStatus)
   status?: BlogStatus;
@@ -144,7 +147,7 @@ export class BlogController {
 
   private parseBlogMeta(dto: any): { status?: BlogStatus; publishedAt?: Date | null; isPinned?: boolean } {
     const meta: { status?: BlogStatus; publishedAt?: Date | null; isPinned?: boolean } = {};
-    if (dto.status && ['draft', 'active', 'archived'].includes(dto.status)) {
+    if (dto.status && ['draft', 'pending', 'active', 'archived'].includes(dto.status)) {
       meta.status = dto.status as BlogStatus;
     }
     if (dto.publishedAt !== undefined && dto.publishedAt !== '' && dto.publishedAt !== null) {
@@ -156,6 +159,14 @@ export class BlogController {
       meta.isPinned = dto.isPinned === true || dto.isPinned === 'true';
     }
     return meta;
+  }
+
+  private isStaff(user: { role: string }): boolean {
+    return [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR].includes(user.role as UserRole);
+  }
+
+  private canCreateBlog(user: { role: string }): boolean {
+    return [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR, UserRole.MEMBER, UserRole.PREMIUM, UserRole.VIP].includes(user.role as UserRole);
   }
 
   private async saveBlogImages(blogId: number, files: Express.Multer.File[]): Promise<string[]> {
@@ -177,25 +188,37 @@ export class BlogController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR)
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FilesInterceptor('images', 10)) // Max 10 images
   @ApiBearerAuth('JWT-auth')
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Create a new blog post', description: 'Create a new blog post with images (admin/staff only)' })
+  @ApiOperation({ summary: 'Create a new blog post', description: 'Staff: any status. Members: draft or pending only.' })
   @ApiBody({ type: CreateBlogDto })
   @ApiResponse({ status: 201, description: 'Blog post successfully created' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin/Staff only' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Members only (member, premium, vip)' })
   async create(
     @Body() createBlogDto: CreateBlogDto & { status?: string; publishedAt?: string; isPinned?: string },
     @Request() req,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
+    if (!this.canCreateBlog(req.user)) {
+      throw new ForbiddenException('La création d\'articles est réservée aux membres. Devenez membre pour poster des articles.');
+    }
+
     const meta = this.parseBlogMeta(createBlogDto);
-    const status = meta.status ?? BlogStatus.DRAFT;
-    const publishedAt = meta.publishedAt;
-    const isPinned = meta.isPinned ?? false;
+    let status = meta.status ?? BlogStatus.DRAFT;
+    let publishedAt = meta.publishedAt;
+    let isPinned = meta.isPinned ?? false;
+
+    // Members cannot set active, archived, or isPinned
+    if (!this.isStaff(req.user)) {
+      if (status === BlogStatus.ACTIVE || status === BlogStatus.ARCHIVED) {
+        status = BlogStatus.PENDING;
+      }
+      isPinned = false;
+      publishedAt = null; // Members cannot schedule publication
+    }
 
     if (files && files.length > 0) {
       const blogPost = await this.blogService.create(
@@ -235,6 +258,24 @@ export class BlogController {
     );
   }
 
+  @Get('my')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get current user\'s blog posts', description: 'Returns all posts by the authenticated user (all statuses).' })
+  @ApiResponse({ status: 200, description: 'Paginated list of user\'s blog posts' })
+  findMy(@Query() query: BlogPaginationQueryDto, @Request() req: { user: { id: number } }) {
+    return this.blogService.findAllPaginated(
+      query.page ?? 1,
+      query.pageSize ?? 10,
+      query.search,
+      req.user.id,
+      query.sortBy ?? 'createdAt',
+      query.sortOrder ?? 'DESC',
+      query.status,
+      false, // forPublic = false to see all statuses
+    );
+  }
+
   @Get()
   @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({
@@ -263,34 +304,54 @@ export class BlogController {
 
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
-  @ApiOperation({ summary: 'Get a blog post by ID', description: 'Public: active posts only. Admin: any post.' })
+  @ApiOperation({ summary: 'Get a blog post by ID', description: 'Public: active only. Admin: any. Author: own draft/pending.' })
   @ApiParam({ name: 'id', description: 'Blog post ID', type: 'number' })
   @ApiResponse({ status: 200, description: 'Blog post retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Blog post not found' })
-  findOne(@Param('id') id: string, @Request() req: { user?: { role: string } }) {
+  async findOne(@Param('id') id: string, @Request() req: { user?: { id: number; role: string } }) {
     const isAdmin = req.user && [UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR].includes(req.user.role as UserRole);
     const forPublic = !isAdmin;
-    return this.blogService.findOne(+id, forPublic);
+    try {
+      return await this.blogService.findOne(+id, forPublic);
+    } catch (e) {
+      if (req.user && e instanceof NotFoundException) {
+        const post = await this.blogService.findOne(+id, false);
+        if (post.authorId === req.user.id) return post;
+      }
+      throw e;
+    }
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR)
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FilesInterceptor('images', 10)) // Max 10 images
   @ApiBearerAuth('JWT-auth')
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Update a blog post', description: 'Update an existing blog post with images (admin/staff only)' })
+  @ApiOperation({ summary: 'Update a blog post', description: 'Staff: any post. Members: own draft/pending only.' })
   @ApiParam({ name: 'id', description: 'Blog post ID', type: 'number' })
   @ApiBody({ type: UpdateBlogDto })
   @ApiResponse({ status: 200, description: 'Blog post successfully updated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin/Staff only' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Blog post not found' })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateBlogDto: any, // Use any to handle FormData properly
+    @Request() req,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
+    const existing = await this.blogService.findOne(id, false);
+    const isStaff = this.isStaff(req.user);
+
+    if (!isStaff) {
+      if (existing.authorId !== req.user.id) {
+        throw new ForbiddenException('Vous ne pouvez modifier que vos propres articles.');
+      }
+      if (existing.status !== BlogStatus.DRAFT && existing.status !== BlogStatus.PENDING) {
+        throw new ForbiddenException('Seuls les articles en brouillon ou en attente peuvent être modifiés.');
+      }
+    }
+
     let imageUrls: string[] | undefined;
 
     // Parse existing images if provided as JSON string
@@ -298,45 +359,98 @@ export class BlogController {
       try {
         imageUrls = JSON.parse(updateBlogDto.images);
       } catch (e) {
-        // If parsing fails, treat as empty array
         imageUrls = [];
       }
     } else if (Array.isArray(updateBlogDto.images)) {
       imageUrls = updateBlogDto.images;
     }
 
-    // If new images are uploaded, add them to existing ones or replace
     if (files && files.length > 0) {
       const newImageUrls = await this.saveBlogImages(id, files);
-      // Combine existing and new images
       imageUrls = [...(imageUrls || []), ...newImageUrls];
     }
 
     const meta = this.parseBlogMeta(updateBlogDto);
+    let status = meta.status;
+    let publishedAt = meta.publishedAt;
+    let isPinned = meta.isPinned;
+
+    // Members cannot set active, archived, or isPinned
+    if (!isStaff) {
+      if (status === BlogStatus.ACTIVE || status === BlogStatus.ARCHIVED) {
+        status = undefined; // Keep current status
+      }
+      isPinned = existing.isPinned; // Preserve, don't allow change
+      publishedAt = existing.publishedAt; // Preserve
+    }
+
     return this.blogService.update(
       id,
       updateBlogDto.title,
       updateBlogDto.content,
       imageUrls,
       updateBlogDto.videoUrl,
-      meta.status,
-      meta.publishedAt,
-      meta.isPinned,
+      status,
+      publishedAt,
+      isPinned,
     );
   }
 
-  @Delete(':id')
+  @Patch(':id/approve')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Delete a blog post', description: 'Delete a blog post by ID (admin/staff only)' })
+  @ApiOperation({ summary: 'Approve a pending blog post', description: 'Staff only. Sets status to active and sends approval email to author.' })
+  @ApiParam({ name: 'id', description: 'Blog post ID', type: 'number' })
+  @ApiResponse({ status: 200, description: 'Blog post approved and email sent' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Blog post not found' })
+  async approve(@Param('id', ParseIntPipe) id: number) {
+    return this.blogService.approve(id);
+  }
+
+  @Patch(':id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Reject a pending blog post', description: 'Staff only. Sets status to draft and sends rejection email with reason to author.' })
+  @ApiParam({ name: 'id', description: 'Blog post ID', type: 'number' })
+  @ApiBody({ schema: { type: 'object', required: ['reason'], properties: { reason: { type: 'string' } } } })
+  @ApiResponse({ status: 200, description: 'Blog post rejected and email sent' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Blog post not found' })
+  async reject(@Param('id', ParseIntPipe) id: number, @Body('reason') reason: string) {
+    if (!reason || typeof reason !== 'string' || !reason.trim()) {
+      throw new BadRequestException('La raison du rejet est obligatoire.');
+    }
+    return this.blogService.reject(id, reason.trim());
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Delete a blog post', description: 'Staff: any post. Members: own draft/pending only.' })
   @ApiParam({ name: 'id', description: 'Blog post ID', type: 'number' })
   @ApiResponse({ status: 200, description: 'Blog post successfully deleted' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin/Staff only' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Blog post not found' })
-  remove(@Param('id') id: string) {
-    return this.blogService.remove(+id);
+  async remove(@Param('id', ParseIntPipe) id: number, @Request() req) {
+    const existing = await this.blogService.findOne(id, false);
+    const isStaff = this.isStaff(req.user);
+
+    if (!isStaff) {
+      if (existing.authorId !== req.user.id) {
+        throw new ForbiddenException('Vous ne pouvez supprimer que vos propres articles.');
+      }
+      if (existing.status !== BlogStatus.DRAFT && existing.status !== BlogStatus.PENDING) {
+        throw new ForbiddenException('Seuls les articles en brouillon ou en attente peuvent être supprimés.');
+      }
+    }
+
+    return this.blogService.remove(id);
   }
 }
 

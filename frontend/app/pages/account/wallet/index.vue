@@ -16,6 +16,7 @@ const { isProfileComplete } = useProfileValidation()
 const fetchData = async () => {
   await Promise.all([
     walletStore.fetchBalance(),
+    walletStore.fetchJijiBalance(),
     walletStore.fetchTransactions(),
   ])
 }
@@ -31,10 +32,12 @@ onMounted(() => {
     
     <div class="space-y-2">
       <h1 class="text-3xl font-bold">Mon portefeuille</h1>
-      <p class="text-white/60">Gérez vos Pūpū et consultez vos transactions</p>
+      <p class="text-white/60">Gérez vos Pūpū, vos Jiji et consultez vos transactions</p>
     </div>
 
-    <!-- Balance Card -->
+    <!-- Balances -->
+    <div class="grid gap-6 sm:grid-cols-2">
+    <!-- Pūpū Balance Card -->
     <UCard class="bg-gradient-to-r from-primary-500/20 to-primary-600/20">
       <div class="text-center">
         <div class="mb-2 text-sm text-white/60">Solde disponible</div>
@@ -57,6 +60,31 @@ onMounted(() => {
         </UButton>
       </div>
     </UCard>
+
+    <!-- Jiji Balance Card -->
+    <UCard class="bg-gradient-to-r from-amber-500/20 to-amber-600/20">
+      <div class="text-center">
+        <div class="mb-2 text-sm text-white/60">Jetons Jiji (jeux)</div>
+        <div class="mb-4 flex items-center justify-center gap-2 text-5xl font-bold text-amber-500">
+          <JijiIcon size="lg" />
+          <span>{{ Math.round(walletStore.jijiBalance) }}</span>
+        </div>
+        <div class="text-sm text-white/60">
+          Pour Bingo et Kikiri
+        </div>
+        <UButton
+          to="/games/bingo"
+          color="neutral"
+          variant="soft"
+          size="lg"
+          class="mt-6"
+          icon="i-heroicons-play"
+        >
+          Jouer
+        </UButton>
+      </div>
+    </UCard>
+    </div>
 
     <!-- Transactions -->
     <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">

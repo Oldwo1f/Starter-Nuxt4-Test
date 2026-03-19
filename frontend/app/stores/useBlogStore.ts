@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './useAuthStore'
 
-export type BlogStatus = 'draft' | 'active' | 'archived'
+export type BlogStatus = 'draft' | 'pending' | 'active' | 'archived'
 
 export interface BlogPost {
   id: number
@@ -69,7 +69,7 @@ export const useBlogStore = defineStore('blog', () => {
   // États pour les filtres
   const globalFilter = ref('')
   const authorIdFilter = ref('')
-  const statusFilter = ref<BlogStatus | ''>('')
+  const statusFilter = ref<BlogStatus | '_all'>('_all')
 
   // États pour le tri et la pagination
   const sorting = ref<SortingState[]>([])
@@ -146,7 +146,7 @@ export const useBlogStore = defineStore('blog', () => {
           params.authorId = authorId
         }
       }
-      if (statusFilter.value) {
+      if (statusFilter.value && statusFilter.value !== '_all') {
         params.status = statusFilter.value
       }
 
@@ -360,7 +360,7 @@ export const useBlogStore = defineStore('blog', () => {
   const resetFilters = () => {
     globalFilter.value = ''
     authorIdFilter.value = ''
-    statusFilter.value = ''
+    statusFilter.value = '_all'
     sorting.value = []
     pagination.value = {
       pageIndex: 0,
@@ -382,6 +382,7 @@ export const useBlogStore = defineStore('blog', () => {
 
   const statusLabels: Record<BlogStatus, string> = {
     draft: 'Brouillon',
+    pending: 'En attente de validation',
     active: 'Actif',
     archived: 'Archivé',
   }

@@ -14,6 +14,7 @@ export interface User {
   isCertified?: boolean
   lastLogin?: string | null
   walletBalance?: number
+  jijiBalance?: number
   createdAt: string
   updatedAt: string
 }

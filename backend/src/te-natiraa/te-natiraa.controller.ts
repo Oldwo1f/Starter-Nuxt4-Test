@@ -64,7 +64,7 @@ export class TeNatiraaController {
 
   @Post('validate/:qrCode')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Validate a QR code (mark as used)',
@@ -77,7 +77,7 @@ export class TeNatiraaController {
 
   @Get('registrations')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'List Te Natira\'a registrations',
@@ -97,7 +97,7 @@ export class TeNatiraaController {
 
   @Get('registrations/grouped')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'List registrations grouped by event',
@@ -110,7 +110,7 @@ export class TeNatiraaController {
 
   @Get('events')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'List all Te Natira\'a events',
@@ -123,7 +123,7 @@ export class TeNatiraaController {
 
   @Post('events')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Create a Te Natira\'a event',
@@ -136,7 +136,7 @@ export class TeNatiraaController {
 
   @Put('events/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Update a Te Natira\'a event',
@@ -149,7 +149,7 @@ export class TeNatiraaController {
 
   @Delete('events/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Delete a Te Natira\'a event',

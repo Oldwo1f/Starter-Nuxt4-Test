@@ -4,23 +4,29 @@ definePageMeta({
   title: 'Gestion du blog',
 })
 
+import { useAuthStore } from '~/stores/useAuthStore'
 import { useBlogStore } from '~/stores/useBlogStore'
 import type { EditorToolbarItem } from '#ui/types'
 import type { BlogPost } from '~/stores/useBlogStore'
 
 const blogStore = useBlogStore()
+const authStore = useAuthStore()
 const toast = useToast()
+const config = useRuntimeConfig()
 const { getImageUrl } = useApi()
+const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
 
 const statusFilterOptions = [
-  { value: '', label: 'Tous' },
+  { value: '_all', label: 'Tous' },
   { value: 'draft', label: 'Brouillon' },
+  { value: 'pending', label: 'En attente de validation' },
   { value: 'active', label: 'Actif' },
   { value: 'archived', label: 'Archivé' },
 ]
 
 const statusOptions = [
   { value: 'draft', label: 'Brouillon' },
+  { value: 'pending', label: 'En attente de validation' },
   { value: 'active', label: 'Actif' },
   { value: 'archived', label: 'Archivé' },
 ]
@@ -185,6 +191,90 @@ const handleDeletePost = async () => {
 const handleConfirmDelete = (post: BlogPost) => {
   blogStore.selectedPost = post
   blogStore.confirmDelete()
+}
+
+const handleApprove = async (post: BlogPost) => {
+  try {
+    await $fetch(`${API_BASE_URL}/blog/${post.id}/approve`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${authStore.accessToken}`,
+      },
+    })
+    toast.add({
+      title: 'Article approuvé',
+      description: `"${post.title}" a été publié. Un email a été envoyé à l'auteur.`,
+      color: 'success',
+      icon: 'i-heroicons-check-circle',
+    })
+    await handleFetchPosts()
+  } catch (err: any) {
+    toast.add({
+      title: 'Erreur',
+      description: err.data?.message || err.message || 'Erreur lors de l\'approbation',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+  }
+}
+
+// Modal de rejet avec raison obligatoire
+const isRejectModalOpen = ref(false)
+const postToReject = ref<BlogPost | null>(null)
+const rejectReason = ref('')
+const isRejecting = ref(false)
+
+const openRejectModal = (post: BlogPost) => {
+  postToReject.value = post
+  rejectReason.value = ''
+  isRejectModalOpen.value = true
+}
+
+const closeRejectModal = () => {
+  isRejectModalOpen.value = false
+  postToReject.value = null
+  rejectReason.value = ''
+}
+
+const handleReject = async () => {
+  const post = postToReject.value
+  if (!post || !rejectReason.value.trim()) {
+    toast.add({
+      title: 'Raison obligatoire',
+      description: 'Veuillez indiquer la raison du rejet avant de confirmer.',
+      color: 'warning',
+      icon: 'i-heroicons-exclamation-triangle',
+    })
+    return
+  }
+  isRejecting.value = true
+  try {
+    await $fetch(`${API_BASE_URL}/blog/${post.id}/reject`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${authStore.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: { reason: rejectReason.value.trim() },
+    })
+    toast.add({
+      title: 'Article rejeté',
+      description: `"${post.title}" a été remis en brouillon. Un email avec la raison du rejet a été envoyé à l'auteur.`,
+      color: 'warning',
+      icon: 'i-heroicons-x-circle',
+    })
+    closeRejectModal()
+    await handleFetchPosts()
+  } catch (err: any) {
+    toast.add({
+      title: 'Erreur',
+      description: err.data?.message || err.message || 'Erreur lors du rejet',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+  } finally {
+    isRejecting.value = false
+  }
 }
 
 const items: EditorToolbarItem[][] = [
@@ -470,7 +560,7 @@ const getImagePreviewUrl = (file: File) => {
           >
             <template #statusFormatted-cell="{ row }">
               <UBadge
-                :color="row.original.status === 'active' ? 'success' : row.original.status === 'draft' ? 'warning' : 'neutral'"
+                :color="row.original.status === 'active' ? 'success' : row.original.status === 'draft' ? 'warning' : row.original.status === 'pending' ? 'primary' : 'neutral'"
                 variant="soft"
                 size="sm"
               >
@@ -487,6 +577,24 @@ const getImagePreviewUrl = (file: File) => {
             </template>
             <template #actions-cell="{ row }">
               <div class="flex items-center gap-2">
+                <UButton
+                  v-if="row.original.status === 'pending'"
+                  label="Approuver"
+                  icon="i-heroicons-check"
+                  color="success"
+                  variant="subtle"
+                  size="sm"
+                  @click="handleApprove(row.original)"
+                />
+                <UButton
+                  v-if="row.original.status === 'pending'"
+                  label="Rejeter"
+                  icon="i-heroicons-x-mark"
+                  color="warning"
+                  variant="subtle"
+                  size="sm"
+                  @click="openRejectModal(row.original)"
+                />
                 <UButton
                   label="Éditer"
                   icon="i-heroicons-pencil"
@@ -724,6 +832,62 @@ const getImagePreviewUrl = (file: File) => {
             :loading="blogStore.isDeleting"
           >
             {{ blogStore.isEditMode ? 'Enregistrer' : 'Créer' }}
+          </UButton>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- Modal de rejet avec raison obligatoire -->
+    <UModal v-model:open="isRejectModalOpen" @close="closeRejectModal">
+      <template #header>
+        <div class="flex items-center gap-2">
+          <UIcon name="i-heroicons-x-circle" class="w-5 h-5 text-warning-500" />
+          <span class="font-medium">Rejeter l'article</span>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="p-6 space-y-4">
+          <UAlert
+            color="warning"
+            variant="soft"
+            icon="i-heroicons-exclamation-triangle"
+            title="Raison obligatoire"
+            description="La raison du rejet sera envoyée par email à l'auteur. Veuillez la renseigner ci-dessous."
+          />
+          <template v-if="postToReject">
+            <p class="text-white/90">
+              Article : <strong class="text-white">"{{ postToReject.title }}"</strong>
+            </p>
+          </template>
+          <UFormGroup label="Raison du rejet" name="rejectReason" required>
+            <UTextarea
+              v-model="rejectReason"
+              placeholder="Ex: Le contenu ne correspond pas aux critères éditoriaux..."
+              :rows="4"
+              class="w-full"
+            />
+          </UFormGroup>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            @click="closeRejectModal"
+            :disabled="isRejecting"
+          >
+            Annuler
+          </UButton>
+          <UButton
+            color="warning"
+            @click="handleReject"
+            :loading="isRejecting"
+            :disabled="isRejecting || !rejectReason.trim()"
+          >
+            Confirmer le rejet
           </UButton>
         </div>
       </template>

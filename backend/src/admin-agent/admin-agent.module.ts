@@ -13,6 +13,9 @@ import { BillingModule } from '../billing/billing.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { ReferralModule } from '../referral/referral.module';
 import { MarketplaceModule } from '../marketplace/marketplace.module';
+import { BingoModule } from '../bingo/bingo.module';
+import { KikiriModule } from '../kikiri/kikiri.module';
+import { TeNatiraaModule } from '../te-natiraa/te-natiraa.module';
 
 @Module({
   imports: [
@@ -28,6 +31,9 @@ import { MarketplaceModule } from '../marketplace/marketplace.module';
     WalletModule,
     ReferralModule,
     MarketplaceModule,
+    BingoModule,
+    KikiriModule,
+    TeNatiraaModule,
   ],
   controllers: [AdminAgentController],
   providers: [AdminAgentService],

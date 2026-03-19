@@ -17,9 +17,10 @@ import tatouImage from '~/assets/images/tatou.jpg'
       aria-hidden="true"
     />
     <AppHeader />
-    <main class="flex-1">
+    <main class="flex-1 pb-20 md:pb-0">
       <slot />
     </main>
     <AppFooter />
+    <AppBottomNav />
   </div>
 </template>

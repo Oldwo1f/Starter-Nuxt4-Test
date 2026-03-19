@@ -43,12 +43,19 @@ const referralData = ref<{
 } | null>(null)
 const isLoadingReferral = ref(false)
 
-// État pour le formulaire de crédit
+// État pour le formulaire de crédit Pūpū
 const creditForm = ref({
   amount: 0,
   description: '',
 })
 const isCreditingUser = ref(false)
+
+// État pour le formulaire de crédit Jiji
+const creditJijiForm = ref({
+  amount: 0,
+  description: '',
+})
+const isCreditingJiji = ref(false)
 
 // Wrapper pour fetchUsers avec gestion des toasts
 const handleFetchUsers = async () => {
@@ -275,6 +282,72 @@ const handleCreditUser = async () => {
     })
   } finally {
     isCreditingUser.value = false
+  }
+}
+
+// Fonction pour créditer des Jiji à un utilisateur
+const handleCreditJijiUser = async () => {
+  if (!userStore.selectedUser) return
+
+  if (creditJijiForm.value.amount <= 0) {
+    toast.add({
+      title: 'Erreur',
+      description: 'Le montant doit être supérieur à 0',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+    return
+  }
+
+  if (!creditJijiForm.value.description || creditJijiForm.value.description.trim().length === 0) {
+    toast.add({
+      title: 'Erreur',
+      description: 'La description est requise',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+    return
+  }
+
+  isCreditingJiji.value = true
+  try {
+    await $fetch(
+      `${API_BASE_URL}/wallet/admin/credit-jiji/${userStore.selectedUser.id}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: {
+          amount: creditJijiForm.value.amount,
+          description: creditJijiForm.value.description.trim(),
+        },
+      }
+    )
+
+    toast.add({
+      title: 'Succès',
+      description: `${creditJijiForm.value.amount} Jiji ont été crédités à ${userStore.selectedUser.email}`,
+      color: 'success',
+      icon: 'i-heroicons-check-circle',
+    })
+
+    creditJijiForm.value = {
+      amount: 0,
+      description: '',
+    }
+
+    await handleFetchUsers()
+  } catch (error: any) {
+    toast.add({
+      title: 'Erreur',
+      description: error.data?.message || error.message || 'Erreur lors du crédit Jiji',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+  } finally {
+    isCreditingJiji.value = false
   }
 }
 
@@ -535,9 +608,15 @@ onUnmounted(() => {
                 size="sm"
                 :is-certified="row.original.isCertified === true"
               />
-              <div class="flex items-center gap-1 text-primary-500 font-semibold">
-                <span>🐚</span>
-                <span>{{ Math.round(row.original.walletBalance || 0) }}</span>
+              <div class="flex items-center gap-2 text-sm">
+                <div class="flex items-center gap-1 text-primary-500 font-semibold">
+                  <span>🐚</span>
+                  <span>{{ Math.round(row.original.walletBalance || 0) }}</span>
+                </div>
+                <div class="flex items-center gap-1 text-amber-500 font-semibold">
+                  <JijiIcon size="xs" />
+                  <span>{{ Math.round(row.original.jijiBalance || 0) }}</span>
+                </div>
               </div>
             </div>
           </template>
@@ -759,6 +838,23 @@ onUnmounted(() => {
                   disabled
                   icon="i-heroicons-check-badge"
                 />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-white/70 mb-2">Solde Pūpū</label>
+                <UInput
+                  :value="`${Math.round(userStore.selectedUser?.walletBalance || 0)} 🐚`"
+                  disabled
+                  icon="i-heroicons-currency-dollar"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-white/70 mb-2">Solde Jiji</label>
+                <div class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+                  <JijiIcon size="sm" />
+                  <span class="font-medium">{{ Math.round(userStore.selectedUser?.jijiBalance || 0) }}</span>
+                </div>
               </div>
 
               <div class="sm:col-span-2">
@@ -1008,7 +1104,56 @@ onUnmounted(() => {
                   block
                 >
                   <UIcon name="i-heroicons-plus-circle" class="mr-1" />
-                  Créditer l'utilisateur
+                  Créditer en Pūpū
+                </UButton>
+              </div>
+            </div>
+          </UCard>
+
+          <!-- Attribution de Jiji (si admin/superadmin) -->
+          <UCard v-if="canModifyRoles" class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <JijiIcon size="sm" />
+                <span class="font-medium">Attribuer des Jiji</span>
+              </div>
+            </template>
+            <div class="p-4 space-y-4">
+              <UFormGroup label="Montant (Jiji)" name="creditJijiAmount">
+                <UInput
+                  v-model.number="creditJijiForm.amount"
+                  type="number"
+                  min="1"
+                  step="1"
+                  placeholder="0"
+                />
+                <template #description>
+                  Montant en Jiji (jetons de jeux) à attribuer à cet utilisateur
+                </template>
+              </UFormGroup>
+
+              <UFormGroup label="Description" name="creditJijiDescription">
+                <UTextarea
+                  v-model="creditJijiForm.description"
+                  placeholder="Ex: Bonus pour participation à un événement"
+                  rows="3"
+                />
+                <template #description>
+                  Description de la transaction (sera préfixée par "[Nuna'a Heritage]")
+                </template>
+              </UFormGroup>
+
+              <div class="flex items-center gap-3 pt-2">
+                <UButton
+                  @click="handleCreditJijiUser"
+                  color="neutral"
+                  variant="soft"
+                  :loading="isCreditingJiji"
+                  :disabled="isCreditingJiji || !creditJijiForm.amount || creditJijiForm.amount <= 0 || !creditJijiForm.description"
+                  block
+                >
+                  <UIcon name="i-heroicons-plus-circle" class="mr-1" />
+                  Créditer en Jiji
                 </UButton>
               </div>
             </div>

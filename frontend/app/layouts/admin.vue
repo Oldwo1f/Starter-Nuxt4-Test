@@ -203,7 +203,19 @@ const allAdminMenuItems = [
     label: 'Te Natira\'a',
     icon: 'i-heroicons-ticket',
     to: '/admin/te-natiraa',
-    roles: ['admin', 'superadmin'], // Admin uniquement
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
+  },
+  {
+    label: 'Kikiri',
+    icon: 'i-heroicons-cube',
+    to: '/admin/kikiri',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
+  },
+  {
+    label: 'Bingo',
+    icon: 'i-heroicons-squares-2x2',
+    to: '/admin/bingo',
+    roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
 ]
 

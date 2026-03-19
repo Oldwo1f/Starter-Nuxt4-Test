@@ -2,17 +2,21 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { KikiriDraw, KikiriDrawStatus } from '../entities/kikiri-draw.entity';
 import { KikiriBet, KikiriBetResult } from '../entities/kikiri-bet.entity';
 import { KikiriChatMessage } from '../entities/kikiri-chat-message.entity';
+import { KikiriSession } from '../entities/kikiri-session.entity';
 import { User } from '../entities/user.entity';
 import { WalletService } from '../wallet/wallet.service';
+import { KikiriConfigService } from './kikiri-config.service';
 
 const SYSTEM_USER_EMAIL = 'system@nunaheritage.local';
-const BETTING_DURATION_MS = 5 * 60 * 1000;
+const DEFAULT_BETTING_DURATION_SEC = 300;
 
 @Injectable()
 export class KikiriService {
@@ -25,9 +29,13 @@ export class KikiriService {
     private betRepository: Repository<KikiriBet>,
     @InjectRepository(KikiriChatMessage)
     private chatRepository: Repository<KikiriChatMessage>,
+    @InjectRepository(KikiriSession)
+    private sessionRepository: Repository<KikiriSession>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private walletService: WalletService,
+    @Inject(forwardRef(() => KikiriConfigService))
+    private configService: KikiriConfigService,
   ) {}
 
   async getSystemUserId(): Promise<number> {
@@ -42,11 +50,65 @@ export class KikiriService {
     return this.systemUserId;
   }
 
+  async getSessionsWithDraws(limit = 50) {
+    const sessions = await this.sessionRepository.find({
+      relations: ['draws'],
+      order: { openedAt: 'DESC' },
+      take: limit,
+    });
+    return sessions.map((s) => ({
+      id: s.id,
+      openedAt: s.openedAt,
+      closedAt: s.closedAt,
+      bankNet: parseFloat(s.bankNet.toString()),
+      drawCount: s.draws?.length ?? 0,
+      draws: (s.draws ?? []).map((d) => ({
+        id: d.id,
+        dice1: d.dice1,
+        dice2: d.dice2,
+        dice3: d.dice3,
+        status: d.status,
+        resolvedAt: d.resolvedAt,
+      })),
+    }));
+  }
+
+  async getOrCreateCurrentSession(): Promise<KikiriSession | null> {
+    const isOpen = await this.configService.isGameOpen();
+    if (!isOpen) return null;
+    const openSession = await this.sessionRepository.findOne({
+      where: { closedAt: IsNull() },
+      order: { openedAt: 'DESC' },
+    });
+    if (openSession) return openSession;
+    const session = this.sessionRepository.create({
+      openedAt: new Date(),
+      bankNet: 0,
+    });
+    return await this.sessionRepository.save(session);
+  }
+
+  async closeCurrentSession(): Promise<void> {
+    const session = await this.sessionRepository.findOne({
+      where: { closedAt: IsNull() },
+      order: { openedAt: 'DESC' },
+    });
+    if (session) {
+      session.closedAt = new Date();
+      await this.sessionRepository.save(session);
+    }
+  }
+
   async createDraw() {
-    const bettingEndsAt = new Date(Date.now() + BETTING_DURATION_MS);
+    const config = await this.configService.getConfig();
+    const durationSec = config.bettingDurationSeconds ?? DEFAULT_BETTING_DURATION_SEC;
+    const durationMs = Math.max(60, Math.min(3600, durationSec)) * 1000;
+    const session = await this.getOrCreateCurrentSession();
+    const bettingEndsAt = new Date(Date.now() + durationMs);
     const draw = this.drawRepository.create({
       status: KikiriDrawStatus.BETTING,
       bettingEndsAt,
+      sessionId: session?.id ?? null,
     });
     return await this.drawRepository.save(draw);
   }
@@ -135,7 +197,7 @@ export class KikiriService {
       throw new BadRequestException('Amount must be greater than 0');
     }
     const systemUserId = await this.getSystemUserId();
-    await this.walletService.gameDebit(
+    await this.walletService.gameDebitJiji(
       userId,
       systemUserId,
       amount,
@@ -194,6 +256,20 @@ export class KikiriService {
     return await this.drawRepository.save(draw);
   }
 
+  /** Bilan banque pour un tirage : totalStaked - totalPaidOut (positif = banque gagne) */
+  async getBankNetForDraw(drawId: number): Promise<number> {
+    const bets = await this.betRepository.find({ where: { drawId } });
+    let totalStaked = 0;
+    let totalPaidOut = 0;
+    for (const bet of bets) {
+      totalStaked += parseFloat(bet.amount.toString());
+      if (bet.result === KikiriBetResult.WIN && bet.winAmount) {
+        totalPaidOut += parseFloat(bet.winAmount.toString());
+      }
+    }
+    return Math.round((totalStaked - totalPaidOut) * 100) / 100;
+  }
+
   async settleBetsAndResolveDraw(drawId: number) {
     const draw = await this.getDrawById(drawId);
     if (draw.status !== KikiriDrawStatus.REVEALING) {
@@ -215,7 +291,7 @@ export class KikiriService {
           100;
         bet.result = KikiriBetResult.WIN;
         bet.winAmount = winAmount;
-        await this.walletService.gameCredit(
+        await this.walletService.gameCreditJiji(
           systemUserId,
           bet.userId,
           winAmount,
@@ -227,7 +303,19 @@ export class KikiriService {
       await this.betRepository.save(bet);
     }
     draw.status = KikiriDrawStatus.RESOLVED;
-    return await this.drawRepository.save(draw);
+    await this.drawRepository.save(draw);
+    if (draw.sessionId) {
+      const bankNet = await this.getBankNetForDraw(drawId);
+      const session = await this.sessionRepository.findOne({
+        where: { id: draw.sessionId },
+      });
+      if (session) {
+        const current = parseFloat(session.bankNet.toString());
+        session.bankNet = Math.round((current + bankNet) * 100) / 100;
+        await this.sessionRepository.save(session);
+      }
+    }
+    return draw;
   }
 
   async sendChatMessage(userId: number, content: string) {
@@ -255,6 +343,7 @@ export class KikiriService {
             firstName: m.user.firstName,
             lastName: m.user.lastName,
             email: m.user.email,
+            avatarImage: m.user.avatarImage,
           }
         : null,
     }));
@@ -263,7 +352,7 @@ export class KikiriService {
   async getUserForChat(userId: number) {
     return await this.userRepository.findOne({
       where: { id: userId },
-      select: ['id', 'firstName', 'lastName', 'email'],
+      select: ['id', 'firstName', 'lastName', 'email', 'avatarImage'],
     });
   }
 

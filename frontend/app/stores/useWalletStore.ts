@@ -35,6 +35,7 @@ export const useWalletStore = defineStore('wallet', () => {
 
   // State
   const balance = ref<number>(0)
+  const jijiBalance = ref<number>(0)
   const transactions = ref<Transaction[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -74,6 +75,30 @@ export const useWalletStore = defineStore('wallet', () => {
       }
     } finally {
       isLoading.value = false
+    }
+  }
+
+  const fetchJijiBalance = async () => {
+    if (!authStore.accessToken) {
+      return { success: false, error: 'Non authentifié' }
+    }
+
+    try {
+      const response = await $fetch<{ jijiBalance: number }>(
+        `${API_BASE_URL}/wallet/jiji-balance`,
+        {
+          headers: {
+            Authorization: `Bearer ${authStore.accessToken}`,
+          },
+        }
+      )
+      jijiBalance.value = response.jijiBalance
+      return { success: true, data: response }
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err.data?.message || err.message || 'Erreur lors de la récupération du solde Jiji',
+      }
     }
   }
 
@@ -238,12 +263,14 @@ export const useWalletStore = defineStore('wallet', () => {
   return {
     // State
     balance: readonly(balance),
+    jijiBalance: readonly(jijiBalance),
     transactions: readonly(transactions),
     isLoading: readonly(isLoading),
     error: readonly(error),
     pagination: readonly(pagination),
     // Actions
     fetchBalance,
+    fetchJijiBalance,
     fetchTransactions,
     transfer,
     exchange,

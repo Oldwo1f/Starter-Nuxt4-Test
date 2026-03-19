@@ -180,38 +180,6 @@ const handleLegacyVerification = async () => {
   }
 }
 
-// Traiter manuellement un paiement Stripe en attente (bouton temporaire)
-const handleManualProcessPayment = async () => {
-  if (!stripeStore.payment?.stripeSessionId) {
-    toast.add({
-      title: 'Erreur',
-      description: 'Aucun paiement Stripe en attente trouvé',
-      color: 'red',
-    })
-    return
-  }
-
-  const res = await stripeStore.processPendingPayment(stripeStore.payment.stripeSessionId)
-  if (res.success) {
-    toast.add({
-      title: 'Paiement traité',
-      description: 'Le paiement a été traité avec succès. Vos droits sont maintenant actifs.',
-      color: 'success',
-    })
-  } else {
-    toast.add({
-      title: 'Erreur',
-      description: res.error || 'Impossible de traiter le paiement',
-      color: 'red',
-    })
-  }
-}
-
-// Vérifier si un paiement est en attente de traitement
-const hasPendingStripePayment = computed(() => {
-  return stripeStore.payment?.status === 'pending' && stripeStore.payment?.stripeSessionId
-})
-
 // Vérifier les paramètres de l'URL après retour de Stripe
 const route = useRoute()
 const router = useRouter()
@@ -223,11 +191,27 @@ onMounted(async () => {
 
   // Vérifier si on revient de Stripe
   if (route.query.success === 'true') {
-    toast.add({
-      title: 'Paiement réussi',
-      description: 'Votre cotisation a été confirmée. Vos droits sont maintenant actifs.',
-      color: 'success',
-    })
+    const sessionId = route.query.session_id as string | undefined
+    // Traiter le paiement si session_id présent (fallback si webhook pas encore reçu)
+    let paymentOk = true
+    if (sessionId) {
+      const res = await stripeStore.processPendingPayment(sessionId)
+      if (!res.success) {
+        paymentOk = false
+        toast.add({
+          title: 'Erreur',
+          description: stripeStore.error || 'Le paiement n\'a pas pu être finalisé. Contactez-nous si le problème persiste.',
+          color: 'red',
+        })
+      }
+    }
+    if (paymentOk) {
+      toast.add({
+        title: 'Paiement réussi',
+        description: 'Votre cotisation a été confirmée. Vos droits sont maintenant actifs.',
+        color: 'success',
+      })
+    }
     // Rafraîchir les données
     await authStore.fetchProfile()
     await stripeStore.fetchMyStripePayment()
@@ -247,35 +231,6 @@ onMounted(async () => {
 
 <template>
   <div class="space-y-6">
-    <!-- Bouton temporaire pour traiter manuellement un paiement en attente -->
-    <UCard
-      v-if="hasPendingStripePayment"
-      class="bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/30"
-    >
-      <div class="flex items-center justify-between">
-        <div class="flex-1">
-          <h3 class="text-lg font-semibold text-amber-300 mb-1">
-            Paiement Stripe en attente de traitement
-          </h3>
-          <p class="text-sm text-white/70">
-            Un paiement Stripe a été effectué mais n'a pas encore été traité automatiquement.
-            Cliquez sur le bouton ci-dessous pour le traiter manuellement.
-          </p>
-          <p v-if="stripeStore.payment?.stripeSessionId" class="text-xs text-white/50 mt-2 font-mono">
-            Session ID: {{ stripeStore.payment.stripeSessionId }}
-          </p>
-        </div>
-        <UButton
-          color="amber"
-          size="lg"
-          :loading="stripeStore.isLoading"
-          @click="handleManualProcessPayment"
-        >
-          Traiter le paiement manuellement
-        </UButton>
-      </div>
-    </UCard>
-
     <div class="space-y-2">
       <h1 class="text-3xl font-bold">Cotisation</h1>
       <p class="text-white/60">

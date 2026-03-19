@@ -14,6 +14,12 @@ export const useMemberCheck = () => {
     return ['member', 'premium', 'vip', 'admin', 'superadmin', 'moderator'].includes(role)
   })
 
+  const canCreateBlogPost = computed(() => {
+    const role = authStore.user?.role?.toLowerCase()
+    if (!role) return false
+    return ['member', 'premium', 'vip', 'admin', 'superadmin', 'moderator'].includes(role)
+  })
+
   /** True si l'utilisateur est chargé et authentifié mais n'est pas membre (inscrit) */
   const isNonMemberAuthenticated = computed(() => {
     if (!authStore.user || !authStore.isAuthenticated) return false
@@ -22,6 +28,7 @@ export const useMemberCheck = () => {
 
   return {
     canCreateListing,
+    canCreateBlogPost,
     isNonMemberAuthenticated,
   }
 }

@@ -32,6 +32,7 @@ export interface KikiriChatMessage {
     firstName?: string | null
     lastName?: string | null
     email?: string
+    avatarImage?: string | null
   } | null
 }
 
@@ -148,6 +149,15 @@ export const useKikiriSocket = () => {
     return () => {}
   }
 
+  const onDrawStartingSoon = (callback: () => void) => {
+    const s = getSocket()
+    if (s) {
+      s.on('kikiri:draw:startingSoon', callback)
+      return () => s.off('kikiri:draw:startingSoon', callback)
+    }
+    return () => {}
+  }
+
   const onDrawNew = (callback: (data: { draw: KikiriDraw }) => void) => {
     const s = getSocket()
     if (s) {
@@ -242,6 +252,24 @@ export const useKikiriSocket = () => {
     return () => {}
   }
 
+  const onTableClosingAfterDraw = (callback: () => void) => {
+    const s = getSocket()
+    if (s) {
+      s.on('kikiri:tableClosingAfterDraw', callback)
+      return () => s.off('kikiri:tableClosingAfterDraw', callback)
+    }
+    return () => {}
+  }
+
+  const onTableClosed = (callback: () => void) => {
+    const s = getSocket()
+    if (s) {
+      s.on('kikiri:tableClosed', callback)
+      return () => s.off('kikiri:tableClosed', callback)
+    }
+    return () => {}
+  }
+
   return {
     connect,
     disconnect,
@@ -256,6 +284,7 @@ export const useKikiriSocket = () => {
     onAllBets,
     onBetPreview,
     onOnlineUsers,
+    onDrawStartingSoon,
     onDrawNew,
     onDrawEnding,
     onDrawReveal,
@@ -264,6 +293,8 @@ export const useKikiriSocket = () => {
     onBetPlaced,
     onBetError,
     onChatMessage,
+    onTableClosingAfterDraw,
+    onTableClosed,
     isConnected: computed(() => kikiriSocketInstance?.connected ?? false),
   }
 }

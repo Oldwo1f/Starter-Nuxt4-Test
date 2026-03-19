@@ -23,6 +23,7 @@ export default defineNuxtConfig({
     backendInternalUrl: process.env.NUXT_BACKEND_INTERNAL_URL || '',
     public: {
       apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
+      frontendUrl: process.env.NUXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000',
       facebookAppId: process.env.NUXT_PUBLIC_FACEBOOK_APP_ID || '',
       stripePublishableKey: process.env.NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
     },

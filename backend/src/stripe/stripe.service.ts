@@ -14,8 +14,12 @@ import { User, UserRole } from '../entities/user.entity';
 import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
 import { TeNatiraaRegistration, TeNatiraaRegistrationStatus } from '../entities/te-natiraa-registration.entity';
 import { EmailService } from '../email/email.service';
+import { WalletService } from '../wallet/wallet.service';
 
 type PackCode = 'teOhi' | 'umete';
+
+const JIJI_TEOHI = 2000;
+const JIJI_UMETE = 5000;
 
 export interface CreateTeNatiraaCheckoutParams {
   firstName: string;
@@ -50,6 +54,7 @@ export class StripeService {
     private teNatiraaRegistrationsRepository: Repository<TeNatiraaRegistration>,
     private dataSource: DataSource,
     private emailService: EmailService,
+    private walletService: WalletService,
   ) {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) {
@@ -301,6 +306,12 @@ export class StripeService {
       throw new NotFoundException('Payment not found');
     }
 
+    // Idempotency: if already processed, skip to avoid double-crediting Pūpū/role
+    if (payment.status === StripePaymentStatus.PAID) {
+      console.log(`[Stripe Webhook] Payment already processed for session ${session.id}, skipping`);
+      return payment;
+    }
+
     // Update payment status
     payment.status = StripePaymentStatus.PAID;
     payment.paidAt = new Date();
@@ -382,6 +393,15 @@ export class StripeService {
         description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation ${pack === 'teOhi' ? 'Te Ohi' : 'Umete'} - Paiement Stripe`,
       });
       await transactionsRepo.save(transaction);
+
+      // Grant Jiji d'inscription (2000 Te Ohi, 5000 Umete)
+      const jijiAmount = pack === 'teOhi' ? JIJI_TEOHI : JIJI_UMETE;
+      await this.walletService.creditJijiSystem(
+        user.id,
+        jijiAmount,
+        `Jiji inscription - Cotisation ${pack === 'teOhi' ? 'Te Ohi' : 'Umete'} - Paiement Stripe`,
+        manager,
+      );
     });
 
     return payment;
@@ -416,7 +436,7 @@ export class StripeService {
     return this.processTeNatiraaCheckoutCompleted(session);
   }
 
-  async processPendingPaymentBySessionId(sessionId: string) {
+  async processPendingPaymentBySessionId(sessionId: string, currentUserId?: number) {
     console.log(`[Stripe] Processing pending payment for session: ${sessionId}`);
     
     // Retrieve session from Stripe
@@ -424,6 +444,14 @@ export class StripeService {
     
     if (session.payment_status !== 'paid') {
       throw new BadRequestException(`Session payment status is ${session.payment_status}, expected 'paid'`);
+    }
+
+    // For cotisation: verify session belongs to current user (security)
+    if (session.metadata?.type !== 'teNatiraa' && currentUserId !== undefined) {
+      const sessionUserId = parseInt(session.metadata?.userId || '0', 10);
+      if (sessionUserId !== currentUserId) {
+        throw new UnauthorizedException('Cette session de paiement ne vous appartient pas');
+      }
     }
 
     // Create a mock event to process
