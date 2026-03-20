@@ -58,7 +58,7 @@
     "migrate:jiji": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-jiji.ts",
     "migrate:game-period-winners": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-game-period-winners.ts",
     "migrate:bingo-ended-at": "ts-node --project tsconfig.seed.json -r tsconfig-paths/register src/database/migrations/run-migration-bingo-ended-at.ts",
-    "migrate:all": "bash scripts/run-all-migrations.sh"
+    "migrate:all": "sh scripts/run-all-migrations.sh"
   },
   "dependencies": {
     "@getbrevo/brevo": "^4.0.1",
