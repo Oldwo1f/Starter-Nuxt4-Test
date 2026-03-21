@@ -297,6 +297,33 @@ export class KikiriGateway {
     }
   }
 
+  @SubscribeMessage('kikiri:moveAllBets')
+  async handleMoveAllBets(
+    @MessageBody() payload: MoveBetDto,
+    @ConnectedSocket() client: Socket,
+  ) {
+    const userId = client.data?.userId;
+    if (!userId) return { error: 'Unauthorized' };
+    try {
+      const bets = await this.kikiriService.moveAllBets(
+        userId,
+        payload.drawId,
+        payload.from,
+        payload.to,
+      );
+      const allBets = await this.kikiriService.getAllBetsByCaseForDraw(payload.drawId);
+      const allBetsPayload = JSON.parse(JSON.stringify(allBets));
+      this.server.to(KIKIRI_ROOM).emit('kikiri:allBets', { drawId: payload.drawId, allBets: allBetsPayload });
+      return { success: true, bets };
+    } catch (error: any) {
+      this.logger.error(`Move all bets error: ${error?.message}`);
+      client.emit('kikiri:bet:error', {
+        error: error?.message || 'Failed to move bets',
+      });
+      return { error: error?.message || 'Failed to move bets' };
+    }
+  }
+
   @SubscribeMessage('kikiri:betPreview')
   handleBetPreview(
     @MessageBody() payload: { drawId: number; delta: number; case: number },

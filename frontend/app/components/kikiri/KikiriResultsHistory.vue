@@ -3,6 +3,8 @@ import type { KikiriDraw } from '~/composables/useKikiriSocket'
 
 defineProps<{ draws: KikiriDraw[] }>()
 
+const { t } = useI18n()
+
 const formatResult = (userNet: number | undefined) => {
   if (userNet === undefined) return null
   if (userNet > 0) return { text: `+${userNet}`, color: 'text-green-400' }
@@ -23,10 +25,10 @@ const getBetsForDraw = (draw: KikiriDraw) => {
 <template>
   <div class="rounded-xl bg-white/5 border border-white/10 p-6">
     <h3 class="text-lg font-semibold text-white mb-4">
-      Derniers tirages
+      {{ t('games.kikiriHistoryTitle') }}
     </h3>
     <div v-if="draws.length === 0" class="text-white/50 text-center py-8">
-      Aucun tirage pour le moment
+      {{ t('games.kikiriNoDraws') }}
     </div>
     <div v-else class="flex flex-col">
       <div
@@ -35,7 +37,7 @@ const getBetsForDraw = (draw: KikiriDraw) => {
         class="py-3 border-b border-white/5 last:border-0 flex flex-col"
       >
         <div class="flex justify-between items-center">
-          <span class="text-white/70">Tirage #{{ draw.id }}</span>
+          <span class="text-white/70">{{ t('games.kikiriDrawLabel', { id: draw.id }) }}</span>
           <div class="flex gap-2">
             <KikiriDieFace
               v-for="(d, i) in [draw.dice1, draw.dice2, draw.dice3]"
@@ -50,7 +52,7 @@ const getBetsForDraw = (draw: KikiriDraw) => {
           class="flex justify-between items-center gap-4 mt-2 text-xs text-white/60"
         >
           <div class="flex flex-wrap gap-x-4 gap-y-1 items-center">
-            <span class="text-white/60 shrink-0">Vos mises:</span>
+            <span class="text-white/60 shrink-0">{{ t('gamesKikiriUi.yourBets') }}</span>
             <span
               v-for="{ num, amount } in getBetsForDraw(draw)"
               :key="num"

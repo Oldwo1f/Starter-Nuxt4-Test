@@ -2,10 +2,10 @@
 definePageMeta({
   layout: 'account',
   middleware: 'auth',
-  meta: {
-    title: 'Mes badges',
-  },
+  titleKey: 'account.pages.badges',
 })
+
+const { t } = useI18n()
 
 // Données des badges selon le plan badges-gamification.md
 const badgeCategories = [
@@ -210,9 +210,9 @@ const isBadgeOwned = (key: string) => ownedBadgeKeys.value.has(key)
 <template>
   <div class="space-y-8">
     <div class="space-y-2">
-      <h1 class="text-3xl font-bold">Mes badges</h1>
+      <h1 class="text-3xl font-bold">{{ t('account.badgesPage.title') }}</h1>
       <p class="text-white/60">
-        Collectez des badges en participant à la vie de Nuna Heritage. Transmettez, connectez-vous et inspirez la communauté.
+        {{ t('account.badgesPage.subtitle') }}
       </p>
     </div>
 
@@ -221,8 +221,8 @@ const isBadgeOwned = (key: string) => ownedBadgeKeys.value.has(key)
       color="primary"
       variant="soft"
       icon="i-heroicons-information-circle"
-      title="En cours de développement"
-      description="Tous les badges sont affichés ci-dessous. L'attribution automatique sera implémentée prochainement."
+      :title="t('account.badgesPage.devTitle')"
+      :description="t('account.badgesPage.devDesc')"
     />
 
     <div class="space-y-8">

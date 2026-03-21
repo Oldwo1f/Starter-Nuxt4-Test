@@ -4,13 +4,19 @@ definePageMeta({
 })
 
 import { useAcademyStore } from '~/stores/useAcademyStore'
-import { useAuthStore } from '~/stores/useAuthStore'
 import { useApi } from '~/composables/useApi'
 
 const academyStore = useAcademyStore()
-const authStore = useAuthStore()
 const { getImageUrl } = useApi()
 const router = useRouter()
+const { t } = useI18n()
+
+const courseAccessMessage = (level: string) => {
+  if (level === 'public' || level === 'member' || level === 'premium' || level === 'vip') {
+    return t(`accessAcademy.${level}`)
+  }
+  return t('accessAcademy.restricted')
+}
 
 // Fetch courses on mount
 onMounted(async () => {
@@ -43,11 +49,6 @@ const hasPartialAccess = (course: Course) => {
   return academyStore.hasPartialAccess(course)
 }
 
-// Get access message for a course
-const getAccessMessage = (course: Course) => {
-  return academyStore.getAccessMessage(course)
-}
-
 // Handle course click
 const handleCourseClick = (course: Course) => {
   if (canAccess(course) || hasPartialAccess(course)) {
@@ -59,9 +60,9 @@ const handleCourseClick = (course: Course) => {
 <template>
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
     <div class="mb-8 text-center">
-      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Academy</h1>
+      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">{{ t('academyPage.title') }}</h1>
       <p class="mx-auto max-w-2xl text-lg text-white/70">
-        Découvrez nos cours et progressez à votre rythme
+        {{ t('academyPage.subtitle') }}
       </p>
     </div>
 
@@ -103,7 +104,7 @@ const handleCourseClick = (course: Course) => {
               v-if="hasPartialAccess(course)"
               class="absolute top-2 left-2 rounded-full bg-green-500/90 px-3 py-1 text-xs font-semibold text-white"
             >
-              Premier module gratuit
+              {{ t('academyPage.firstModuleFree') }}
             </div>
           </div>
         </template>
@@ -117,7 +118,7 @@ const handleCourseClick = (course: Course) => {
               variant="outline"
               size="xs"
             >
-              Public
+              {{ t('academyPage.badgePublic') }}
             </UBadge>
             <UBadge 
               v-else-if="course.accessLevel === 'member'"
@@ -125,7 +126,7 @@ const handleCourseClick = (course: Course) => {
               variant="subtle"
               size="xs"
             >
-              Membre
+              {{ t('academyPage.badgeMember') }}
             </UBadge>
             <UBadge 
               v-else-if="course.accessLevel === 'premium'"
@@ -133,7 +134,7 @@ const handleCourseClick = (course: Course) => {
               variant="subtle"
               size="xs"
             >
-              Premium
+              {{ t('academyPage.badgePremium') }}
             </UBadge>
             <UBadge 
               v-else-if="course.accessLevel === 'vip'"
@@ -141,7 +142,7 @@ const handleCourseClick = (course: Course) => {
               variant="subtle"
               size="xs"
             >
-              VIP
+              {{ t('academyPage.badgeVip') }}
             </UBadge>
           </div>
           <p v-if="course.description" class="line-clamp-3 text-sm text-white/70">
@@ -151,7 +152,7 @@ const handleCourseClick = (course: Course) => {
           <!-- Progress bar -->
           <div v-if="course.progress" class="space-y-1">
             <div class="flex items-center justify-between text-xs text-white/60">
-              <span>Progression</span>
+              <span>{{ t('academyPage.progress') }}</span>
               <span>{{ formatProgress(course.progress) }}%</span>
             </div>
             <div class="h-2 w-full overflow-hidden rounded-full bg-white/10">
@@ -166,7 +167,7 @@ const handleCourseClick = (course: Course) => {
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 text-xs text-white/60">
               <UIcon name="i-heroicons-folder" class="h-4 w-4" />
-              <span>{{ course.modules?.length || 0 }} module{{ (course.modules?.length || 0) > 1 ? 's' : '' }}</span>
+              <span>{{ (course.modules?.length || 0) > 1 ? `${course.modules?.length || 0} ${t('academyPage.modules')}` : `${course.modules?.length || 0} ${t('academyPage.module')}` }}</span>
             </div>
             
             <!-- Bouton avec cadenas si le cours est restreint et l'utilisateur n'a pas accès -->
@@ -180,7 +181,7 @@ const handleCourseClick = (course: Course) => {
               class="opacity-50 cursor-not-allowed"
               @click.stop
             >
-              {{ getAccessMessage(course) }}
+              {{ courseAccessMessage(course.accessLevel) }}
             </UButton>
             
             <!-- Bouton pour accès partiel -->
@@ -192,7 +193,7 @@ const handleCourseClick = (course: Course) => {
               icon="i-heroicons-play"
               @click.stop="handleCourseClick(course)"
             >
-              Accéder au premier module
+              {{ t('academyPage.accessFirstModule') }}
             </UButton>
             
             <!-- Bouton pour accès complet -->
@@ -204,7 +205,7 @@ const handleCourseClick = (course: Course) => {
               icon="i-heroicons-play"
               @click.stop="handleCourseClick(course)"
             >
-              Accéder à la formation
+              {{ t('academyPage.accessCourse') }}
             </UButton>
           </div>
         </div>
@@ -213,7 +214,7 @@ const handleCourseClick = (course: Course) => {
 
     <div v-else class="py-12 text-center text-white/60">
       <UIcon name="i-heroicons-academic-cap" class="mx-auto mb-4 h-12 w-12" />
-      <p>Aucun cours disponible pour le moment</p>
+      <p>{{ t('academyPage.empty') }}</p>
     </div>
   </div>
 </template>

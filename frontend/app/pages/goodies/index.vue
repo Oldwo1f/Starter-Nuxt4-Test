@@ -6,6 +6,7 @@ definePageMeta({
 })
 
 const goodiesStore = useGoodiesStore()
+const { t } = useI18n()
 
 // Fetch goodies on mount
 onMounted(() => {
@@ -16,9 +17,9 @@ onMounted(() => {
 <template>
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
     <div class="mb-12 text-center">
-      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Goodies</h1>
+      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">{{ t('goodiesPage.title') }}</h1>
       <p class="mx-auto max-w-2xl text-lg text-white/70">
-        Téléchargez des ressources gratuites : logos, images, listes de crypto, vidéos et plus encore
+        {{ t('goodiesPage.subtitle') }}
       </p>
     </div>
 
@@ -45,7 +46,7 @@ onMounted(() => {
     <!-- Empty state -->
     <div v-else class="py-12 text-center text-white/60">
       <UIcon name="i-heroicons-gift" class="mx-auto mb-4 h-12 w-12" />
-      <p>Aucun goodie trouvé</p>
+      <p>{{ t('goodiesPage.empty') }}</p>
     </div>
   </div>
 </template>

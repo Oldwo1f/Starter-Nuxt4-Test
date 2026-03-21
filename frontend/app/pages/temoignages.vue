@@ -3,6 +3,8 @@ definePageMeta({
   layout: 'default',
 })
 
+const { t } = useI18n()
+
 // Helper pour obtenir l'URL d'embed YouTube
 const getVideoEmbedUrl = (url: string | null | undefined): string | undefined => {
   if (!url) return undefined
@@ -96,10 +98,10 @@ const testimonials = [
       <!-- En-tête -->
       <div class="mb-12 text-center">
         <h1 class="mb-4 text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
-          Témoignages de nos membres
+          {{ t('temoignagesPage.title') }}
         </h1>
         <p class="mx-auto max-w-3xl text-lg text-white/70 sm:text-xl">
-          Découvrez les expériences, les parcours et les histoires inspirantes de notre communauté Nuna'a Heritage
+          {{ t('temoignagesPage.subtitle') }}
         </p>
       </div>
 

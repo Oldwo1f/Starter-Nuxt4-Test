@@ -15,6 +15,8 @@ const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
 const authStore = useAuthStore()
 const { canCreateListing } = useMemberCheck()
 const toast = useToast()
+const { t } = useI18n()
+const { dateLocale } = useLocaleDate()
 const route = useRoute()
 const router = useRouter()
 
@@ -53,25 +55,25 @@ const displayedPrice = computed(() =>
 
 const validate = () => {
   errors.value = {}
-  if (!form.value.firstName?.trim()) {
-    errors.value.firstName = 'Le nom est requis'
-  }
   if (!form.value.lastName?.trim()) {
-    errors.value.lastName = 'Le prénom est requis'
+    errors.value.lastName = t('teNatiraaRegister.errLastName')
+  }
+  if (!form.value.firstName?.trim()) {
+    errors.value.firstName = t('teNatiraaRegister.errFirstName')
   }
   if (!form.value.email?.trim()) {
-    errors.value.email = "L'email est requis"
+    errors.value.email = t('teNatiraaRegister.errEmailRequired')
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-    errors.value.email = "L'email n'est pas valide"
+    errors.value.email = t('teNatiraaRegister.errEmailInvalid')
   }
   if (form.value.adultCount < 0) {
-    errors.value.adultCount = 'Le nombre d\'adultes doit être positif'
+    errors.value.adultCount = t('teNatiraaRegister.errAdults')
   }
   if (form.value.childCount < 0) {
-    errors.value.childCount = 'Le nombre d\'enfants doit être positif'
+    errors.value.childCount = t('teNatiraaRegister.errChildren')
   }
   if (form.value.adultCount === 0 && form.value.childCount === 0) {
-    errors.value.adultCount = 'Indiquez au moins un adulte ou un enfant'
+    errors.value.adultCount = t('teNatiraaRegister.errAtLeastOne')
   }
   return Object.keys(errors.value).length === 0
 }
@@ -107,18 +109,18 @@ const submit = async () => {
       window.location.href = response.url
     } else {
       toast.add({
-        title: 'Erreur',
-        description: 'Impossible de créer la session de paiement',
+        title: t('pollUi.errorTitle'),
+        description: t('teNatiraaRegister.toastSessionError'),
         color: 'red',
       })
     }
   } catch (err: any) {
     toast.add({
-      title: 'Erreur',
+      title: t('pollUi.errorTitle'),
       description:
         err.data?.message ||
         err.message ||
-        'Une erreur est survenue lors de l\'inscription',
+        t('teNatiraaRegister.toastSubmitError'),
       color: 'red',
     })
   } finally {
@@ -135,8 +137,8 @@ onMounted(async () => {
     nextEvent.value = await $fetch(`${API_BASE_URL}/te-natiraa/next-event`)
     if (!nextEvent.value) {
       toast.add({
-        title: 'Inscriptions fermées',
-        description: 'Aucun Te Natira\'a à venir pour le moment.',
+        title: t('teNatiraaRegister.toastClosedTitle'),
+        description: t('teNatiraaRegister.toastClosedDesc'),
         color: 'amber',
       })
       await navigateTo('/te-natiraa')
@@ -144,8 +146,8 @@ onMounted(async () => {
     }
   } catch {
     toast.add({
-      title: 'Erreur',
-      description: 'Impossible de charger les informations.',
+      title: t('pollUi.errorTitle'),
+      description: t('teNatiraaRegister.toastLoadError'),
       color: 'red',
     })
     await navigateTo('/te-natiraa')
@@ -154,8 +156,8 @@ onMounted(async () => {
   isCheckingEvent.value = false
   if (route.query.canceled === 'true') {
     toast.add({
-      title: 'Paiement annulé',
-      description: 'Vous pouvez réessayer quand vous le souhaitez.',
+      title: t('teNatiraaRegister.toastCanceledTitle'),
+      description: t('teNatiraaRegister.toastCanceledDesc'),
       color: 'amber',
     })
     router.replace({ query: {} })
@@ -164,7 +166,7 @@ onMounted(async () => {
 
 const formatEventDate = (iso: string) => {
   const d = new Date(iso)
-  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  return d.toLocaleDateString(dateLocale.value, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 </script>
 
@@ -176,7 +178,7 @@ const formatEventDate = (iso: string) => {
         class="mb-8 inline-flex items-center gap-2 text-white/70 transition-colors hover:text-white"
       >
         <UIcon name="i-heroicons-arrow-left" class="h-5 w-5" />
-        Retour au Te Natira'a
+        {{ t('teNatiraaRegister.back') }}
       </NuxtLink>
 
       <div v-if="isCheckingEvent" class="flex justify-center py-24">
@@ -188,10 +190,10 @@ const formatEventDate = (iso: string) => {
         class="rounded-2xl border border-primary-500/30 bg-gradient-to-br from-primary-900/40 to-primary-800/30 p-8"
       >
         <h1 class="mb-2 text-3xl font-bold text-white">
-          Inscription au Te Natira'a
+          {{ t('teNatiraaRegister.title') }}
         </h1>
         <p class="mb-8 text-white/70">
-          {{ formatEventDate(nextEvent.eventDate) }} à {{ nextEvent.eventTime }} - {{ nextEvent.location }}
+          {{ t('teNatiraa.eventSummary', { date: formatEventDate(nextEvent.eventDate), time: nextEvent.eventTime, place: nextEvent.location }) }}
         </p>
 
         <!-- Message tarif membre si non connecté -->
@@ -200,45 +202,45 @@ const formatEventDate = (iso: string) => {
           class="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4"
         >
           <p class="text-amber-200">
-            Connectez-vous avec votre compte membre pour profiter du tarif membre.
+            {{ t('teNatiraaRegister.memberHint') }}
           </p>
           <NuxtLink
             :to="`/login?returnUrl=${encodeURIComponent('/te-natiraa/inscription')}`"
             class="mt-2 inline-block font-semibold text-amber-300 underline"
           >
-            Se connecter
+            {{ t('teNatiraaRegister.login') }}
           </NuxtLink>
         </div>
 
         <!-- Tarifs affichés -->
         <div class="mb-8 rounded-lg border border-white/10 bg-white/5 p-4">
-          <h3 class="mb-2 font-semibold text-white">Tarifs</h3>
+          <h3 class="mb-2 font-semibold text-white">{{ t('teNatiraaRegister.pricesTitle') }}</h3>
           <p v-if="isMember" class="text-primary-300">
-            Tarif membre : {{ displayedPrice.preVente.toLocaleString('fr-FR') }} XPF 
+            {{ t('teNatiraaRegister.priceMember') }} {{ displayedPrice.preVente.toLocaleString('fr-FR') }} XPF 
           </p>
           <p v-else class="text-white/80">
-            Tarif public : {{ displayedPrice.preVente.toLocaleString('fr-FR') }} XPF
+            {{ t('teNatiraaRegister.pricePublic') }} {{ displayedPrice.preVente.toLocaleString('fr-FR') }} XPF
           </p>
           <p class="mt-2 text-sm text-white/60">
-            Gratuit pour les enfants et les jeunes de moins de 18 ans. <br> Gratuit pour les étudiants (sur présentation de la carte étudiant).
+            {{ t('teNatiraaRegister.freeNote') }}
           </p>
         </div>
 
         <form class="space-y-6" @submit.prevent="submit">
           <div class="grid gap-6 sm:grid-cols-2">
-            <UFormField label="Nom" :error="errors.lastName">
+            <UFormField :label="t('teNatiraaRegister.labelLastName')" :error="errors.lastName">
               <UInput
                 v-model="form.lastName"
-                placeholder="Votre nom"
+                :placeholder="t('teNatiraaRegister.placeholderLastName')"
                 size="lg"
                 :disabled="isLoading"
                 class="bg-white/5"
               />
             </UFormField>
-            <UFormField label="Prénom" :error="errors.firstName">
+            <UFormField :label="t('teNatiraaRegister.labelFirstName')" :error="errors.firstName">
               <UInput
                 v-model="form.firstName"
-                placeholder="Votre prénom"
+                :placeholder="t('teNatiraaRegister.placeholderFirstName')"
                 size="lg"
                 :disabled="isLoading"
                 class="bg-white/5"
@@ -246,11 +248,11 @@ const formatEventDate = (iso: string) => {
             </UFormField>
           </div>
 
-          <UFormField label="Email" :error="errors.email">
+          <UFormField :label="t('teNatiraaRegister.labelEmail')" :error="errors.email">
             <UInput
               v-model="form.email"
               type="email"
-              placeholder="votre@email.com"
+              :placeholder="t('teNatiraaRegister.placeholderEmail')"
               size="lg"
               :disabled="isLoading"
               class="bg-white/5"
@@ -258,7 +260,7 @@ const formatEventDate = (iso: string) => {
           </UFormField>
 
           <div class="grid gap-6 sm:grid-cols-2">
-            <UFormField label="Nombre d'adultes" :error="errors.adultCount">
+            <UFormField :label="t('teNatiraaRegister.labelAdults')" :error="errors.adultCount">
               <UInput
                 v-model.number="form.adultCount"
                 type="number"
@@ -268,7 +270,7 @@ const formatEventDate = (iso: string) => {
                 class="bg-white/5"
               />
             </UFormField>
-            <UFormField label="Nombre d'enfants/étudiants" :error="errors.childCount">
+            <UFormField :label="t('teNatiraaRegister.labelChildren')" :error="errors.childCount">
               <UInput
                 v-model.number="form.childCount"
                 type="number"
@@ -288,11 +290,11 @@ const formatEventDate = (iso: string) => {
             :loading="isLoading"
             icon="i-heroicons-credit-card"
           >
-            Procéder au paiement
+            {{ t('teNatiraaRegister.pay') }}
           </UButton>
 
           <p class="text-center text-sm text-white/60">
-            Paiement sécurisé par carte bancaire via Stripe
+            {{ t('teNatiraaRegister.stripeNote') }}
           </p>
         </form>
       </div>

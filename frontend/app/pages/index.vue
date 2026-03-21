@@ -12,6 +12,8 @@ definePageMeta({
 const { appName } = useAppInfo()
 const { apiBaseUrl } = useApi()
 const pollStore = usePollStore()
+const { t } = useI18n()
+const { formatDate } = useLocaleDate()
 
 // Sondages actifs pour la home
 const activePolls = computed(() => pollStore.activePolls)
@@ -69,7 +71,7 @@ const fetchFeaturedPosts = async () => {
       title: post.title,
       description: post.content.substring(0, 200) + (post.content.length > 200 ? '...' : ''),
       date: new Date(post.createdAt).toISOString(),
-      author: post.author?.email || 'Auteur',
+      author: post.author?.email || t('home.featuredAuthorFallback'),
       to: `/blog/${post.id}`,
       image: post.images && post.images.length > 0
         ? getImageUrl(post.images[0])
@@ -198,28 +200,28 @@ const handleItemClick = (item: { to: string; external: boolean }) => {
   }
 }
 
-// Données de l'accordéon
-const accordionSections = [
+// Données de l'accordéon (réactif à la langue)
+const accordionSections = computed(() => [
   {
     id: 'transmettre',
-    title: 'Transmettre',
+    title: t('home.accTransmitTitle'),
     icon: 'i-heroicons-academic-cap',
-    description: 'Partagez et transmettez le savoir, la culture et les connaissances à travers nos ressources éducatives, nos articles et nos contenus gratuits.',
+    description: t('home.accTransmitDesc'),
     items: [
       {
-        label: 'Académie',
+        label: t('home.labelAcademy'),
         to: '/academy',
         icon: 'i-heroicons-academic-cap',
         external: false,
       },
       {
-        label: 'Blog',
+        label: t('home.labelBlog'),
         to: '/blog',
         icon: 'i-heroicons-document-text',
         external: false,
       },
       {
-        label: 'Goodies',
+        label: t('home.labelGoodies'),
         to: '/goodies',
         icon: 'i-heroicons-gift',
         external: false,
@@ -228,24 +230,24 @@ const accordionSections = [
   },
   {
     id: 'connecter',
-    title: 'Connecter',
+    title: t('home.accConnectTitle'),
     icon: 'i-heroicons-link',
-    description: 'Créez des liens entre les personnes, les communautés et les initiatives locales. Rejoignez notre réseau de partenaires et participez à notre écosystème de troc.',
+    description: t('home.accConnectDesc'),
     items: [
       {
-        label: 'Annuaire des Partenaires',
+        label: t('home.labelPartners'),
         to: '/partners',
         icon: 'i-heroicons-building-office-2',
         external: false,
       },
       {
-        label: 'Nuna\'a Troc',
+        label: t('home.labelTroc'),
         to: '/marketplace',
         icon: 'i-heroicons-shopping-bag',
         external: false,
       },
       {
-        label: 'Te Natira\'a',
+        label: t('home.labelTeNatiraa'),
         to: '/te-natiraa',
         icon: 'i-heroicons-sparkles',
         external: false,
@@ -254,31 +256,31 @@ const accordionSections = [
   },
   {
     id: 'inspirer',
-    title: 'Inspirer',
+    title: t('home.accInspireTitle'),
     icon: 'i-heroicons-light-bulb',
-    description: 'Découvrez des histoires, des témoignages et des reportages qui inspirent les générations d\'aujourd\'hui et de demain. Plongez dans la richesse de notre culture polynésienne.',
+    description: t('home.accInspireDesc'),
     items: [
       {
-        label: 'Reportages',
+        label: t('home.labelReportages'),
         to: '/culture#reportages',
         icon: 'i-heroicons-video-camera',
         external: false,
       },
       {
-        label: 'Interviews',
+        label: t('home.labelInterviews'),
         to: '/culture#interviews',
         icon: 'i-heroicons-microphone',
         external: false,
       },
       {
-        label: 'Reportages d\'époques',
+        label: t('home.labelPeriodReports'),
         to: 'https://www.tahitivod.pf/discover?locale=fr',
         icon: 'i-heroicons-film',
         external: true,
       },
     ],
   },
-]
+])
 </script>
 
 <template>
@@ -293,14 +295,14 @@ const accordionSections = [
           {{ appName }}
         </h1>
         <div class="mb-8 flex flex-wrap items-center justify-center gap-4 text-2xl font-semibold text-primary-400 sm:text-3xl md:text-4xl lg:gap-8">
-          <span class="transition-all hover:scale-105">Transmettre</span>
+          <span class="transition-all hover:scale-105">{{ t('home.pillTransmit') }}</span>
           <span class="text-white/40">•</span>
-          <span class="transition-all hover:scale-105">Connecter</span>
+          <span class="transition-all hover:scale-105">{{ t('home.pillConnect') }}</span>
           <span class="text-white/40">•</span>
-          <span class="transition-all hover:scale-105">Inspirer</span>
+          <span class="transition-all hover:scale-105">{{ t('home.pillInspire') }}</span>
         </div>
         <p class="mx-auto max-w-3xl text-lg text-white/80 sm:text-xl">
-          Bâtir aujourd'hui l'héritage de demain
+          {{ t('home.heroSub') }}
         </p>
       </div>
       <!-- Effet de fond décoratif -->
@@ -315,10 +317,10 @@ const accordionSections = [
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
-            À la une
+            {{ t('home.featuredTitle') }}
           </h2>
           <p class="mx-auto max-w-2xl text-lg text-white/70">
-            Découvrez nos derniers articles de blog
+            {{ t('home.featuredSubtitle') }}
           </p>
         </div>
 
@@ -376,7 +378,7 @@ const accordionSections = [
                   </div>
                   <div class="flex items-center gap-2">
                     <UIcon name="i-heroicons-calendar" class="h-4 w-4" />
-                    <span>{{ new Date(post.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+                    <span>{{ formatDate(post.date) }}</span>
                   </div>
                 </div>
                 <UIcon
@@ -396,7 +398,7 @@ const accordionSections = [
             icon="i-heroicons-arrow-right"
             class="group"
           >
-            Voir tous les articles
+            {{ t('home.seeAllArticles') }}
             <UIcon
               name="i-heroicons-arrow-right"
               class="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
@@ -430,7 +432,7 @@ const accordionSections = [
                 v-if="showPlayButton"
                 @click="playVideo"
                 class="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-black"
-                aria-label="Lancer la vidéo"
+                :aria-label="t('home.playVideoAria')"
               >
                 <div class="flex h-20 w-20 items-center justify-center rounded-full bg-primary-500/90 backdrop-blur-sm transition-all hover:scale-110 hover:bg-primary-500">
                   <UIcon
@@ -443,7 +445,7 @@ const accordionSections = [
               <button
                 @click="toggleVideoSound"
                 class="absolute bottom-4 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm transition-all hover:bg-black/80 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-black"
-                :aria-label="isMuted ? 'Activer le son' : 'Désactiver le son'"
+                :aria-label="isMuted ? t('home.unmuteAria') : t('home.muteAria')"
               >
                 <UIcon
                   :name="isMuted ? 'i-heroicons-speaker-x-mark' : 'i-heroicons-speaker-wave'"
@@ -457,21 +459,9 @@ const accordionSections = [
           <div class="order-1 space-y-6 lg:order-2">
             
             <div class="space-y-4 text-lg leading-relaxed text-white/90">
-              <p>
-                Nuna'a Heritage est une initiative créée en mars 2024 pour transmettre
-                la culture, les valeurs et le savoir, tout en les reliant au monde
-                moderne.
-              </p>
-              <p>
-                Elle développe des projets locaux, éducation sur les marchés financiers
-                culturels et entrepreneuriaux pour inspirer les générations d'aujourd'hui
-                et de demain.
-              </p>
-              <p>
-                Nuna'a Heritage a été fondée par <strong class="text-primary-400">Fabien Nohorai (Naho)</strong>, artiste et
-                entrepreneur polynésien, avec une vision simple : <strong class="text-primary-400">bâtir aujourd'hui
-                l'héritage de demain</strong>.
-              </p>
+              <p>{{ t('home.presentationP1') }}</p>
+              <p>{{ t('home.presentationP2') }}</p>
+              <p>{{ t('home.presentationP3') }}</p>
             </div>
           </div>
         </div>
@@ -483,10 +473,10 @@ const accordionSections = [
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
-            Explorez nos univers
+            {{ t('home.exploreTitle') }}
           </h2>
           <p class="mx-auto max-w-2xl text-lg text-white/70">
-            Découvrez les différentes facettes de Nuna'a Heritage
+            {{ t('home.exploreSubtitle') }}
           </p>
         </div>
 
@@ -570,7 +560,7 @@ const accordionSections = [
                           v-if="item.external"
                           class="mt-1 text-xs text-white/60"
                         >
-                          Lien externe
+                          {{ t('home.externalLink') }}
                         </p>
                       </div>
                       <UIcon
@@ -595,27 +585,15 @@ const accordionSections = [
           <div class="space-y-6 text-center lg:text-left">
             <div class="inline-flex items-center gap-2 rounded-full bg-primary-500/20 px-4 py-2 text-sm font-semibold text-primary-300">
               <UIcon name="i-heroicons-sparkles" class="h-5 w-5" />
-              <span>Te Natira'a</span>
+              <span>{{ t('home.teNatiraaBadge') }}</span>
             </div>
             <h2 class="text-4xl font-bold text-white sm:text-5xl lg:text-6xl">
-              Un moment de rassemblement
+              {{ t('home.teNatiraaTitle') }}
             </h2>
             <div class="space-y-4 text-lg leading-relaxed text-white/90">
-              <p>
-                Le <strong class="text-primary-300">"Te Natira'a"</strong> est un moment de
-                rassemblement pour les membres et les
-                invités de Nuna'a Heritage.
-              </p>
-              <p>
-                On s'y retrouve pour partager un repas, mettre
-                en avant la culture, les artisans et la musique,
-                dans une ambiance conviviale et
-                respectueuse.
-              </p>
-              <p>
-                C'est un temps de rencontre, de partage et de
-                lien humain.
-              </p>
+              <p>{{ t('home.teNatiraaP1') }}</p>
+              <p>{{ t('home.teNatiraaP2') }}</p>
+              <p>{{ t('home.teNatiraaP3') }}</p>
             </div>
             <div class="pt-4">
               <UButton
@@ -625,7 +603,7 @@ const accordionSections = [
                 icon="i-heroicons-sparkles"
                 class="group"
               >
-                Découvrir Te Natira'a
+                {{ t('home.discoverTeNatiraa') }}
                 <UIcon
                   name="i-heroicons-arrow-right"
                   class="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1"
@@ -639,14 +617,14 @@ const accordionSections = [
             <div class="relative aspect-[1600/747] overflow-hidden rounded-2xl shadow-2xl">
               <img
                 :src="tenatiraaImage1"
-                alt="Te Natira'a - Moment de rassemblement"
+                :alt="t('home.altTeNatiraa')"
                 class="h-full w-full object-cover transition-transform hover:scale-105"
               />
             </div>
             <div class="relative aspect-[1600/747] overflow-hidden rounded-2xl shadow-2xl">
               <img
                 :src="tenatiraaImage2"
-                alt="Te Natira'a - Moment de rassemblement"
+                :alt="t('home.altTeNatiraa')"
                 class="h-full w-full object-cover transition-transform hover:scale-105"
               />
             </div>
@@ -665,10 +643,10 @@ const accordionSections = [
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
-            Sondages en cours
+            {{ t('home.pollsTitle') }}
           </h2>
           <p class="mx-auto max-w-2xl text-lg text-white/70">
-            Partagez votre avis sur les sujets qui vous tiennent à cœur
+            {{ t('home.pollsSubtitle') }}
           </p>
         </div>
 
@@ -693,7 +671,7 @@ const accordionSections = [
             icon="i-heroicons-arrow-right"
             class="group"
           >
-            Voir tous les sondages
+            {{ t('home.seeAllPolls') }}
             <UIcon
               name="i-heroicons-arrow-right"
               class="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1"
@@ -708,10 +686,10 @@ const accordionSections = [
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
           <h2 class="mb-4 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
-            Rejoignez la communauté
+            {{ t('home.communityTitle') }}
           </h2>
           <p class="mb-8 text-lg text-white/80 sm:text-xl">
-            Participez à l'écosystème Nuna'a Heritage et découvrez tous nos services
+            {{ t('home.communitySubtitle') }}
           </p>
           <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <UButton
@@ -720,7 +698,7 @@ const accordionSections = [
               color="primary"
               icon="i-heroicons-user-plus"
             >
-              S'inscrire
+              {{ t('home.signup') }}
             </UButton>
             <UButton
               to="/tarifs"
@@ -728,7 +706,7 @@ const accordionSections = [
               variant="outline"
               icon="i-heroicons-currency-dollar"
             >
-              Voir les tarifs
+              {{ t('home.seePricing') }}
             </UButton>
           </div>
         </div>

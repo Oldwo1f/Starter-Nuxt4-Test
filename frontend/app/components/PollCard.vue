@@ -15,6 +15,8 @@ const props = withDefaults(defineProps<Props>(), {
 const pollStore = usePollStore()
 const authStore = useAuthStore()
 const toast = useToast()
+const { t } = useI18n()
+const { formatDate } = useLocaleDate()
 
 // Pour QCM
 const selectedOptionId = ref<number | null>(null)
@@ -49,8 +51,8 @@ const handleSubmitQCM = async (e: Event) => {
   
   if (!selectedOptionId.value) {
     toast.add({
-      title: 'Erreur',
-      description: 'Veuillez sélectionner une réponse',
+      title: t('pollUi.errorTitle'),
+      description: t('pollUi.selectAnswer'),
       color: 'red',
     })
     return
@@ -61,8 +63,8 @@ const handleSubmitQCM = async (e: Event) => {
     const returnUrl = `/polls/${props.poll.id}`
     navigateTo(`/login?returnUrl=${encodeURIComponent(returnUrl)}`)
     toast.add({
-      title: 'Connexion requise',
-      description: 'Vous devez être connecté pour voter',
+      title: t('pollUi.loginTitle'),
+      description: t('pollUi.loginDesc'),
       color: 'yellow',
     })
     return
@@ -74,8 +76,8 @@ const handleSubmitQCM = async (e: Event) => {
     const memberRoles = ['member', 'premium', 'vip', 'admin', 'superadmin', 'moderator']
     if (!memberRoles.includes(userRole)) {
       toast.add({
-        title: 'Accès restreint',
-        description: 'Ce sondage est réservé aux membres',
+        title: t('pollUi.restrictedTitle'),
+        description: t('pollUi.restrictedDesc'),
         color: 'red',
       })
       return
@@ -98,27 +100,27 @@ const handleSubmitQCM = async (e: Event) => {
     }
     
     toast.add({
-      title: 'Réponse enregistrée',
-      description: 'Votre réponse a été enregistrée avec succès',
+      title: t('pollUi.savedTitle'),
+      description: t('pollUi.savedDesc'),
       color: 'success',
     })
   } catch (err: any) {
-    const errorMessage = err.data?.message || err.message || 'Erreur lors de l\'enregistrement de la réponse'
+    const errorMessage = err.data?.message || err.message || t('pollUi.saveError')
     
     // Si l'erreur indique qu'une connexion est requise, rediriger
     if (errorMessage.includes('restricted to members') || errorMessage.includes('Unauthorized')) {
       const returnUrl = `/polls/${props.poll.id}`
       navigateTo(`/login?returnUrl=${encodeURIComponent(returnUrl)}`)
       toast.add({
-        title: 'Connexion requise',
-        description: 'Vous devez être connecté pour voter',
+        title: t('pollUi.loginTitle'),
+        description: t('pollUi.loginDesc'),
         color: 'yellow',
       })
       return
     }
     
     toast.add({
-      title: 'Erreur',
+      title: t('pollUi.errorTitle'),
       description: errorMessage,
       color: 'red',
     })
@@ -162,13 +164,13 @@ const handleCardClick = () => {
             v-if="poll.type === 'qcm'"
             class="rounded-full bg-primary-500/20 px-2 py-1 text-xs font-semibold text-primary-300"
           >
-            QCM
+            {{ t('pollUi.qcmBadge') }}
           </span>
           <span
             v-else
             class="rounded-full bg-primary-500/20 px-2 py-1 text-xs font-semibold text-primary-300"
           >
-            Classement
+            {{ t('pollUi.rankingBadge') }}
           </span>
         </div>
       </div>
@@ -206,7 +208,7 @@ const handleCardClick = () => {
           :disabled="!selectedOptionId"
           @click="handleSubmitQCM"
         >
-          Envoyer ma réponse
+          {{ t('pollUi.sendAnswer') }}
         </UButton>
       </div>
 
@@ -215,10 +217,10 @@ const handleCardClick = () => {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-check-circle" class="h-5 w-5 text-primary-400" />
-            <p class="text-sm font-medium text-primary-300">Résultats</p>
+            <p class="text-sm font-medium text-primary-300">{{ t('pollUi.resultsLabel') }}</p>
           </div>
           <p class="text-xs text-white/60">
-            {{ pollResults.totalResponses }} {{ pollResults.totalResponses > 1 ? 'réponses' : 'réponse' }}
+            {{ pollResults.totalResponses }} {{ pollResults.totalResponses > 1 ? t('pollUi.responseMany') : t('pollUi.responseOne') }}
           </p>
         </div>
         <div class="space-y-2">
@@ -241,7 +243,7 @@ const handleCardClick = () => {
             </div>
           </div>
           <p v-if="pollResults.results.length > 4" class="text-xs text-white/60 text-center pt-1">
-            + {{ pollResults.results.length - 4 }} autre{{ pollResults.results.length - 4 > 1 ? 's' : '' }}
+            {{ pollResults.results.length - 4 > 1 ? t('pollUi.otherMorePlural', { n: pollResults.results.length - 4 }) : t('pollUi.otherMore', { n: pollResults.results.length - 4 }) }}
           </p>
         </div>
       </div>
@@ -250,7 +252,7 @@ const handleCardClick = () => {
       <div v-else-if="showResponse && poll.type === 'qcm' && hasResponded && !pollResults" class="rounded-lg bg-primary-500/10 border border-primary-500/30 p-3">
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-check-circle" class="h-5 w-5 text-primary-400" />
-          <p class="text-sm font-medium text-primary-300">Vous avez déjà répondu</p>
+          <p class="text-sm font-medium text-primary-300">{{ t('pollUi.alreadyResponded') }}</p>
         </div>
       </div>
 
@@ -259,10 +261,10 @@ const handleCardClick = () => {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-check-circle" class="h-5 w-5 text-primary-400" />
-            <p class="text-sm font-medium text-primary-300">Classement</p>
+            <p class="text-sm font-medium text-primary-300">{{ t('pollUi.rankingLabel') }}</p>
           </div>
           <p class="text-xs text-white/60">
-            {{ pollResults.totalResponses }} {{ pollResults.totalResponses > 1 ? 'réponses' : 'réponse' }}
+            {{ pollResults.totalResponses }} {{ pollResults.totalResponses > 1 ? t('pollUi.responseMany') : t('pollUi.responseOne') }}
           </p>
         </div>
         <div class="space-y-2">
@@ -284,19 +286,19 @@ const handleCardClick = () => {
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold text-white truncate">{{ result.text }}</p>
               <p class="text-xs text-white/60">
-                Moyenne: {{ result.averagePosition?.toFixed(2) || 'N/A' }}
+                {{ t('pollUi.moyenne') }}: {{ result.averagePosition?.toFixed(2) || t('pollUi.na') }}
               </p>
             </div>
           </div>
           <p v-if="pollResults.results.length > 3" class="text-xs text-white/60 text-center pt-1">
-            + {{ pollResults.results.length - 3 }} autre{{ pollResults.results.length - 3 > 1 ? 's' : '' }}
+            {{ pollResults.results.length - 3 > 1 ? t('pollUi.otherMorePlural', { n: pollResults.results.length - 3 }) : t('pollUi.otherMore', { n: pollResults.results.length - 3 }) }}
           </p>
         </div>
       </div>
 
       <!-- Options pour classement (juste affichage si pas encore répondu) -->
       <div v-else-if="poll.type === 'ranking' && poll.options.length > 0 && (!showResponse || !hasResponded)" class="space-y-2">
-        <p class="text-sm font-medium text-white/70">Éléments à classer :</p>
+        <p class="text-sm font-medium text-white/70">{{ t('pollUi.rankingPreviewTitle') }}</p>
         <div class="space-y-1">
           <div
             v-for="option in poll.options.slice(0, 3)"
@@ -307,7 +309,7 @@ const handleCardClick = () => {
             <span>{{ option.text }}</span>
           </div>
           <p v-if="poll.options.length > 3" class="text-xs text-white/60 pl-6">
-            + {{ poll.options.length - 3 }} autre{{ poll.options.length - 3 > 1 ? 's' : '' }}
+            {{ poll.options.length - 3 > 1 ? t('pollUi.otherMorePlural', { n: poll.options.length - 3 }) : t('pollUi.otherMore', { n: poll.options.length - 3 }) }}
           </p>
         </div>
       </div>
@@ -320,11 +322,11 @@ const handleCardClick = () => {
               name="i-heroicons-lock-closed"
               class="h-4 w-4"
             />
-            <span>{{ poll.accessLevel === 'member' ? 'Réservé aux membres' : 'Public' }}</span>
+            <span>{{ poll.accessLevel === 'member' ? t('pollUi.membersOnlyShort') : t('pollUi.publicShort') }}</span>
           </div>
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-calendar" class="h-4 w-4" />
-            <span>{{ new Date(poll.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+            <span>{{ formatDate(poll.createdAt) }}</span>
           </div>
         </div>
         <UIcon

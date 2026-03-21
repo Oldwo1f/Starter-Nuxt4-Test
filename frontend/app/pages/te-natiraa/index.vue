@@ -12,6 +12,8 @@ definePageMeta({
 
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
+const { t } = useI18n()
+const { dateLocale } = useLocaleDate()
 
 interface NextEvent {
   id: number
@@ -61,7 +63,7 @@ let countdownInterval: ReturnType<typeof setInterval> | null = null
 
 const formatEventDate = (iso: string) => {
   const d = new Date(iso)
-  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  return d.toLocaleDateString(dateLocale.value, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 const fetchNextEvent = async () => {
@@ -90,13 +92,13 @@ onUnmounted(() => {
       <div class="relative z-10 mx-auto max-w-5xl text-center">
         <div class="mb-6 inline-flex items-center gap-2 rounded-full bg-primary-500/20 px-4 py-2 text-sm font-semibold text-primary-300">
           <UIcon name="i-heroicons-sparkles" class="h-5 w-5" />
-          <span>Te Natira'a</span>
+          <span>{{ t('home.teNatiraaBadge') }}</span>
         </div>
         <h1 class="mb-6 text-5xl font-bold tracking-tight text-white sm:text-6xl md:text-7xl lg:text-8xl">
-          Un moment de rassemblement
+          {{ t('teNatiraa.heroTitle') }}
         </h1>
         <p class="mx-auto max-w-3xl text-lg text-white/80 sm:text-xl">
-          Rejoignez-nous pour partager la culture, les traditions et créer des liens durables
+          {{ t('teNatiraa.heroSubtitle') }}
         </p>
         <div v-if="nextEvent" class="mt-8">
           <UButton
@@ -105,7 +107,7 @@ onUnmounted(() => {
             color="primary"
             icon="i-heroicons-ticket"
           >
-            S'inscrire au Te Natira'a
+            {{ t('teNatiraa.registerCta') }}
           </UButton>
         </div>
       </div>
@@ -122,10 +124,10 @@ onUnmounted(() => {
         <div class="rounded-2xl border border-primary-500/30 bg-gradient-to-br from-primary-900/40 to-primary-800/30 p-8 backdrop-blur-sm">
           <div class="mb-6 text-center">
             <h2 class="mb-2 text-2xl font-bold text-white sm:text-3xl">
-              Prochain événement
+              {{ t('teNatiraa.nextEvent') }}
             </h2>
             <p class="text-lg text-primary-300">
-              {{ formatEventDate(nextEvent.eventDate) }} à {{ nextEvent.eventTime }} - {{ nextEvent.location }}
+              {{ t('teNatiraa.eventSummary', { date: formatEventDate(nextEvent.eventDate), time: nextEvent.eventTime, place: nextEvent.location }) }}
             </p>
           </div>
           <div class="grid grid-cols-4 gap-4 sm:gap-6">
@@ -134,7 +136,7 @@ onUnmounted(() => {
                 {{ countdown.days.toString().padStart(2, '0') }}
               </div>
               <div class="text-sm font-medium text-white/70 sm:text-base">
-                Jours
+                {{ t('timeUnits.days') }}
               </div>
             </div>
             <div class="text-center">
@@ -142,7 +144,7 @@ onUnmounted(() => {
                 {{ countdown.hours.toString().padStart(2, '0') }}
               </div>
               <div class="text-sm font-medium text-white/70 sm:text-base">
-                Heures
+                {{ t('timeUnits.hours') }}
               </div>
             </div>
             <div class="text-center">
@@ -150,7 +152,7 @@ onUnmounted(() => {
                 {{ countdown.minutes.toString().padStart(2, '0') }}
               </div>
               <div class="text-sm font-medium text-white/70 sm:text-base">
-                Minutes
+                {{ t('timeUnits.minutes') }}
               </div>
             </div>
             <div class="text-center">
@@ -158,7 +160,7 @@ onUnmounted(() => {
                 {{ countdown.seconds.toString().padStart(2, '0') }}
               </div>
               <div class="text-sm font-medium text-white/70 sm:text-base">
-                Secondes
+                {{ t('timeUnits.seconds') }}
               </div>
             </div>
           </div>
@@ -172,25 +174,13 @@ onUnmounted(() => {
         <div class="mx-auto max-w-4xl">
           <div class="mb-12 text-center">
             <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
-              Qu'est-ce que le Te Natira'a ?
+              {{ t('teNatiraa.whatTitle') }}
             </h2>
           </div>
           <div class="space-y-6 text-lg leading-relaxed text-white/90">
-            <p>
-              Le <strong class="text-primary-300">"Te Natira'a"</strong> est un moment de
-              rassemblement pour les membres et les
-              invités de Nuna'a Heritage.
-            </p>
-            <p>
-              On s'y retrouve pour partager un repas, mettre
-              en avant la culture, les artisans et la musique,
-              dans une ambiance conviviale et
-              respectueuse.
-            </p>
-            <p>
-              C'est un temps de rencontre, de partage et de
-              lien humain.
-            </p>
+            <p>{{ t('home.teNatiraaP1') }}</p>
+            <p>{{ t('home.teNatiraaP2') }}</p>
+            <p>{{ t('home.teNatiraaP3') }}</p>
           </div>
         </div>
       </div>
@@ -201,10 +191,10 @@ onUnmounted(() => {
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
-            Moments partagés
+            {{ t('teNatiraa.galleryTitle') }}
           </h2>
           <p class="mx-auto max-w-2xl text-lg text-white/70">
-            Découvrez les moments forts de nos précédents rassemblements
+            {{ t('teNatiraa.gallerySubtitle') }}
           </p>
         </div>
 
@@ -214,14 +204,14 @@ onUnmounted(() => {
             <div class="group relative aspect-[1600/747] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
               <img
                 :src="tenatiraaH1"
-                alt="Te Natira'a - Moment de rassemblement"
+                :alt="t('home.altTeNatiraa')"
                 class="h-full w-full object-cover"
               />
             </div>
             <div class="group relative aspect-[1600/747] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
               <img
                 :src="tenatiraaH2"
-                alt="Te Natira'a - Moment de rassemblement"
+                :alt="t('home.altTeNatiraa')"
                 class="h-full w-full object-cover"
               />
             </div>
@@ -232,21 +222,21 @@ onUnmounted(() => {
             <div class="group relative aspect-[747/1600] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
               <img
                 :src="tenatiraaV1"
-                alt="Te Natira'a - Moment de rassemblement"
+                :alt="t('home.altTeNatiraa')"
                 class="h-full w-full object-cover"
               />
             </div>
             <div class="group relative aspect-[747/1600] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
               <img
                 :src="tenatiraaV2"
-                alt="Te Natira'a - Moment de rassemblement"
+                :alt="t('home.altTeNatiraa')"
                 class="h-full w-full object-cover"
               />
             </div>
             <div class="group relative aspect-[747/1600] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
               <img
                 :src="tenatiraaV3"
-                alt="Te Natira'a - Moment de rassemblement"
+                :alt="t('home.altTeNatiraa')"
                 class="h-full w-full object-cover"
               />
             </div>
@@ -256,7 +246,7 @@ onUnmounted(() => {
           <div class="group relative aspect-[1600/747] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
             <img
               :src="tenatiraaH3"
-              alt="Te Natira'a - Moment de rassemblement"
+              :alt="t('home.altTeNatiraa')"
               class="h-full w-full object-cover"
             />
           </div>
@@ -270,7 +260,7 @@ onUnmounted(() => {
         <div class="mx-auto max-w-4xl">
           <div class="mb-12 text-center">
             <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
-              Informations pratiques
+              {{ t('teNatiraa.practicalTitle') }}
             </h2>
           </div>
           <div v-if="nextEvent" class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -281,7 +271,7 @@ onUnmounted(() => {
                 </div>
               </div>
               <h3 class="mb-2 text-xl font-bold text-white">
-                Date
+                {{ t('teNatiraa.labelDate') }}
               </h3>
               <p class="text-white/80">
                 {{ formatEventDate(nextEvent.eventDate) }}
@@ -295,7 +285,7 @@ onUnmounted(() => {
                 </div>
               </div>
               <h3 class="mb-2 text-xl font-bold text-white">
-                Lieu
+                {{ t('teNatiraa.labelPlace') }}
               </h3>
               <p class="text-white/80">
                 {{ nextEvent.location }}
@@ -309,7 +299,7 @@ onUnmounted(() => {
                 </div>
               </div>
               <h3 class="mb-2 text-xl font-bold text-white">
-                Heure
+                {{ t('teNatiraa.labelTime') }}
               </h3>
               <p class="text-white/80">
                 {{ nextEvent.eventTime }}
@@ -317,13 +307,13 @@ onUnmounted(() => {
             </UCard>
           </div>
           <p v-else class="text-center text-white/70">
-            Aucun Te Natira'a à venir pour le moment. Revenez bientôt !
+            {{ t('teNatiraa.noUpcoming') }}
           </p>
 
           <!-- Section Tarifs -->
           <div class="mt-12">
             <h3 class="mb-8 text-center text-3xl font-bold text-white sm:text-4xl">
-              Tarifs
+              {{ t('teNatiraa.pricesSection') }}
             </h3>
             <div class="grid gap-6 sm:grid-cols-2">
               <!-- Tarifs Membres -->
@@ -333,16 +323,16 @@ onUnmounted(() => {
                     <UIcon name="i-heroicons-user" class="h-6 w-6 text-primary-400" />
                   </div>
                   <h4 class="text-2xl font-bold text-white">
-                    Membres
+                    {{ t('teNatiraa.members') }}
                   </h4>
                 </div>
                 <div class="space-y-3">
                   <div class="flex items-center justify-between rounded-lg bg-primary-500/10 px-4 py-3">
-                    <span class="text-white/80">Pré-vente</span>
+                    <span class="text-white/80">{{ t('teNatiraa.preSale') }}</span>
                     <span class="text-xl font-bold text-primary-300">1000 XPF</span>
                   </div>
                   <div class="flex items-center justify-between rounded-lg bg-primary-500/10 px-4 py-3">
-                    <span class="text-white/80">Plein tarif</span>
+                    <span class="text-white/80">{{ t('teNatiraa.fullPrice') }}</span>
                     <span class="text-xl font-bold text-primary-300">1500 XPF</span>
                   </div>
                 </div>
@@ -355,16 +345,16 @@ onUnmounted(() => {
                     <UIcon name="i-heroicons-user-group" class="h-6 w-6 text-primary-400" />
                   </div>
                   <h4 class="text-2xl font-bold text-white">
-                    Public
+                    {{ t('teNatiraa.public') }}
                   </h4>
                 </div>
                 <div class="space-y-3">
                   <div class="flex items-center justify-between rounded-lg bg-primary-500/10 px-4 py-3">
-                    <span class="text-white/80">Pré-vente</span>
+                    <span class="text-white/80">{{ t('teNatiraa.preSale') }}</span>
                     <span class="text-xl font-bold text-primary-300">1500 XPF</span>
                   </div>
                   <div class="flex items-center justify-between rounded-lg bg-primary-500/10 px-4 py-3">
-                    <span class="text-white/80">Plein tarif</span>
+                    <span class="text-white/80">{{ t('teNatiraa.fullPrice') }}</span>
                     <span class="text-xl font-bold text-primary-300">2000 XPF</span>
                   </div>
                 </div>
@@ -372,10 +362,10 @@ onUnmounted(() => {
             </div>
             <div class="mt-6 space-y-2 text-center">
               <p class="text-xl font-bold text-white/90">
-                Gratuit pour les enfants et les jeunes de moins de 18 ans
+                {{ t('teNatiraa.freeKids') }}
               </p>
               <p class="text-xl font-bold text-white/90">
-                Gratuit pour les étudiants (sur présentation de la carte étudiant)
+                {{ t('teNatiraa.freeStudents') }}
               </p>
             </div>
           </div>
@@ -393,10 +383,10 @@ onUnmounted(() => {
       <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div class="rounded-2xl border border-primary-500/30 bg-gradient-to-br from-primary-900/30 to-primary-800/20 p-8 sm:p-12 text-center">
           <h2 class="mb-4 text-3xl font-bold text-white sm:text-4xl">
-            Rejoignez-nous pour le prochain Te Natira'a
+            {{ t('teNatiraa.ctaTitle') }}
           </h2>
           <p class="mb-8 text-lg text-white/80">
-            Participez à ce moment unique de partage et de découverte de la culture polynésienne
+            {{ t('teNatiraa.ctaSubtitle') }}
           </p>
           <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <UButton
@@ -406,7 +396,7 @@ onUnmounted(() => {
               color="primary"
               icon="i-heroicons-ticket"
             >
-              S'inscrire au Te Natira'a
+              {{ t('teNatiraa.registerCta') }}
             </UButton>
             <UButton
               to="/"
@@ -414,7 +404,7 @@ onUnmounted(() => {
               :variant="nextEvent ? 'outline' : 'solid'"
               icon="i-heroicons-arrow-left"
             >
-              Retour à l'accueil
+              {{ t('teNatiraa.backHome') }}
             </UButton>
           </div>
         </div>

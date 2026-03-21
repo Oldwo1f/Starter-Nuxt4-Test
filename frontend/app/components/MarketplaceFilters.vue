@@ -20,6 +20,7 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const localFilters = ref({ ...props.filters })
 
@@ -54,10 +55,10 @@ const handleApply = () => {
   <div class="space-y-4">
     <!-- Search -->
     <div>
-      <label class="mb-2 block text-sm font-medium">Recherche</label>
+      <label class="mb-2 block text-sm font-medium">{{ t('marketplaceFilters.search') }}</label>
       <UInput
         v-model="localFilters.search"
-        placeholder="Rechercher..."
+        :placeholder="t('marketplaceFilters.searchPlaceholder')"
         icon="i-heroicons-magnifying-glass"
         size="lg"
       />
@@ -65,11 +66,11 @@ const handleApply = () => {
 
     <!-- Location filter -->
     <div>
-      <label class="mb-2 block text-sm font-medium">Localisation</label>
+      <label class="mb-2 block text-sm font-medium">{{ t('marketplaceFilters.location') }}</label>
       <USelect
         v-model="localFilters.locationId"
         :items="locations.length > 0 ? locations.map(l => ({ label: `${l.commune} - ${l.ile} (${l.archipel})`, value: l.id })) : []"
-        placeholder="Toutes les localisations"
+        :placeholder="t('marketplaceFilters.locationPlaceholder')"
         size="lg"
         :disabled="locations.length === 0"
       />
@@ -77,11 +78,11 @@ const handleApply = () => {
 
     <!-- Category filter -->
     <div>
-      <label class="mb-2 block text-sm font-medium">Catégorie</label>
+      <label class="mb-2 block text-sm font-medium">{{ t('marketplaceFilters.category') }}</label>
       <USelect
         v-model="localFilters.categoryId"
         :items="categories.length > 0 ? categories.map(c => ({ label: c.name, value: c.id })) : []"
-        placeholder="Toutes les catégories"
+        :placeholder="t('marketplaceFilters.categoryPlaceholder')"
         size="lg"
         :disabled="categories.length === 0"
       />
@@ -89,7 +90,7 @@ const handleApply = () => {
 
     <!-- Type filter (Bien/Service) -->
     <div>
-      <label class="mb-2 block text-sm font-medium">Type</label>
+      <label class="mb-2 block text-sm font-medium">{{ t('marketplaceFilters.type') }}</label>
       <div class="flex gap-2">
         <UButton
           :variant="localFilters.type === 'bien' ? 'solid' : 'outline'"
@@ -98,7 +99,7 @@ const handleApply = () => {
           class="flex-1"
           @click="localFilters.type = localFilters.type === 'bien' ? undefined : 'bien'"
         >
-          Produits
+          {{ t('marketplaceFilters.products') }}
         </UButton>
         <UButton
           :variant="localFilters.type === 'service' ? 'solid' : 'outline'"
@@ -107,25 +108,25 @@ const handleApply = () => {
           class="flex-1"
           @click="localFilters.type = localFilters.type === 'service' ? undefined : 'service'"
         >
-          Services
+          {{ t('marketplaceFilters.services') }}
         </UButton>
       </div>
     </div>
 
     <!-- Price range -->
     <div>
-      <label class="mb-2 block text-sm font-medium">Prix (Pūpū)</label>
+      <label class="mb-2 block text-sm font-medium">{{ t('marketplaceFilters.pricePupu') }}</label>
       <div class="grid grid-cols-2 gap-2">
         <UInput
           v-model.number="localFilters.minPrice"
           type="number"
-          placeholder="Min"
+          :placeholder="t('marketplaceFilters.min')"
           size="lg"
         />
         <UInput
           v-model.number="localFilters.maxPrice"
           type="number"
-          placeholder="Max"
+          :placeholder="t('marketplaceFilters.max')"
           size="lg"
         />
       </div>
@@ -139,14 +140,14 @@ const handleApply = () => {
         color="neutral"
         @click="handleClear"
       >
-        Réinitialiser
+        {{ t('marketplaceFilters.reset') }}
       </UButton>
       <UButton
         block
         color="primary"
         @click="handleApply"
       >
-        Appliquer
+        {{ t('marketplaceFilters.apply') }}
       </UButton>
     </div>
   </div>

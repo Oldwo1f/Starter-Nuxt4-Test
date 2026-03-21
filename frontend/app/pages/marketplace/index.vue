@@ -11,6 +11,7 @@ definePageMeta({
 const { fromNow } = useDate()
 const { apiBaseUrl } = useApi()
 const authStore = useAuthStore()
+const { t } = useI18n()
 const { isProfileComplete } = useProfileValidation()
 const { canCreateListing } = useMemberCheck()
 
@@ -237,7 +238,7 @@ const getSellerName = (listing: any) => {
   if (listing.seller?.firstName || listing.seller?.lastName) {
     return `${listing.seller.firstName || ''} ${listing.seller.lastName || ''}`.trim()
   }
-  return 'Anonyme'
+  return t('common.anonymous')
 }
 
 // Get seller avatar URL
@@ -305,8 +306,8 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
     <!-- Header -->
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-3xl font-bold">Place de TROC</h1>
-        <p class="text-white/60">Découvrez les produits et services disponibles</p>
+        <h1 class="text-3xl font-bold">{{ t('marketplace.title') }}</h1>
+        <p class="text-white/60">{{ t('marketplace.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-2">
         <!-- View mode toggle (hidden on mobile) -->
@@ -331,7 +332,7 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
           icon="i-heroicons-plus-circle"
           :disabled="!isProfileComplete"
         >
-          Créer une annonce
+          {{ t('marketplace.createListing') }}
         </UButton>
         <UButton
           v-else-if="authStore.isAuthenticated && !canCreateListing"
@@ -340,21 +341,21 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
           variant="outline"
           icon="i-heroicons-lock-closed"
         >
-          <span class="hidden sm:inline">Devenir membre pour poster</span>
-          <span class="sm:hidden">Devenir membre</span>
+          <span class="hidden sm:inline">{{ t('marketplace.memberToPost') }}</span>
+          <span class="sm:hidden">{{ t('marketplace.memberToPostShort') }}</span>
         </UButton>
       </div>
     </div>
 
     <!-- Filters Button (Mobile) with Slideover -->
     <div class="mb-4 flex gap-2">
-      <USlideover v-model:open="isFiltersOpen" title="Filtres" side="left">
+      <USlideover v-model:open="isFiltersOpen" :title="t('marketplace.filters')" side="left">
         <UButton
           icon="i-heroicons-funnel"
           color="neutral"
           variant="outline"
         >
-          Filtres
+          {{ t('marketplace.filters') }}
         </UButton>
 
         <template #body>
@@ -377,7 +378,7 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
         variant="outline"
         @click="clearFilters"
       >
-        Réinitialiser
+        {{ t('marketplace.resetFilters') }}
       </UButton>
     </div>
 
@@ -553,10 +554,10 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
           icon="i-heroicons-chevron-left"
           @click="pagination.page--"
         >
-          Précédent
+          {{ t('marketplace.prev') }}
         </UButton>
         <span class="text-sm text-white/60">
-          Page {{ pagination.page }} sur {{ pagination.totalPages }}
+          {{ t('marketplace.pageOf', { page: pagination.page, total: pagination.totalPages }) }}
         </span>
         <UButton
           :disabled="!pagination.hasNext"
@@ -564,21 +565,21 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
           trailing-icon="i-heroicons-chevron-right"
           @click="pagination.page++"
         >
-          Suivant
+          {{ t('marketplace.next') }}
         </UButton>
       </div>
     </div>
 
     <div v-else class="py-12 text-center text-white/60">
       <UIcon name="i-heroicons-inbox" class="mx-auto mb-4 h-12 w-12" />
-      <p>Aucune annonce trouvée</p>
+      <p>{{ t('marketplace.noListings') }}</p>
       <UButton
         v-if="authStore.isAuthenticated && canCreateListing"
         to="/marketplace/create"
         color="primary"
         class="mt-4"
       >
-        Créer la première annonce
+        {{ t('marketplace.createFirst') }}
       </UButton>
       <UButton
         v-else-if="authStore.isAuthenticated && !canCreateListing"
@@ -587,7 +588,7 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
         variant="outline"
         class="mt-4"
       >
-        Devenir membre pour poster une annonce
+        {{ t('marketplace.memberToPostListing') }}
       </UButton>
     </div>
 

@@ -4,6 +4,7 @@ import { useProfileValidation } from '~/composables/useProfileValidation'
 
 const authStore = useAuthStore()
 const { isProfileComplete } = useProfileValidation()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -12,8 +13,8 @@ const { isProfileComplete } = useProfileValidation()
     color="error"
     variant="soft"
     icon="i-heroicons-exclamation-triangle"
-    title="Votre Profil est incomplet"
-    description="Vous ne pourrez pas créer d'annonce ni transférer des Pūpū 🐚"
+    :title="t('profileIncomplete.title')"
+    :description="t('profileIncomplete.description')"
     class="mb-6"
   >
     <template #actions>
@@ -23,7 +24,7 @@ const { isProfileComplete } = useProfileValidation()
         variant="solid"
         size="sm"
       >
-        Compléter mon profil
+        {{ t('profileIncomplete.cta') }}
       </UButton>
     </template>
   </UAlert>

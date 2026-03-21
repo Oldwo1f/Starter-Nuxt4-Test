@@ -13,6 +13,7 @@ const marketplaceStore = useMarketplaceStore()
 const authStore = useAuthStore()
 const { isProfileComplete } = useProfileValidation()
 const { canCreateListing } = useMemberCheck()
+const { t } = useI18n()
 
 // Helper function to format image URL
 const { getImageUrl: getImageUrlHelper } = useApi()
@@ -37,14 +38,14 @@ const fetchMyListings = async () => {
 
 // Delete listing
 const handleDelete = async (id: number) => {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) {
+  if (!confirm(t('marketplaceMy.deleteConfirm'))) {
     return
   }
   const result = await marketplaceStore.deleteListing(id)
   if (result.success) {
     await fetchMyListings()
   } else {
-    alert(result.error || 'Erreur lors de la suppression')
+    alert(result.error || t('marketplaceMy.deleteError'))
   }
 }
 
@@ -61,8 +62,8 @@ onMounted(() => {
 <template>
   <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold">Mes annonces</h1>
-      <p class="text-white/60">Gérez vos annonces publiées</p>
+      <h1 class="text-3xl font-bold">{{ t('marketplaceMy.title') }}</h1>
+      <p class="text-white/60">{{ t('marketplaceMy.subtitle') }}</p>
     </div>
 
     <!-- Filter -->
@@ -72,25 +73,25 @@ onMounted(() => {
           :variant="statusFilter === 'all' ? 'solid' : 'outline'"
           @click="statusFilter = 'all'"
         >
-          Toutes
+          {{ t('marketplaceMy.filterAll') }}
         </UButton>
         <UButton
           :variant="statusFilter === 'active' ? 'solid' : 'outline'"
           @click="statusFilter = 'active'"
         >
-          Actives
+          {{ t('marketplaceMy.filterActive') }}
         </UButton>
         <UButton
           :variant="statusFilter === 'sold' ? 'solid' : 'outline'"
           @click="statusFilter = 'sold'"
         >
-          Vendues
+          {{ t('marketplaceMy.filterSold') }}
         </UButton>
         <UButton
           :variant="statusFilter === 'archived' ? 'solid' : 'outline'"
           @click="statusFilter = 'archived'"
         >
-          Archivées
+          {{ t('marketplaceMy.filterArchived') }}
         </UButton>
       </div>
     </UCard>
@@ -133,7 +134,7 @@ onMounted(() => {
                   <span>•</span>
                   <span>{{ listing.category?.name }}</span>
                   <span>•</span>
-                  <span>{{ listing.viewCount }} vues</span>
+                  <span>{{ t('marketplaceMy.views', { n: listing.viewCount }) }}</span>
                 </div>
               </div>
               <div class="flex shrink-0 flex-col items-end gap-1 text-primary-500">
@@ -151,7 +152,7 @@ onMounted(() => {
                 :color="listing.status === 'active' ? 'green' : listing.status === 'sold' ? 'red' : 'gray'"
                 variant="subtle"
               >
-                {{ listing.status === 'active' ? 'Active' : listing.status === 'sold' ? 'Vendue' : 'Archivée' }}
+                {{ listing.status === 'active' ? t('marketplaceMy.statusActive') : listing.status === 'sold' ? t('marketplaceMy.statusSold') : t('marketplaceMy.statusArchived') }}
               </UBadge>
             </div>
 
@@ -163,7 +164,7 @@ onMounted(() => {
                 size="sm"
                 icon="i-heroicons-eye"
               >
-                Voir
+                {{ t('marketplaceMy.view') }}
               </UButton>
               <UButton
                 v-if="listing.status === 'active'"
@@ -172,7 +173,7 @@ onMounted(() => {
                 size="sm"
                 icon="i-heroicons-pencil"
               >
-                Modifier
+                {{ t('marketplaceMy.edit') }}
               </UButton>
               <UButton
                 variant="outline"
@@ -181,7 +182,7 @@ onMounted(() => {
                 icon="i-heroicons-trash"
                 @click="handleDelete(listing.id)"
               >
-                Supprimer
+                {{ t('marketplaceMy.delete') }}
               </UButton>
             </div>
           </div>
@@ -191,7 +192,7 @@ onMounted(() => {
 
     <div v-else class="py-12 text-center text-white/60">
       <UIcon name="i-heroicons-inbox" class="mx-auto mb-4 h-12 w-12" />
-      <p>Aucune annonce trouvée</p>
+      <p>{{ t('marketplaceMy.noListings') }}</p>
       <UButton
         v-if="canCreateListing"
         to="/marketplace/create"
@@ -199,7 +200,7 @@ onMounted(() => {
         class="mt-4"
         :disabled="!isProfileComplete"
       >
-        Créer une annonce
+        {{ t('marketplaceMy.createListing') }}
       </UButton>
       <UButton
         v-else
@@ -208,7 +209,7 @@ onMounted(() => {
         variant="outline"
         class="mt-4"
       >
-        Devenir membre pour poster une annonce
+        {{ t('marketplaceMy.memberToPost') }}
       </UButton>
     </div>
   </div>

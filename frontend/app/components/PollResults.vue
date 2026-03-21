@@ -6,14 +6,15 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="space-y-6">
     <div>
-      <h2 class="text-2xl font-bold text-white">Résultats du sondage</h2>
+      <h2 class="text-2xl font-bold text-white">{{ t('pollUi.resultsPageTitle') }}</h2>
       <p class="mt-2 text-sm text-white/60">
-        {{ results.totalResponses }} {{ results.totalResponses > 1 ? 'réponses' : 'réponse' }}
+        {{ results.totalResponses }} {{ results.totalResponses > 1 ? t('pollUi.responseMany') : t('pollUi.responseOne') }}
       </p>
     </div>
 
@@ -60,9 +61,9 @@ const props = defineProps<Props>()
         <div class="flex-1">
           <p class="font-semibold text-white">{{ result.text }}</p>
           <p class="text-sm text-white/60">
-            Position moyenne : {{ result.averagePosition?.toFixed(2) || 'N/A' }}
+            {{ t('pollUi.positionAvg', { n: result.averagePosition?.toFixed(2) || t('pollUi.na') }) }}
             <span v-if="result.responseCount !== undefined">
-              ({{ result.responseCount }} {{ result.responseCount > 1 ? 'réponses' : 'réponse' }})
+              ({{ result.responseCount }} {{ result.responseCount > 1 ? t('pollUi.responseMany') : t('pollUi.responseOne') }})
             </span>
           </p>
         </div>

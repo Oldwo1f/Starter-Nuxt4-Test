@@ -13,6 +13,7 @@ definePageMeta({
 
 const authStore = useAuthStore()
 const toast = useToast()
+const { t } = useI18n()
 
 // Compte à rebours pour la promo de lancement - 31 mars à minuit
 const countdown = ref({
@@ -64,8 +65,8 @@ onUnmounted(() => {
 
 // Handler pour le bouton "Nous contacter" des packs VIP
 const handleContactVIP = () => {
-  // Ouvrir le client email avec un mailto
-  window.location.href = 'mailto:contact@nunaheritage.pf?subject=Demande d\'information - Pack VIP Invest'
+  const subj = encodeURIComponent(t('tarifs.contactMailSubject'))
+  window.location.href = `mailto:contact@nunaheritage.pf?subject=${subj}`
 }
 
 // Formatage des prix en XPF
@@ -87,95 +88,94 @@ const getPackImage = (packName: string) => {
 }
 
 // Pack Te Ohi - 5000 XPF/an
-const teOhiPack = {
+const teOhiPack = computed(() => ({
   name: 'Te Ohi',
   price: 5000,
-  period: 'an',
-  badge: 'Membre Nuna\'a héritage',
-  description: 'Accès complet aux services membres',
+  period: t('tarifs.periodYear'),
+  badge: t('tarifs.teOhi.badge'),
+  description: t('tarifs.teOhi.description'),
   features: [
-    'Accès à l\'Academy',
-    'Accès aux goodies et aux partenaires',
-    'Accès à Nuna\'a Troc',
-    '🐚 50 Pūpū offerts',
-    { text: '+ 2 000', unit: '/ semaine', icon: 'jiji' },
-    'Te Natira\'a à prix membre',
-    'Liste Crypto expertisées #1',
+    t('tarifs.teOhi.f0'),
+    t('tarifs.teOhi.f1'),
+    t('tarifs.teOhi.f2'),
+    t('tarifs.teOhi.f3'),
+    { text: t('tarifs.teOhi.jijiText'), unit: t('tarifs.teOhi.jijiUnit'), icon: 'jiji' },
+    t('tarifs.teOhi.f4'),
+    t('tarifs.teOhi.f5'),
   ],
-  buttonLabel: authStore.isAuthenticated ? 'Déjà membre' : 'Choisir ce pack',
+  buttonLabel: authStore.isAuthenticated ? t('tarifs.teOhi.btnMember') : t('tarifs.teOhi.btnChoose'),
   buttonAction: () => {
     if (!authStore.isAuthenticated) {
       navigateTo('/register')
     }
   },
-}
+}))
 
 // Pack UMETE - 20000 XPF/an
-const umetePack = {
+const umetePack = computed(() => ({
   name: 'Umete',
   price: 20000,
-  period: 'an',
-  badge: 'Membre Premium',
-  description: 'Accès premium avec fonctionnalités avancées',
+  period: t('tarifs.periodYear'),
+  badge: t('tarifs.umete.badge'),
+  description: t('tarifs.umete.description'),
   features: [
-    'Tout du pack Te Ohi +',
-    '+ 🐚 50 Pūpū offerts (100 au total)',
-    { text: '+ 4 000', unit: '/ semaine', icon: 'jiji' },
-    'Cours avancés de l\'Academy débloqués',
-    'Goodies premium débloqués',
-    'Liste Crypto expertisées #2',
+    t('tarifs.umete.f0'),
+    t('tarifs.umete.f1'),
+    { text: t('tarifs.umete.jijiText'), unit: t('tarifs.umete.jijiUnit'), icon: 'jiji' },
+    t('tarifs.umete.f2'),
+    t('tarifs.umete.f3'),
+    t('tarifs.umete.f4'),
   ],
-  buttonLabel: authStore.isAuthenticated ? 'Passer Premium' : 'Choisir ce pack',
+  buttonLabel: authStore.isAuthenticated ? t('tarifs.umete.btnPremium') : t('tarifs.umete.btnChoose'),
   buttonAction: () => {
     if (!authStore.isAuthenticated) {
       navigateTo('/register')
     } else {
-      // TODO: Implémenter l'upgrade vers Premium
       toast.add({
-        title: 'Fonctionnalité à venir',
-        description: 'L\'upgrade vers Premium sera bientôt disponible',
+        title: t('tarifs.toastSoonTitle'),
+        description: t('tarifs.toastSoonDesc'),
         color: 'info',
       })
     }
   },
   popular: true,
-}
+}))
 
 // Packs VIP Invest
-const vipInvestPacks = [
+const vipInvestPacks = computed(() => [
   {
     name: 'Aratai',
     price: 50000,
-    period: 'an',
-    description: 'Pack d\'investissement premium',
-    buttonLabel: 'Nous contacter',
+    period: t('tarifs.periodYear'),
+    description: t('tarifs.vipDesc'),
+    buttonLabel: t('tarifs.contactUs'),
     buttonAction: handleContactVIP,
   },
   {
     name: 'Fenua',
     price: 150000,
-    period: 'an',
-    description: 'Pack d\'investissement premium',
-    buttonLabel: 'Nous contacter',
+    period: t('tarifs.periodYear'),
+    description: t('tarifs.vipDesc'),
+    buttonLabel: t('tarifs.contactUs'),
     buttonAction: handleContactVIP,
   },
   {
     name: 'Toa',
     price: 300000,
-    period: 'an',
-    description: 'Pack d\'investissement premium',
-    buttonLabel: 'Nous contacter',
+    period: t('tarifs.periodYear'),
+    description: t('tarifs.vipDesc'),
+    buttonLabel: t('tarifs.contactUs'),
     buttonAction: handleContactVIP,
   },
   {
     name: 'Fetia',
     price: 500000,
-    period: 'an',
-    description: 'Pack d\'investissement premium',
-    buttonLabel: 'Nous contacter',
+    period: t('tarifs.periodYear'),
+    description: t('tarifs.vipDesc'),
+    buttonLabel: t('tarifs.contactUs'),
     buttonAction: handleContactVIP,
   },
-]
+])
 </script>
 
 <template>
@@ -185,10 +185,10 @@ const vipInvestPacks = [
       <div class="relative z-10 mx-auto max-w-7xl">
         <div class="text-center">
           <h1 class="mb-4 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
-            Tarifs
+            {{ t('tarifs.title') }}
           </h1>
           <p class="mx-auto max-w-2xl text-lg text-white/70 sm:text-xl">
-            Choisissez le pack qui correspond à vos besoins et rejoignez la communauté Nuna'a Heritage
+            {{ t('tarifs.subtitle') }}
           </p>
         </div>
       </div>
@@ -206,13 +206,13 @@ const vipInvestPacks = [
           <div class="mb-6 text-center">
             <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary-500/20 px-4 py-2 text-sm font-semibold text-primary-300">
               <UIcon name="i-heroicons-sparkles" class="h-5 w-5" />
-              <span>Promo de Lancement du nouveau site</span>
+              <span>{{ t('tarifs.promoBadge') }}</span>
             </div>
             <h2 class="mb-2 text-2xl font-bold text-white sm:text-3xl">
-              🐚 Pūpū supplémentaires pendant 1 an
+              {{ t('tarifs.promoTitle') }}
             </h2>
             <p class="text-lg text-primary-300">
-              Pour toute inscription avant le 31 mars — crédités chaque début de mois
+              {{ t('tarifs.promoSubtitle') }}
             </p>
           </div>
           <div class="mb-6 grid grid-cols-4 gap-3 sm:gap-4 md:gap-6">
@@ -221,7 +221,7 @@ const vipInvestPacks = [
                 {{ countdown.days.toString().padStart(2, '0') }}
               </div>
               <div class="text-xs font-medium text-white/70 sm:text-sm md:text-base">
-                Jours
+                {{ t('timeUnits.days') }}
               </div>
             </div>
             <div class="text-center">
@@ -229,7 +229,7 @@ const vipInvestPacks = [
                 {{ countdown.hours.toString().padStart(2, '0') }}
               </div>
               <div class="text-xs font-medium text-white/70 sm:text-sm md:text-base">
-                Heures
+                {{ t('timeUnits.hours') }}
               </div>
             </div>
             <div class="text-center">
@@ -237,7 +237,7 @@ const vipInvestPacks = [
                 {{ countdown.minutes.toString().padStart(2, '0') }}
               </div>
               <div class="text-xs font-medium text-white/70 sm:text-sm md:text-base">
-                Minutes
+                {{ t('timeUnits.minutes') }}
               </div>
             </div>
             <div class="text-center">
@@ -245,22 +245,22 @@ const vipInvestPacks = [
                 {{ countdown.seconds.toString().padStart(2, '0') }}
               </div>
               <div class="text-xs font-medium text-white/70 sm:text-sm md:text-base">
-                Secondes
+                {{ t('timeUnits.seconds') }}
               </div>
             </div>
           </div>
           <!-- Informations sur les packs -->
           <div class="mt-6 grid gap-4 sm:grid-cols-2">
             <div class="rounded-lg bg-primary-500/20 p-4 text-center">
-              <div class="mb-1 text-sm font-medium text-white/70">Pack Te Ohi</div>
+              <div class="mb-1 text-sm font-medium text-white/70">{{ t('tarifs.promoPackTeOhi') }}</div>
               <div class="text-xl font-bold text-white">
-                <span class="text-primary-300">+5 🐚</span> / mois pendant 1 an
+                <span class="text-primary-300">{{ t('tarifs.promoTeOhiLine') }}</span>
               </div>
             </div>
             <div class="rounded-lg bg-primary-500/20 p-4 text-center">
-              <div class="mb-1 text-sm font-medium text-white/70">Pack Umete</div>
+              <div class="mb-1 text-sm font-medium text-white/70">{{ t('tarifs.promoPackUmete') }}</div>
               <div class="text-xl font-bold text-white">
-                <span class="text-primary-300">+10 🐚</span> / mois pendant 1 an
+                <span class="text-primary-300">{{ t('tarifs.promoUmeteLine') }}</span>
               </div>
             </div>
           </div>
@@ -305,8 +305,8 @@ const vipInvestPacks = [
                   <span class="text-4xl font-bold text-white">
                     {{ formatPrice(teOhiPack.price) }}
                   </span>
-                  <span class="text-lg text-white/60">XPF</span>
-                  <span class="text-sm text-white/60">/ {{ teOhiPack.period }}</span>
+                  <span class="text-lg text-white/60">{{ t('tarifs.currency') }}</span>
+                  <span class="text-sm text-white/60">{{ t('tarifs.perSlash') }} {{ teOhiPack.period }}</span>
                 </div>
               </div>
             </template>
@@ -386,8 +386,8 @@ const vipInvestPacks = [
                   <span class="text-4xl font-bold text-white">
                     {{ formatPrice(umetePack.price) }}
                   </span>
-                  <span class="text-lg text-white/60">XPF</span>
-                  <span class="text-sm text-white/60">/ {{ umetePack.period }}</span>
+                  <span class="text-lg text-white/60">{{ t('tarifs.currency') }}</span>
+                  <span class="text-sm text-white/60">{{ t('tarifs.perSlash') }} {{ umetePack.period }}</span>
                 </div>
               </div>
             </template>
@@ -442,10 +442,10 @@ const vipInvestPacks = [
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-3xl font-bold text-white sm:text-4xl">
-            Packs VIP Invest
+            {{ t('tarifs.vipTitle') }}
           </h2>
           <p class="mx-auto max-w-2xl text-lg text-white/70">
-            Pour les investisseurs souhaitant s'engager davantage dans notre communauté
+            {{ t('tarifs.vipSubtitle') }}
           </p>
         </div>
 
@@ -476,8 +476,8 @@ const vipInvestPacks = [
                   <span class="text-3xl font-bold text-primary-400">
                     {{ formatPrice(pack.price) }}
                   </span>
-                  <span class="text-base text-white/60">XPF</span>
-                  <span class="text-sm text-white/60">/ {{ pack.period }}</span>
+                  <span class="text-base text-white/60">{{ t('tarifs.currency') }}</span>
+                  <span class="text-sm text-white/60">{{ t('tarifs.perSlash') }} {{ pack.period }}</span>
                 </div>
               </div>
             </template>

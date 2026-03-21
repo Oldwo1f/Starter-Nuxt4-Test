@@ -14,6 +14,7 @@ const authStore = useAuthStore()
 const { isNonMemberAuthenticated } = useMemberCheck()
 const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 
 // Form data
 const form = ref({
@@ -27,25 +28,23 @@ const form = ref({
   isSearching: false,
 })
 
-// Price unit options - separated by type
-const bienPriceUnitOptions = [
-  { label: "l'unité", value: "l'unité" },
-  { label: 'le paquet', value: 'le paquet' },
-  { label: 'le kilo', value: 'le kilo' },
-  { label: 'Le lot', value: 'Le lot' },
-  { label: 'La pièce', value: 'La pièce' },
-]
+const bienPriceUnitOptions = computed(() => [
+  { label: t('marketplaceCreate.priceUnits.unite'), value: "l'unité" },
+  { label: t('marketplaceCreate.priceUnits.paquet'), value: 'le paquet' },
+  { label: t('marketplaceCreate.priceUnits.kilo'), value: 'le kilo' },
+  { label: t('marketplaceCreate.priceUnits.lot'), value: 'Le lot' },
+  { label: t('marketplaceCreate.priceUnits.piece'), value: 'La pièce' },
+])
 
-const servicePriceUnitOptions = [
-  { label: 'par heure', value: 'par heure' },
-  { label: 'par jour', value: 'par jour' },
-  { label: 'demi-journée', value: 'demi-journée' },
-  { label: 'la séance', value: 'la séance' },
-]
+const servicePriceUnitOptions = computed(() => [
+  { label: t('marketplaceCreate.priceUnits.heure'), value: 'par heure' },
+  { label: t('marketplaceCreate.priceUnits.jour'), value: 'par jour' },
+  { label: t('marketplaceCreate.priceUnits.demijournee'), value: 'demi-journée' },
+  { label: t('marketplaceCreate.priceUnits.seance'), value: 'la séance' },
+])
 
-// Computed property to get the right options based on type
 const priceUnitOptions = computed(() => {
-  return form.value.type === 'service' ? servicePriceUnitOptions : bienPriceUnitOptions
+  return form.value.type === 'service' ? servicePriceUnitOptions.value : bienPriceUnitOptions.value
 })
 
 // Images
@@ -175,8 +174,8 @@ watch(() => sliderPosition.value, (newPosition) => {
 const handleImageCropped = (file: File) => {
   if (images.value.length >= 5) {
     toast.add({
-      title: 'Limite atteinte',
-      description: 'Maximum 5 images autorisées',
+      title: t('marketplaceCreate.toastLimitTitle'),
+      description: t('marketplaceCreate.toastLimitDesc'),
       color: 'warning',
     })
     return
@@ -200,8 +199,8 @@ const removeImage = (index: number) => {
 const handleSubmit = () => {
   if (!form.value.title || !form.value.description || !form.value.categoryId || !form.value.locationId) {
     toast.add({
-      title: 'Champs manquants',
-      description: 'Veuillez remplir tous les champs obligatoires',
+      title: t('marketplaceCreate.toastMissingTitle'),
+      description: t('marketplaceCreate.toastMissingDesc'),
       color: 'warning',
     })
     return
@@ -211,16 +210,16 @@ const handleSubmit = () => {
   if (!form.value.isSearching) {
     if (!form.value.price) {
       toast.add({
-        title: 'Champs manquants',
-        description: 'Veuillez remplir tous les champs obligatoires',
+        title: t('marketplaceCreate.toastMissingTitle'),
+        description: t('marketplaceCreate.toastMissingDesc'),
         color: 'warning',
       })
       return
     }
     if (images.value.length === 0) {
       toast.add({
-        title: 'Image requise',
-        description: 'Veuillez ajouter au moins une image',
+        title: t('marketplaceCreate.toastImageTitle'),
+        description: t('marketplaceCreate.toastImageDesc'),
         color: 'warning',
       })
       return
@@ -239,8 +238,8 @@ const confirmAndSubmit = async () => {
     // Ensure categoryId and locationId are defined (already checked above)
     if (!form.value.categoryId || !form.value.locationId) {
       toast.add({
-        title: 'Erreur',
-        description: 'Veuillez remplir tous les champs obligatoires',
+        title: t('common.error'),
+        description: t('marketplaceCreate.toastMissingDesc'),
         color: 'red',
       })
       return
@@ -258,24 +257,24 @@ const confirmAndSubmit = async () => {
 
     if (result.success) {
       toast.add({
-        title: 'Annonce publiée',
-        description: 'Votre annonce a été publiée avec succès',
+        title: t('marketplaceCreate.toastPublishedTitle'),
+        description: t('marketplaceCreate.toastPublishedDesc'),
         color: 'success',
         icon: 'i-heroicons-check-circle',
       })
       router.push(`/marketplace/${result.data?.id}`)
     } else {
       toast.add({
-        title: 'Erreur',
-        description: result.error || 'Erreur lors de la création',
+        title: t('common.error'),
+        description: result.error || t('marketplaceCreate.toastCreateError'),
         color: 'red',
         icon: 'i-heroicons-exclamation-circle',
       })
     }
   } catch (error: any) {
     toast.add({
-      title: 'Erreur',
-      description: error.message || 'Erreur lors de la création',
+      title: t('common.error'),
+      description: error.message || t('marketplaceCreate.toastCreateError'),
       color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -290,8 +289,8 @@ watch(
   (isNonMember) => {
     if (isNonMember) {
       toast.add({
-        title: 'Réservé aux membres',
-        description: 'La création d\'annonces est réservée aux membres. Devenez membre pour poster des annonces.',
+        title: t('marketplaceCreate.toastMembersTitle'),
+        description: t('marketplaceCreate.toastMembersDesc'),
         color: 'warning',
         icon: 'i-heroicons-lock-closed',
       })
@@ -312,17 +311,17 @@ onMounted(() => {
   <div class="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
     <div class="mb-6">
       <UButton to="/marketplace" variant="ghost" icon="i-heroicons-arrow-left">
-        Retour
+        {{ t('marketplaceCreate.back') }}
       </UButton>
-      <h1 class="mt-4 text-3xl font-bold">Créer une annonce</h1>
-      <p class="mt-2 text-white/60">Remplissez le formulaire pour publier votre annonce</p>
+      <h1 class="mt-4 text-3xl font-bold">{{ t('marketplaceCreate.pageTitle') }}</h1>
+      <p class="mt-2 text-white/60">{{ t('marketplaceCreate.pageSubtitle') }}</p>
     </div>
 
     <UCard>
       <form @submit.prevent="handleSubmit" class="w-full space-y-6">
         <!-- Je recherche flag -->
         <div>
-          <label class="mb-2 block text-sm font-medium">Type d'annonce *</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('marketplaceCreate.listingTypeLabel') }}</label>
           <div class="flex gap-2">
             <UButton
               :variant="!form.isSearching ? 'solid' : 'outline'"
@@ -331,7 +330,7 @@ onMounted(() => {
               class="flex-1"
               @click="form.isSearching = false"
             >
-              Annonce normale
+              {{ t('marketplaceCreate.normalListing') }}
             </UButton>
             <UButton
               :variant="form.isSearching ? 'solid' : 'outline'"
@@ -340,17 +339,17 @@ onMounted(() => {
               class="flex-1"
               @click="form.isSearching = true"
             >
-              Je recherche
+              {{ t('marketplaceCreate.searchingListing') }}
             </UButton>
           </div>
           <p v-if="form.isSearching" class="mt-2 text-xs text-white/60">
-            Cette annonce exprime un besoin. Un autre troqueur pourra y répondre.
+            {{ t('marketplaceCreate.searchingHint') }}
           </p>
         </div>
 
         <!-- Type -->
         <div>
-          <label class="mb-2 block text-sm font-medium">Type *</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('marketplaceCreate.typeLabel') }}</label>
           <div class="flex gap-2">
             <UButton
               :variant="form.type === 'bien' ? 'solid' : 'outline'"
@@ -359,7 +358,7 @@ onMounted(() => {
               class="flex-1"
               @click="form.type = 'bien'"
             >
-              Produit
+              {{ t('marketplaceCreate.product') }}
             </UButton>
             <UButton
               :variant="form.type === 'service' ? 'solid' : 'outline'"
@@ -368,17 +367,17 @@ onMounted(() => {
               class="flex-1"
               @click="form.type = 'service'"
             >
-              Service
+              {{ t('marketplaceCreate.service') }}
             </UButton>
           </div>
         </div>
 
         <!-- Title -->
         <div class="w-full">
-          <label class="mb-2 block text-sm font-medium">Titre *</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('marketplaceCreate.titleLabel') }}</label>
           <UInput
             v-model="form.title"
-            placeholder="Ex: Vélo de montagne en excellent état"
+            :placeholder="t('marketplaceCreate.titlePlaceholder')"
             size="lg"
             class="w-full"
             required
@@ -387,23 +386,21 @@ onMounted(() => {
 
         <!-- Description -->
         <div class="w-full">
-          <label class="mb-2 block text-sm font-medium">Description *</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('marketplaceCreate.descLabel') }}</label>
           <UTextarea
             v-model="form.description"
-            :placeholder="form.isSearching 
-              ? 'Je recherche du poisson en quantité pour ce weekend.\nJ\'ai beaucoup de fruits pour ceux qui sont intéréssé, sinon je peux rendre des services transports ou payer en cash.'
-              : 'Décrivez votre produit ou service en détail...'"
+            :placeholder="form.isSearching ? t('marketplaceCreate.descPlaceholderSearch') : t('marketplaceCreate.descPlaceholderNormal')"
             :rows="6"
             size="lg"
             class="w-full"
             required
           />
-          <p class="mt-1 text-xs text-white/60">{{ form.description.length }} caractères</p>
+          <p class="mt-1 text-xs text-white/60">{{ t('marketplaceCreate.charsCount', { count: form.description.length }) }}</p>
         </div>
 
         <!-- Images -->
         <div v-if="!form.isSearching">
-          <label class="mb-2 block text-sm font-medium">Images * (format carré requis)</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('marketplaceCreate.imagesLabel') }}</label>
           <div class="space-y-4">
             <!-- Preview grid -->
             <div v-if="imagePreviews.length > 0" class="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -412,7 +409,7 @@ onMounted(() => {
                 :key="index"
                 class="relative aspect-square overflow-hidden rounded-lg border border-white/20"
               >
-                <img :src="preview" alt="Preview" class="h-full w-full object-cover" />
+                <img :src="preview" :alt="t('marketplaceCreate.previewAlt')" class="h-full w-full object-cover" />
                 <button
                   type="button"
                   class="absolute right-2 top-2 rounded-full bg-red-500 p-1.5 text-white hover:bg-red-600 transition-colors"
@@ -432,7 +429,7 @@ onMounted(() => {
               />
             </div>
             <div v-else class="rounded-lg border border-white/20 p-4 text-center text-sm text-white/60">
-              Maximum de 5 images atteint
+              {{ t('marketplaceCreate.maxImagesReached') }}
             </div>
           </div>
         </div>
@@ -441,42 +438,42 @@ onMounted(() => {
         <div class="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
           <!-- Category -->
           <div class="w-full">
-            <label class="mb-2 block text-sm font-medium">Catégorie *</label>
+            <label class="mb-2 block text-sm font-medium">{{ t('marketplaceCreate.categoryLabel') }}</label>
             <USelect
               v-model="form.categoryId"
               :items="categories.length > 0 ? categories.map(c => ({ label: c.name, value: c.id })) : []"
-              placeholder="Sélectionnez une catégorie"
+              :placeholder="t('marketplaceCreate.categoryPlaceholder')"
               size="lg"
               class="w-full"
               :disabled="categories.length === 0"
               required
             />
             <p v-if="categories.length === 0 && !isLoading" class="mt-1 text-xs text-red-500">
-              Aucune catégorie disponible pour ce type
+              {{ t('marketplaceCreate.noCategoriesForType') }}
             </p>
           </div>
 
           <!-- Location -->
           <div class="w-full">
-            <label class="mb-2 block text-sm font-medium">Localisation *</label>
+            <label class="mb-2 block text-sm font-medium">{{ t('marketplaceCreate.locationLabel') }}</label>
             <USelect
               v-model="form.locationId"
               :items="locations.length > 0 ? locations.map(l => ({ label: `${l.commune} - ${l.ile} (${l.archipel})`, value: l.id })) : []"
-              placeholder="Sélectionnez votre localisation"
+              :placeholder="t('marketplaceCreate.locationPlaceholder')"
               size="lg"
               class="w-full"
               :disabled="locations.length === 0"
               required
             />
             <p v-if="locations.length === 0 && !isLoading" class="mt-1 text-xs text-red-500">
-              Aucune localisation disponible
+              {{ t('marketplaceCreate.noLocations') }}
             </p>
           </div>
         </div>
 
         <!-- Price -->
         <div v-if="!form.isSearching" class="w-full">
-          <label class="mb-2 block text-sm font-medium">Valeur en Pūpū *</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('marketplaceCreate.priceLabel') }}</label>
           
           <!-- Slider -->
           <div class="mb-4">
@@ -530,7 +527,7 @@ onMounted(() => {
             <USelect
               v-model="form.priceUnit"
               :items="priceUnitOptions"
-              :placeholder="form.type ? 'Unité' : 'Sélectionnez d\'abord un type'"
+              :placeholder="form.type ? t('marketplaceCreate.unitPlaceholder') : t('marketplaceCreate.selectTypeFirst')"
               size="lg"
               class="w-48 flex-shrink-0"
               :disabled="!form.type"
@@ -549,7 +546,7 @@ onMounted(() => {
             :loading="isSubmitting"
             icon="i-heroicons-check-circle"
           >
-            Publier l'annonce
+            {{ t('marketplaceCreate.publishListing') }}
           </UButton>
         </div>
       </form>
@@ -563,7 +560,7 @@ onMounted(() => {
             name="i-heroicons-check-circle"
             class="w-5 h-5 text-primary-400"
           />
-          <span class="font-medium">Confirmer la publication</span>
+          <span class="font-medium">{{ t('marketplaceCreate.confirmHeader') }}</span>
         </div>
       </template>
 
@@ -573,12 +570,12 @@ onMounted(() => {
             color="primary"
             variant="soft"
             icon="i-heroicons-information-circle"
-            title="Publication de l'annonce"
-            description="Votre annonce sera visible par tous les membres de la communauté après publication."
+            :title="t('marketplaceCreate.alertPublishTitle')"
+            :description="t('marketplaceCreate.alertPublishDesc')"
           />
           <p class="text-white/90">
-            Êtes-vous sûr de vouloir publier l'annonce
-            <strong class="text-white">"{{ form.title || 'sans titre' }}"</strong> ?
+            {{ t('marketplaceCreate.confirmQuestionPrefix') }}
+            <strong class="text-white">"{{ form.title || t('marketplaceCreate.untitled') }}"</strong> ?
           </p>
         </div>
       </template>
@@ -591,7 +588,7 @@ onMounted(() => {
             @click="isConfirmOpen = false"
             :disabled="isSubmitting"
           >
-            Annuler
+            {{ t('marketplaceCreate.cancel') }}
           </UButton>
           <UButton
             color="primary"
@@ -600,7 +597,7 @@ onMounted(() => {
             :disabled="isSubmitting"
             icon="i-heroicons-check-circle"
           >
-            Publier
+            {{ t('marketplaceCreate.publish') }}
           </UButton>
         </div>
       </template>

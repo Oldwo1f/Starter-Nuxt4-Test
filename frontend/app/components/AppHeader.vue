@@ -2,12 +2,41 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import logoUrl from '~/assets/images/logo-nuna-heritage.png'
 import { useAuthStore } from '~/stores/useAuthStore'
+import { useBillingStore } from '~/stores/useBillingStore'
 import { useMessagesStore } from '~/stores/useMessagesStore'
+import { useStripeStore } from '~/stores/useStripeStore'
 
 const { appName } = useAppInfo()
+const { t } = useI18n()
 const isDrawerOpen = ref(false)
+
+const isNavPill = (to: string) => to === '/marketplace'
 const authStore = useAuthStore()
+const stripeStore = useStripeStore()
+const billingStore = useBillingStore()
 const messagesStore = useMessagesStore()
+
+// Même logique que account/cotisation : membre avec cotisation encore valide
+const hasActivePaidMembership = computed(() => {
+  if (!authStore.isAuthenticated || !authStore.user) {
+    return false
+  }
+  const role = authStore.user.role?.toLowerCase()
+  const hasValidRole = role === 'member' || role === 'premium' || role === 'vip'
+  if (!hasValidRole) {
+    return false
+  }
+  const expiresAt = authStore.user.paidAccessExpiresAt
+    ?? stripeStore.userAccess?.paidAccessExpiresAt
+    ?? billingStore.userAccess?.paidAccessExpiresAt
+  if (!expiresAt) {
+    return false
+  }
+  return new Date(expiresAt) > new Date()
+})
+
+/** Invités et comptes sans adhésion active : mettre « Nos packs » dans la barre principale */
+const showNosPacksInPrimaryNav = computed(() => !hasActivePaidMembership.value)
 
 onMounted(() => {
   if (authStore.isAuthenticated) {
@@ -55,62 +84,68 @@ const currentSection = computed(() => {
 // Menu pour la section Nuna'a Heritage
 const heritageMenuItems = computed<MenuItem[]>(() => [
   {
-    label: 'Accueil',
+    label: t('nav.home'),
     to: '/',
     icon: 'i-heroicons-home',
     active: route.path === '/',
   },
   {
-    label: 'Blog',
+    label: t('nav.blog'),
     to: '/blog',
     icon: 'i-heroicons-document-text',
     active: route.path.startsWith('/blog'),
   },
   {
-    label: 'Goodies',
+    label: t('nav.polls'),
+    to: '/polls',
+    icon: 'i-heroicons-chart-bar',
+    active: route.path.startsWith('/polls'),
+  },
+  {
+    label: t('nav.goodies'),
     to: '/goodies',
     icon: 'i-heroicons-gift',
     active: route.path.startsWith('/goodies'),
   },
   {
-    label: 'Culture',
+    label: t('nav.culture'),
     to: '/culture',
     icon: 'i-heroicons-video-camera',
     active: route.path.startsWith('/culture'),
   },
   {
-    label: 'Partenaires',
+    label: t('nav.partners'),
     to: '/partners',
     icon: 'i-heroicons-building-office-2',
     active: route.path.startsWith('/partners'),
   },
   {
-    label: 'Nos packs',
+    label: t('nav.packs'),
     to: '/tarifs',
     icon: 'i-heroicons-cube',
     active: route.path.startsWith('/tarifs'),
   },
   {
-    label: 'Te Natira\'a',
+    label: t('nav.teNatiraa'),
     to: '/te-natiraa',
     icon: 'i-heroicons-sparkles',
     active: route.path.startsWith('/te-natiraa'),
   },
   {
-    label: "Nuna'a Troc",
+    label: t('nav.troc'),
     to: '/marketplace',
     icon: 'i-heroicons-shopping-bag',
     active: route.path.startsWith('/marketplace'),
     color: 'primary' as const,
   },
   {
-    label: 'Academy',
+    label: t('nav.academy'),
     to: '/academy',
     icon: 'i-heroicons-academic-cap',
     active: route.path.startsWith('/academy'),
   },
   {
-    label: 'Jeux',
+    label: t('nav.games'),
     to: '/games',
     icon: 'i-heroicons-play',
     active: route.path.startsWith('/games'),
@@ -118,26 +153,31 @@ const heritageMenuItems = computed<MenuItem[]>(() => [
 ])
 
 // Menu pour la section Marketplace
-const marketplaceMenuItems = computed<MenuItem[]>(() => [
-  {
-    label: 'Place de TROC',
-    to: '/marketplace',
-    icon: 'i-heroicons-home',
-    active: route.path === '/marketplace',
-  },
-  {
-    label: 'Comment ça marche',
-    to: '/marketplace/how-it-works',
-    icon: 'i-heroicons-question-mark-circle',
-    active: route.path === '/marketplace/how-it-works',
-  },
-  {
-    label: 'Mon espace',
-    to: '/account',
-    icon: 'i-heroicons-user-circle',
-    active: route.path.startsWith('/account'),
-  },
-])
+const marketplaceMenuItems = computed<MenuItem[]>(() => {
+  const items: MenuItem[] = [
+    {
+      label: t('nav.marketplaceHome'),
+      to: '/marketplace',
+      icon: 'i-heroicons-home',
+      active: route.path === '/marketplace',
+    },
+    {
+      label: t('nav.howItWorks'),
+      to: '/marketplace/how-it-works',
+      icon: 'i-heroicons-question-mark-circle',
+      active: route.path === '/marketplace/how-it-works',
+    },
+  ]
+  if (authStore.isAuthenticated) {
+    items.push({
+      label: t('common.mySpace'),
+      to: '/account',
+      icon: 'i-heroicons-user-circle',
+      active: route.path.startsWith('/account'),
+    })
+  }
+  return items
+})
 
 // Menu actif selon la section
 const activeMenuItems = computed(() => {
@@ -145,6 +185,105 @@ const activeMenuItems = computed(() => {
     return marketplaceMenuItems.value
   }
   return heritageMenuItems.value
+})
+
+// Desktop Heritage : liens principaux (mobile drawer inchangé via heritageMenuItems)
+const heritageDesktopPrimaryItems = computed<MenuItem[]>(() => {
+  const items: MenuItem[] = [
+    {
+      label: t('nav.blog'),
+      to: '/blog',
+      icon: 'i-heroicons-document-text',
+      active: route.path.startsWith('/blog'),
+    },
+    {
+      label: t('nav.academy'),
+      to: '/academy',
+      icon: 'i-heroicons-academic-cap',
+      active: route.path.startsWith('/academy'),
+    },
+    {
+      label: t('nav.games'),
+      to: '/games',
+      icon: 'i-heroicons-play',
+      active: route.path.startsWith('/games'),
+    },
+    {
+      label: t('nav.troc'),
+      to: '/marketplace',
+      icon: 'i-heroicons-shopping-bag',
+      active: route.path.startsWith('/marketplace'),
+      color: 'primary' as const,
+    },
+  ]
+  if (showNosPacksInPrimaryNav.value) {
+    items.push({
+      label: t('nav.packs'),
+      to: '/tarifs',
+      icon: 'i-heroicons-cube',
+      active: route.path.startsWith('/tarifs'),
+    })
+  }
+  if (authStore.isAuthenticated) {
+    items.push({
+      label: t('common.mySpace'),
+      to: '/account',
+      icon: 'i-heroicons-user-circle',
+      active: route.path.startsWith('/account'),
+    })
+  }
+  return items
+})
+
+const heritageMoreMenuActive = computed(() => {
+  const p = route.path
+  const tarifsOnlyInMore = !showNosPacksInPrimaryNav.value
+  return (
+    p.startsWith('/goodies')
+    || p.startsWith('/culture')
+    || p.startsWith('/partners')
+    || (tarifsOnlyInMore && p.startsWith('/tarifs'))
+    || p.startsWith('/te-natiraa')
+    || p.startsWith('/polls')
+  )
+})
+
+const heritageMoreMenuItems = computed<DropdownMenuItem[][]>(() => {
+  const row: DropdownMenuItem[] = [
+    {
+      label: t('nav.polls'),
+      icon: 'i-heroicons-chart-bar',
+      to: '/polls',
+    },
+    {
+      label: t('nav.goodies'),
+      icon: 'i-heroicons-gift',
+      to: '/goodies',
+    },
+    {
+      label: t('nav.culture'),
+      icon: 'i-heroicons-video-camera',
+      to: '/culture',
+    },
+    {
+      label: t('nav.partners'),
+      icon: 'i-heroicons-building-office-2',
+      to: '/partners',
+    },
+  ]
+  if (!showNosPacksInPrimaryNav.value) {
+    row.push({
+      label: t('nav.packs'),
+      icon: 'i-heroicons-cube',
+      to: '/tarifs',
+    })
+  }
+  row.push({
+    label: t('nav.teNatiraa'),
+    icon: 'i-heroicons-sparkles',
+    to: '/te-natiraa',
+  })
+  return [row]
 })
 
 // Obtenir le texte pour l'avatar (initiales)
@@ -170,12 +309,12 @@ const getAvatarUrl = computed(() => {
 const userMenuItems = computed<DropdownMenuItem[][]>(() => {
   const profileItems: DropdownMenuItem[] = [
     {
-      label: 'Mon espace',
+      label: t('common.mySpace'),
       icon: 'i-heroicons-home',
       to: '/account',
     },
     {
-      label: 'Mon profil',
+      label: t('common.myProfile'),
       icon: 'i-heroicons-user-circle',
       to: '/account/profile',
     },
@@ -184,7 +323,7 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
   // Ajouter le lien Administration si l'utilisateur est staff ou admin
   if (isStaffOrAdmin.value) {
     profileItems.push({
-      label: 'Administration',
+      label: t('common.administration'),
       icon: 'i-heroicons-squares-2x2',
       to: '/admin/dashboard',
     })
@@ -193,15 +332,15 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
   return [
     [
       {
-        label: authStore.user?.email || 'Utilisateur',
+        label: authStore.user?.email || t('common.user'),
         avatar: getAvatarUrl.value
           ? {
               src: getAvatarUrl.value,
-              alt: authStore.user?.email || 'User',
+              alt: authStore.user?.email || t('common.userAlt'),
             }
           : {
               text: getAvatarText.value,
-              alt: authStore.user?.email || 'User',
+              alt: authStore.user?.email || t('common.userAlt'),
             },
         type: 'label',
       },
@@ -209,7 +348,7 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
     profileItems,
     [
       {
-        label: 'Déconnexion',
+        label: t('common.logout'),
         icon: 'i-heroicons-arrow-right-on-rectangle',
         onSelect: handleLogout,
       },
@@ -239,41 +378,90 @@ const isActive = (item: MenuItem) => item.active
         </NuxtLink>
       </div>
 
-      <!-- Navigation Menu -->
+      <!-- Navigation Menu (desktop) -->
       <nav class="hidden items-center gap-1 md:flex">
-        <template v-for="item in activeMenuItems" :key="item.to || item.label">
-          <UButton
-            v-if="item.external"
-            :href="item.to"
-            :target="item.target || '_blank'"
-            :color="item.color || (item.active ? 'primary' : 'neutral')"
-            :variant="item.active ? 'solid' : 'ghost'"
-            :icon="item.icon"
-            size="sm"
-            :class="[
-              (item.label === 'Nuna\'a Troc' || item.label === 'Academy') 
-                ? (item.active ? '!text-black border border-green-500 rounded-md' : '!text-green-500 border border-green-500 rounded-md')
-                : (item.active ? '!text-black' : '!text-white/80')
-            ]"
-            rel="noopener noreferrer"
-          >
-            {{ item.label }}
-          </UButton>
-          <UButton
-            v-else
-            :to="item.to"
-            :color="item.color || (item.active ? 'primary' : 'neutral')"
-            :variant="item.active ? 'solid' : 'ghost'"
-            :icon="item.icon"
-            size="sm"
-            :class="[
-              (item.label === 'Nuna\'a Troc' || item.label === 'Academy') 
-                ? (item.active ? '!text-black border border-green-500 rounded-md' : '!text-green-500 border border-green-500 rounded-md')
-                : (item.active ? '!text-black' : '!text-white/80')
-            ]"
-          >
-            {{ item.label }}
-          </UButton>
+        <template v-if="currentSection === 'marketplace'">
+          <template v-for="item in marketplaceMenuItems" :key="item.to || item.label">
+            <UButton
+              v-if="item.external"
+              :href="item.to"
+              :target="item.target || '_blank'"
+              :color="item.color || (item.active ? 'primary' : 'neutral')"
+              :variant="item.active ? 'solid' : 'ghost'"
+              :icon="item.icon"
+              size="sm"
+              :class="[
+                isNavPill(item.to)
+                  ? (item.active ? '!text-black border border-green-500 rounded-md' : '!text-green-500 border border-green-500 rounded-md')
+                  : (item.active ? '!text-black' : '!text-white/80')
+              ]"
+              rel="noopener noreferrer"
+            >
+              {{ item.label }}
+            </UButton>
+            <UButton
+              v-else
+              :to="item.to"
+              :color="item.color || (item.active ? 'primary' : 'neutral')"
+              :variant="item.active ? 'solid' : 'ghost'"
+              :icon="item.icon"
+              size="sm"
+              :class="[
+                isNavPill(item.to)
+                  ? (item.active ? '!text-black border border-green-500 rounded-md' : '!text-green-500 border border-green-500 rounded-md')
+                  : (item.active ? '!text-black' : '!text-white/80')
+              ]"
+            >
+              {{ item.label }}
+            </UButton>
+          </template>
+        </template>
+        <template v-else>
+          <template v-for="item in heritageDesktopPrimaryItems" :key="item.to || item.label">
+            <UButton
+              v-if="item.external"
+              :href="item.to"
+              :target="item.target || '_blank'"
+              :color="item.color || (item.active ? 'primary' : 'neutral')"
+              :variant="item.active ? 'solid' : 'ghost'"
+              :icon="item.icon"
+              size="sm"
+              :class="[
+                isNavPill(item.to)
+                  ? (item.active ? '!text-black border border-green-500 rounded-md' : '!text-green-500 border border-green-500 rounded-md')
+                  : (item.active ? '!text-black' : '!text-white/80')
+              ]"
+              rel="noopener noreferrer"
+            >
+              {{ item.label }}
+            </UButton>
+            <UButton
+              v-else
+              :to="item.to"
+              :color="item.color || (item.active ? 'primary' : 'neutral')"
+              :variant="item.active ? 'solid' : 'ghost'"
+              :icon="item.icon"
+              size="sm"
+              :class="[
+                isNavPill(item.to)
+                  ? (item.active ? '!text-black border border-green-500 rounded-md' : '!text-green-500 border border-green-500 rounded-md')
+                  : (item.active ? '!text-black' : '!text-white/80')
+              ]"
+            >
+              {{ item.label }}
+            </UButton>
+          </template>
+          <UDropdownMenu :items="heritageMoreMenuItems">
+            <UButton
+              :color="heritageMoreMenuActive ? 'primary' : 'neutral'"
+              :variant="heritageMoreMenuActive ? 'solid' : 'ghost'"
+              trailing-icon="i-heroicons-chevron-down"
+              size="sm"
+              :class="heritageMoreMenuActive ? '!text-black' : '!text-white/80'"
+            >
+              {{ t('nav.more') }}
+            </UButton>
+          </UDropdownMenu>
         </template>
       </nav>
 
@@ -354,7 +542,7 @@ const isActive = (item: MenuItem) => item.active
                 class="w-full justify-center"
                 @click="isDrawerOpen = false"
               >
-                Connexion
+                {{ t('common.login') }}
               </UButton>
               <NuxtLink
                 v-else
@@ -369,7 +557,7 @@ const isActive = (item: MenuItem) => item.active
                   size="sm"
                   class="w-full justify-start"
                 >
-                  Mon espace
+                  {{ t('common.mySpace') }}
                 </UButton>
               </NuxtLink>
             </div>
@@ -379,6 +567,7 @@ const isActive = (item: MenuItem) => item.active
 
       <!-- Auth Section (Connexion cachée sur mobile, présente dans le drawer) -->
       <div class="flex items-center gap-2">
+        <LanguageSwitcher />
         <UButton
           v-if="!authStore.isAuthenticated"
           to="/login"
@@ -388,13 +577,13 @@ const isActive = (item: MenuItem) => item.active
           size="sm"
           class="hidden sm:flex"
         >
-          Connexion
+          {{ t('common.login') }}
         </UButton>
         <template v-else>
           <NuxtLink
             to="/account/messages"
             class="relative flex items-center justify-center rounded-full p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-            aria-label="Messages"
+            :aria-label="t('common.messages')"
           >
             <UIcon name="i-heroicons-chat-bubble-left-right" class="h-5 w-5" />
             <UBadge

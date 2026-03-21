@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { Goodie } from '~/stores/useGoodiesStore'
 import { useGoodiesStore } from '~/stores/useGoodiesStore'
-import { useAuthStore } from '~/stores/useAuthStore'
-
 interface Props {
   goodie: Goodie
 }
@@ -10,13 +8,28 @@ interface Props {
 const props = defineProps<Props>()
 
 const goodiesStore = useGoodiesStore()
-const authStore = useAuthStore()
 const { getImageUrl: getImageUrlHelper } = useApi()
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
+const { t } = useI18n()
+const { formatDate } = useLocaleDate()
 
 const canAccess = computed(() => goodiesStore.canAccessGoodie(props.goodie))
-const accessMessage = computed(() => goodiesStore.getAccessMessage(props.goodie))
+const accessMessage = computed(() => {
+  const l = props.goodie.accessLevel
+  if (l === 'public' || l === 'member' || l === 'premium' || l === 'vip') {
+    return t(`accessGoodie.${l}`)
+  }
+  return t('accessGoodie.restricted')
+})
+
+const accessBadgeLabel = computed(() => {
+  const l = props.goodie.accessLevel
+  if (l === 'public') return t('goodiesCard.badgePublic')
+  if (l === 'member') return t('goodiesCard.badgeMember')
+  if (l === 'premium') return t('goodiesCard.badgePremium')
+  return t('goodiesCard.badgeVip')
+})
 
 // Obtenir l'URL de l'image
 const getImageUrl = (): string | null => {
@@ -90,7 +103,7 @@ const shouldShowLink = computed(() => {
           variant="subtle" 
           size="xs"
         >
-          {{ goodie.accessLevel === 'public' ? 'Public' : goodie.accessLevel === 'member' ? 'Membre' : goodie.accessLevel === 'premium' ? 'Premium' : 'VIP' }}
+          {{ accessBadgeLabel }}
         </UBadge>
       </div>
 
@@ -100,13 +113,13 @@ const shouldShowLink = computed(() => {
 
       <div v-if="goodie.offeredByName" class="flex items-center gap-2 text-xs text-white/60">
         <UIcon name="i-heroicons-user" class="h-4 w-4" />
-        <span>Offert par {{ goodie.offeredByName }}</span>
+        <span>{{ t('goodiesCard.offeredBy', { name: goodie.offeredByName }) }}</span>
       </div>
 
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2 text-xs text-white/60">
           <UIcon name="i-heroicons-calendar" class="h-4 w-4" />
-          <span>{{ new Date(goodie.createdAt).toLocaleDateString('fr-FR') }}</span>
+          <span>{{ formatDate(goodie.createdAt) }}</span>
         </div>
 
         <!-- Bouton visible uniquement si l'utilisateur a accès -->
@@ -118,7 +131,7 @@ const shouldShowLink = computed(() => {
           :icon="goodie.fileUrl ? 'i-heroicons-arrow-down-tray' : 'i-heroicons-arrow-top-right-on-square'"
           @click.stop="handleClick"
         >
-          {{ goodie.fileUrl ? 'Télécharger' : 'Voir' }}
+          {{ goodie.fileUrl ? t('goodiesCard.download') : t('goodiesCard.view') }}
         </UButton>
         
         <!-- Bouton avec cadenas si le goodie est restreint et l'utilisateur n'a pas accès -->

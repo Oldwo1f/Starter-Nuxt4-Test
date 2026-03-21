@@ -7,6 +7,7 @@ import { useMemberCheck } from '~/composables/useMemberCheck'
 definePageMeta({
   layout: 'account',
   middleware: 'auth',
+  titleKey: 'account.menuListings',
 })
 
 const marketplaceStore = useMarketplaceStore()
@@ -14,6 +15,8 @@ const authStore = useAuthStore()
 const toast = useToast()
 const { isProfileComplete } = useProfileValidation()
 const { canCreateListing } = useMemberCheck()
+const { t } = useI18n()
+const { formatDate } = useLocaleDate()
 
 // Helper function to format image URL
 const { getImageUrl: getImageUrlHelper } = useApi()
@@ -83,22 +86,22 @@ const showConfirm = (title: string, description: string, onConfirm: () => void) 
 // Delete listing
 const handleDelete = (id: number) => {
   showConfirm(
-    'Supprimer l\'annonce',
-    'Êtes-vous sûr de vouloir supprimer cette annonce ? Cette action est irréversible.',
+    t('account.listings.confirmDeleteTitle'),
+    t('account.listings.confirmDeleteDesc'),
     async () => {
       confirmAlert.value.show = false
       const result = await marketplaceStore.deleteListing(id)
       if (result.success) {
         toast.add({
-          title: 'Annonce supprimée',
-          description: 'Votre annonce a été supprimée avec succès.',
+          title: t('account.listings.toastDeletedTitle'),
+          description: t('account.listings.toastDeletedDesc'),
           color: 'success',
         })
         await fetchMyListings()
       } else {
         toast.add({
-          title: 'Erreur',
-          description: result.error || 'Erreur lors de la suppression',
+          title: t('pollUi.errorTitle'),
+          description: result.error || t('account.listings.deleteError'),
           color: 'red',
         })
       }
@@ -131,13 +134,13 @@ onMounted(() => {
       icon="i-heroicons-exclamation-triangle"
       :actions="[
         {
-          label: 'Annuler',
+          label: t('account.listings.cancel'),
           color: 'neutral',
           variant: 'outline',
           onClick: () => { confirmAlert.show = false }
         },
         {
-          label: 'Confirmer',
+          label: t('account.listings.confirm'),
           color: 'red',
           onClick: confirmAlert.onConfirm
         }
@@ -147,8 +150,8 @@ onMounted(() => {
 
     <div class="flex items-start justify-between gap-4">
       <div class="space-y-2">
-        <h1 class="text-3xl font-bold">Mes annonces</h1>
-        <p class="text-white/60">Gérez vos annonces publiées</p>
+        <h1 class="text-3xl font-bold">{{ t('account.listings.title') }}</h1>
+        <p class="text-white/60">{{ t('account.listings.subtitle') }}</p>
       </div>
       <UButton
         v-if="canCreateListing"
@@ -157,7 +160,7 @@ onMounted(() => {
         icon="i-heroicons-plus-circle"
         :disabled="!isProfileComplete"
       >
-        Créer une annonce
+        {{ t('marketplace.createListing') }}
       </UButton>
       <UButton
         v-else
@@ -166,7 +169,7 @@ onMounted(() => {
         variant="outline"
         icon="i-heroicons-lock-closed"
       >
-        Devenir membre pour poster
+        {{ t('marketplace.memberToPost') }}
       </UButton>
     </div>
 
@@ -177,25 +180,25 @@ onMounted(() => {
           :variant="statusFilter === 'all' ? 'solid' : 'outline'"
           @click="statusFilter = 'all'"
         >
-          Toutes
+          {{ t('account.listings.filterAll') }}
         </UButton>
         <UButton
           :variant="statusFilter === 'active' ? 'solid' : 'outline'"
           @click="statusFilter = 'active'"
         >
-          Actives
+          {{ t('account.listings.filterActive') }}
         </UButton>
         <UButton
           :variant="statusFilter === 'sold' ? 'solid' : 'outline'"
           @click="statusFilter = 'sold'"
         >
-          Vendues
+          {{ t('account.listings.filterSold') }}
         </UButton>
         <UButton
           :variant="statusFilter === 'archived' ? 'solid' : 'outline'"
           @click="statusFilter = 'archived'"
         >
-          Archivées
+          {{ t('account.listings.filterArchived') }}
         </UButton>
       </div>
     </UCard>
@@ -236,9 +239,9 @@ onMounted(() => {
                   <span>•</span>
                   <span>{{ listing.category?.name }}</span>
                   <span>•</span>
-                  <span>{{ listing.viewCount }} vues</span>
+                  <span>{{ t('account.listings.views', { n: listing.viewCount }) }}</span>
                   <span>•</span>
-                  <span>{{ new Date(listing.createdAt).toLocaleDateString('fr-FR') }}</span>
+                  <span>{{ formatDate(listing.createdAt, { day: 'numeric', month: 'short', year: 'numeric' }) }}</span>
                 </div>
               </div>
               <div class="flex shrink-0 flex-col items-end gap-1 text-primary-500">
@@ -265,7 +268,7 @@ onMounted(() => {
                   size="sm"
                   icon="i-heroicons-eye"
                 >
-                  Voir
+                  {{ t('account.listings.view') }}
                 </UButton>
                 <UButton
                   v-if="listing.status === 'active'"
@@ -274,7 +277,7 @@ onMounted(() => {
                   size="sm"
                   icon="i-heroicons-pencil"
                 >
-                  Modifier
+                  {{ t('account.listings.edit') }}
                 </UButton>
                 <UButton
                   variant="outline"
@@ -283,7 +286,7 @@ onMounted(() => {
                   icon="i-heroicons-trash"
                   @click="handleDelete(listing.id)"
                 >
-                  Supprimer
+                  {{ t('account.listings.delete') }}
                 </UButton>
               </div>
             </div>
@@ -294,7 +297,7 @@ onMounted(() => {
 
     <div v-else class="py-12 text-center text-white/60">
       <UIcon name="i-heroicons-inbox" class="mx-auto mb-4 h-12 w-12" />
-      <p>Aucune annonce trouvée</p>
+      <p>{{ t('account.listings.empty') }}</p>
       <UButton
         v-if="canCreateListing"
         to="/marketplace/create"
@@ -302,7 +305,7 @@ onMounted(() => {
         class="mt-4"
         :disabled="!isProfileComplete"
       >
-        Créer une annonce
+        {{ t('marketplace.createListing') }}
       </UButton>
       <UButton
         v-else
@@ -311,7 +314,7 @@ onMounted(() => {
         variant="outline"
         class="mt-4"
       >
-        Devenir membre pour poster une annonce
+        {{ t('account.listings.emptyMemberCta') }}
       </UButton>
     </div>
   </div>

@@ -5,6 +5,7 @@ import { useAuthStore } from '~/stores/useAuthStore'
 definePageMeta({
   layout: 'account',
   middleware: 'auth',
+  titleKey: 'account.pages.transferTitle',
 })
 
 const walletStore = useWalletStore()
@@ -12,6 +13,7 @@ const authStore = useAuthStore()
 const router = useRouter()
 const toast = useToast()
 const { getImageUrl } = useApi()
+const { t } = useI18n()
 
 // Form
 const form = ref({
@@ -259,8 +261,8 @@ onUnmounted(() => {
 const handleSubmit = async () => {
   if (!form.value.toUserEmail || !form.value.amount || form.value.amount <= 0) {
     toast.add({
-      title: 'Champs manquants',
-      description: 'Veuillez sélectionner un destinataire et un montant',
+      title: t('account.transferAccount.toastMissingTitle'),
+      description: t('account.transferAccount.toastMissingDesc'),
       color: 'red',
     })
     return
@@ -268,8 +270,8 @@ const handleSubmit = async () => {
 
   if (!selectedUser.value) {
     toast.add({
-      title: 'Destinataire invalide',
-      description: 'Veuillez sélectionner un utilisateur dans la liste',
+      title: t('account.transferAccount.toastInvalidRecipientTitle'),
+      description: t('account.transferAccount.toastInvalidRecipientDesc'),
       color: 'red',
     })
     return
@@ -277,8 +279,8 @@ const handleSubmit = async () => {
 
   if (!form.value.description || form.value.description.trim().length === 0) {
     toast.add({
-      title: 'Description manquante',
-      description: 'Veuillez renseigner une description pour cette transaction',
+      title: t('account.transferAccount.toastDescTitle'),
+      description: t('account.transferAccount.toastDescDesc'),
       color: 'red',
     })
     return
@@ -286,8 +288,8 @@ const handleSubmit = async () => {
 
   if (form.value.amount > walletStore.balance) {
     toast.add({
-      title: 'Solde insuffisant',
-      description: 'Vous n\'avez pas assez de Pūpū pour effectuer ce transfert',
+      title: t('account.transferAccount.toastInsufficientTitle'),
+      description: t('account.transferAccount.toastInsufficientDesc'),
       color: 'red',
     })
     return
@@ -303,8 +305,11 @@ const handleSubmit = async () => {
 
     if (result.success) {
       toast.add({
-        title: 'Transfert réussi',
-        description: `${form.value.amount} Pūpū ont été transférés à ${getUserDisplayName(selectedUser.value)}`,
+        title: t('account.transferAccount.toastSuccessTitle'),
+        description: t('account.transferAccount.toastSuccessDesc', {
+          amount: form.value.amount,
+          name: getUserDisplayName(selectedUser.value),
+        }),
         color: 'success',
       })
       // Reset form
@@ -321,15 +326,15 @@ const handleSubmit = async () => {
       router.push('/account/wallet')
     } else {
       toast.add({
-        title: 'Erreur',
-        description: result.error || 'Erreur lors du transfert',
+        title: t('pollUi.errorTitle'),
+        description: result.error || t('account.transferAccount.errorTransfer'),
         color: 'red',
       })
     }
   } catch (error: any) {
     toast.add({
-      title: 'Erreur',
-      description: error.message || 'Erreur lors du transfert',
+      title: t('pollUi.errorTitle'),
+      description: error.message || t('account.transferAccount.errorTransfer'),
       color: 'red',
     })
   } finally {
@@ -342,17 +347,17 @@ const handleSubmit = async () => {
   <div class="space-y-6">
     <div class="space-y-2">
       <UButton to="/account/wallet" variant="ghost" icon="i-heroicons-arrow-left">
-        Retour
+        {{ t('account.transferAccount.back') }}
       </UButton>
-      <h1 class="text-3xl font-bold">Transférer des Pūpū</h1>
-      <p class="text-white/60">Envoyez des Pūpū à un autre membre</p>
+      <h1 class="text-3xl font-bold">{{ t('account.transferAccount.title') }}</h1>
+      <p class="text-white/60">{{ t('account.transferAccount.subtitle') }}</p>
     </div>
 
     <!-- Balance info -->
     <UCard class="bg-gradient-to-r from-primary-500/20 to-primary-600/20">
       <div class="flex items-center justify-between">
         <div>
-          <div class="text-sm text-white/60">Solde disponible</div>
+          <div class="text-sm text-white/60">{{ t('account.transferAccount.available') }}</div>
           <div class="text-2xl font-bold text-primary-500">
             🐚 {{ Math.round(walletStore.balance) }}
           </div>
@@ -365,11 +370,11 @@ const handleSubmit = async () => {
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Recipient search -->
         <div class="user-search-container relative">
-          <label class="mb-2 block text-sm font-medium">Destinataire *</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('account.transferAccount.recipientLabel') }}</label>
           <div class="relative">
             <UInput
               v-model="searchTerm"
-              :placeholder="selectedUser ? getUserDisplayName(selectedUser) : 'Rechercher un utilisateur...'"
+              :placeholder="selectedUser ? getUserDisplayName(selectedUser) : t('account.transferAccount.searchUserPh')"
               size="lg"
               :disabled="!!selectedUser"
               :loading="isSearching"
@@ -426,13 +431,13 @@ const handleSubmit = async () => {
             v-if="showSearchResults && searchResults.length === 0 && !isSearching && searchTerm.length >= 2"
             class="absolute z-50 mt-2 w-full rounded-lg border-0 bg-gray-900 p-4 text-center text-sm text-white/60"
           >
-            Aucun utilisateur trouvé
+            {{ t('account.transferAccount.noUserFound') }}
           </div>
         </div>
 
         <!-- Amount -->
         <div>
-          <label class="mb-2 block text-sm font-medium">Montant (Pūpū) *</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('account.transferAccount.amountLabel') }}</label>
           <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl">🐚</span>
             <UInput
@@ -450,22 +455,22 @@ const handleSubmit = async () => {
           <p class="mt-1 text-xs text-white/60">
             {{ form.amount ? `≈ ${(form.amount * 100).toFixed(0)} XPF` : '' }}
             <span v-if="form.amount > walletStore.balance" class="text-red-500">
-              (Solde insuffisant)
+              {{ t('account.transferAccount.insufficientHint') }}
             </span>
           </p>
         </div>
 
         <!-- Description -->
         <div>
-          <label class="mb-2 block text-sm font-medium">Description *</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('account.transferAccount.descLabel') }}</label>
           <UInput
             v-model="form.description"
-            placeholder="Ex: Paiement pour services"
+            :placeholder="t('account.transferAccount.descPh')"
             size="lg"
             required
           />
           <p class="mt-1 text-xs text-white/60">
-            Décrivez la raison de ce transfert
+            {{ t('account.transferAccount.descHint') }}
           </p>
         </div>
 
@@ -480,7 +485,7 @@ const handleSubmit = async () => {
             :disabled="form.amount > walletStore.balance || form.amount <= 0"
             icon="i-heroicons-arrow-path"
           >
-            Transférer
+            {{ t('account.transferAccount.submit') }}
           </UButton>
         </div>
       </form>

@@ -15,6 +15,7 @@ const authStore = useAuthStore()
 const walletStore = useWalletStore()
 const { fromNow } = useDate()
 const { isProfileComplete } = useProfileValidation()
+const { t } = useI18n()
 
 const listingId = computed(() => parseInt(route.params.id as string, 10))
 const listing = ref<any>(null)
@@ -31,7 +32,7 @@ const fetchListing = async () => {
     const data = await $fetch(`${apiBaseUrl}/marketplace/listings/${listingId.value}`)
     listing.value = data
   } catch (err: any) {
-    error.value = err.data?.message || err.message || 'Erreur lors du chargement de l\'annonce'
+    error.value = err.data?.message || err.message || t('marketplaceListing.loadError')
   } finally {
     isLoading.value = false
   }
@@ -119,13 +120,14 @@ const availableContactMethods = computed(() => {
 
 // Get contact method label
 const getContactMethodLabel = (method: string) => {
-  const labels: Record<string, string> = {
-    phone: 'Téléphone',
-    messenger: 'Messenger',
-    telegram: 'Telegram',
-    whatsapp: 'WhatsApp',
+  const keys: Record<string, string> = {
+    phone: 'marketplaceListing.contactPhone',
+    messenger: 'marketplaceListing.contactMessenger',
+    telegram: 'marketplaceListing.contactTelegram',
+    whatsapp: 'marketplaceListing.contactWhatsapp',
   }
-  return labels[method] || method
+  const key = keys[method]
+  return key ? t(key) : method
 }
 
 // Get contact method icon
@@ -241,13 +243,13 @@ onMounted(() => {
 
     <div v-else-if="error" class="text-center text-red-500">
       <p>{{ error }}</p>
-      <UButton to="/marketplace" class="mt-4">Retour à la marketplace</UButton>
+      <UButton to="/marketplace" class="mt-4">{{ t('marketplaceListing.backToMarketplace') }}</UButton>
     </div>
 
     <div v-else-if="listing" class="space-y-6">
       <!-- Back button -->
       <UButton to="/marketplace" variant="ghost" icon="i-heroicons-arrow-left">
-        Retour
+        {{ t('marketplaceListing.back') }}
       </UButton>
 
       <!-- Main content -->
@@ -286,7 +288,7 @@ onMounted(() => {
                   ]"
                   @click="currentImageIndex = Number(index)"
                 >
-                  <img :src="url" :alt="`Image ${Number(index) + 1}`" class="h-full w-full object-cover" />
+                  <img :src="url" :alt="t('marketplaceListing.imageN', { n: Number(index) + 1 })" class="h-full w-full object-cover" />
                 </button>
               </div>
             </div>
@@ -336,13 +338,13 @@ onMounted(() => {
           <!-- Price card (hidden for "Je recherche" listings) -->
           <UCard v-if="!listing.isSearching">
             <template #header>
-              <h2 class="text-xl font-semibold">Valeur</h2>
+              <h2 class="text-xl font-semibold">{{ t('marketplaceListing.valueTitle') }}</h2>
             </template>
             <div class="flex flex-col gap-1">
               <div class="flex items-center gap-2 text-3xl font-bold text-primary-500">
                 <span>🐚</span>
                 <span>{{ listing.price }}</span>
-                <span class="text-lg text-white/60">Pūpū</span>
+                <span class="text-lg text-white/60">{{ t('marketplaceListing.pupuCurrency') }}</span>
               </div>
               <span v-if="listing.priceUnit" class="text-sm text-white/60">{{ listing.priceUnit }}</span>
             </div>
@@ -353,18 +355,18 @@ onMounted(() => {
             <template #header>
               <h2 class="text-xl font-semibold flex items-center gap-2">
                 <UIcon name="i-heroicons-magnifying-glass" class="search-icon-small text-orange-400" />
-                Je recherche
+                {{ t('marketplaceListing.searchingBadge') }}
               </h2>
             </template>
             <div class="text-sm text-white/80">
-              Cette annonce exprime un besoin. Contactez le troqueur pour lui proposer votre offre.
+              {{ t('marketplaceListing.searchingDesc') }}
             </div>
           </UCard>
 
           <!-- Seller info -->
           <UCard>
             <template #header>
-              <h2 class="text-xl font-semibold">Troqueur</h2>
+              <h2 class="text-xl font-semibold">{{ t('marketplaceListing.sellerTitle') }}</h2>
             </template>
             <div class="space-y-4">
               <div class="flex items-center gap-4">
@@ -388,7 +390,7 @@ onMounted(() => {
                       class="flex items-center gap-1"
                     >
                       <UIcon name="i-heroicons-shield-check" class="h-3 w-3" />
-                      Certifié
+                      {{ t('marketplaceListing.certified') }}
                     </UBadge>
                   </div>
                   <div v-if="listing.seller?.lastName" class="text-sm text-white/60">
@@ -402,7 +404,7 @@ onMounted(() => {
               
               <!-- Trading preferences tags -->
               <div v-if="listing.seller?.tradingPreferences && listing.seller.tradingPreferences.length > 0" class="pt-2 border-t border-white/10">
-                <p class="mb-2 text-xs font-medium text-white/60">Préférences de troc</p>
+                <p class="mb-2 text-xs font-medium text-white/60">{{ t('marketplaceListing.tradingPrefs') }}</p>
                 <div class="flex flex-wrap gap-1.5">
                   <UBadge
                     v-for="tagId in listing.seller.tradingPreferences"
@@ -426,7 +428,7 @@ onMounted(() => {
                   icon="i-heroicons-chat-bubble-left-right"
                   @click="handleSendMessage"
                 >
-                  Envoyer un message
+                  {{ t('marketplaceListing.sendMessage') }}
                 </UButton>
                 <UButton
                   v-if="availableContactMethods.length > 0"
@@ -435,7 +437,7 @@ onMounted(() => {
                   icon="i-heroicons-phone"
                   @click="handleContactSeller"
                 >
-                  Autres moyens de contact
+                  {{ t('marketplaceListing.otherContact') }}
                 </UButton>
                 <UButton
                   variant="outline"
@@ -444,13 +446,13 @@ onMounted(() => {
                   :disabled="!isProfileComplete"
                   @click="handleTransferPupu"
                 >
-                  Transférer des Pūpū à ce troqueur
+                  {{ t('marketplaceListing.transferPupu') }}
                 </UButton>
               </div>
               <div v-else-if="authStore.isAuthenticated && authStore.user?.id === listing.sellerId" class="text-center">
-                <p class="text-sm text-white/60">C'est votre annonce</p>
+                <p class="text-sm text-white/60">{{ t('marketplaceListing.yourListing') }}</p>
                 <UButton to="/account/listings" variant="outline" class="mt-2 w-full">
-                  Gérer mes annonces
+                  {{ t('marketplaceListing.manageListings') }}
                 </UButton>
               </div>
               <div v-else class="space-y-2">
@@ -460,7 +462,7 @@ onMounted(() => {
                   block
                   icon="i-heroicons-lock-closed"
                 >
-                  Connectez-vous pour contacter
+                  {{ t('marketplaceListing.loginToContact') }}
                 </UButton>
               </div>
             </div>
@@ -475,7 +477,7 @@ onMounted(() => {
         <div class="flex items-center justify-between w-full">
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-chat-bubble-left-right" class="w-5 h-5" />
-            <span class="font-medium">Contacter le troqueur</span>
+            <span class="font-medium">{{ t('marketplaceListing.contactModalTitle') }}</span>
           </div>
           <UButton
             color="neutral"
@@ -490,7 +492,7 @@ onMounted(() => {
       <template #body>
         <div class="p-6 space-y-3">
           <div v-if="availableContactMethods.length === 0" class="text-center py-4">
-            <p class="text-white/60">Aucun moyen de contact disponible</p>
+            <p class="text-white/60">{{ t('marketplaceListing.noContactMethods') }}</p>
           </div>
           <div v-else class="space-y-2">
             <div

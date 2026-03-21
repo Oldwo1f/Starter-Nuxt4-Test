@@ -4,7 +4,23 @@ import handleNuxtBasePath from './plugins/vite-handle-nuxt-base'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  modules: ['@pinia/nuxt', '@nuxt/icon', '@nuxt/ui'],
+  modules: ['@pinia/nuxt', '@nuxt/icon', '@nuxt/ui', '@nuxtjs/i18n'],
+  i18n: {
+    // langDir est relatif à <rootDir>/i18n/ (restructureDir par défaut = "i18n")
+    defaultLocale: 'fr',
+    strategy: 'no_prefix',
+    langDir: 'locales',
+    lazy: true,
+    locales: [
+      { code: 'fr', language: 'fr-FR', name: 'Français', file: 'fr.json' },
+      { code: 'ty', language: 'ty-PF', name: 'Reo tahiti', file: 'ty.json' },
+    ],
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_locale',
+      redirectOn: 'root',
+    },
+  },
   vite: {
     plugins: [handleNuxtBasePath()],
   },

@@ -8,6 +8,7 @@ definePageMeta({
 
 const walletStore = useWalletStore()
 const router = useRouter()
+const { t } = useI18n()
 
 // Form
 const form = ref({
@@ -26,16 +27,16 @@ onMounted(async () => {
 // Submit
 const handleSubmit = async () => {
   if (!form.value.toUserEmail || !form.value.amount || form.value.amount <= 0) {
-    alert('Veuillez remplir tous les champs obligatoires')
+    alert(t('walletTransfer.alertFill'))
     return
   }
 
   if (form.value.amount > walletStore.balance) {
-    alert('Solde insuffisant')
+    alert(t('walletTransfer.alertBalance'))
     return
   }
 
-  if (!confirm(`Transférer ${form.value.amount} Pūpū à ${form.value.toUserEmail} ?`)) {
+  if (!confirm(t('walletTransfer.confirm', { amount: form.value.amount, email: form.value.toUserEmail }))) {
     return
   }
 
@@ -50,10 +51,10 @@ const handleSubmit = async () => {
     if (result.success) {
       router.push('/wallet')
     } else {
-      alert(result.error || 'Erreur lors du transfert')
+      alert(result.error || t('walletTransfer.errorTransfer'))
     }
   } catch (error: any) {
-    alert(error.message || 'Erreur lors du transfert')
+    alert(error.message || t('walletTransfer.errorTransfer'))
   } finally {
     isSubmitting.value = false
   }
@@ -64,17 +65,17 @@ const handleSubmit = async () => {
   <div class="mx-auto max-w-2xl px-4 py-6 sm:px-6 lg:px-8">
     <div class="mb-6">
       <UButton to="/wallet" variant="ghost" icon="i-heroicons-arrow-left">
-        Retour
+        {{ t('walletTransfer.back') }}
       </UButton>
-      <h1 class="mt-4 text-3xl font-bold">Transférer des Pūpū</h1>
-      <p class="mt-2 text-white/60">Envoyez des Pūpū à un autre membre</p>
+      <h1 class="mt-4 text-3xl font-bold">{{ t('walletTransfer.title') }}</h1>
+      <p class="mt-2 text-white/60">{{ t('walletTransfer.subtitle') }}</p>
     </div>
 
     <!-- Balance info -->
     <UCard class="mb-6">
       <div class="flex items-center justify-between">
         <div>
-          <div class="text-sm text-white/60">Solde disponible</div>
+          <div class="text-sm text-white/60">{{ t('walletTransfer.available') }}</div>
           <div class="text-2xl font-bold text-primary-500">
             🐚 {{ walletStore.balance.toFixed(2) }}
           </div>
@@ -87,11 +88,11 @@ const handleSubmit = async () => {
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Recipient email -->
         <div>
-          <label class="mb-2 block text-sm font-medium">Email du destinataire *</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('walletTransfer.recipientLabel') }}</label>
           <UInput
             v-model="form.toUserEmail"
             type="email"
-            placeholder="user@example.com"
+            :placeholder="t('walletTransfer.recipientPh')"
             size="lg"
             required
           />
@@ -99,7 +100,7 @@ const handleSubmit = async () => {
 
         <!-- Amount -->
         <div>
-          <label class="mb-2 block text-sm font-medium">Montant (Pūpū) *</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('walletTransfer.amountLabel') }}</label>
           <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl">🐚</span>
             <UInput
@@ -117,17 +118,17 @@ const handleSubmit = async () => {
           <p class="mt-1 text-xs text-white/60">
             {{ form.amount ? `≈ ${(form.amount * 100).toFixed(0)} XPF` : '' }}
             <span v-if="form.amount > walletStore.balance" class="text-red-500">
-              (Solde insuffisant)
+              {{ t('walletTransfer.insufficientHint') }}
             </span>
           </p>
         </div>
 
         <!-- Description -->
         <div>
-          <label class="mb-2 block text-sm font-medium">Description (optionnel)</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('walletTransfer.descLabel') }}</label>
           <UInput
             v-model="form.description"
-            placeholder="Ex: Paiement pour services"
+            :placeholder="t('walletTransfer.descPh')"
             size="lg"
           />
         </div>
@@ -143,7 +144,7 @@ const handleSubmit = async () => {
             :disabled="form.amount > walletStore.balance"
             icon="i-heroicons-arrow-path"
           >
-            Transférer
+            {{ t('walletTransfer.submit') }}
           </UButton>
         </div>
       </form>

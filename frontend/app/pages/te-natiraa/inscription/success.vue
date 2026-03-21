@@ -9,6 +9,7 @@ definePageMeta({
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 
 const sessionId = computed(() => route.query.session_id as string | undefined)
 
@@ -28,7 +29,7 @@ const isProcessingServer = computed(() => !!sessionId.value && processPending.va
 const error = computed(() => {
   if (processError.value) {
     const err = processError.value as any
-    return err.data?.message || err.message || 'Erreur lors du traitement'
+    return err.data?.message || err.message || t('teNatiraaSuccess.processErrorFallback')
   }
   return null
 })
@@ -45,15 +46,15 @@ const processPayment = async () => {
       method: 'POST',
     })
     toast.add({
-      title: 'Inscription confirmée',
-      description: 'Votre billet vous a été envoyé par email.',
+      title: t('teNatiraaSuccess.toastOkTitle'),
+      description: t('teNatiraaSuccess.toastOkDesc'),
       color: 'success',
     })
     router.replace({ path: route.path, query: {} })
   } catch (err: any) {
     toast.add({
-      title: 'Erreur',
-      description: err.data?.message || err.message || 'Erreur lors du traitement',
+      title: t('teNatiraaSuccess.toastErrTitle'),
+      description: err.data?.message || err.message || t('teNatiraaSuccess.processErrorFallback'),
       color: 'red',
     })
   } finally {
@@ -66,8 +67,8 @@ onMounted(() => {
     processPayment()
   } else if (isProcessed.value) {
     toast.add({
-      title: 'Inscription confirmée',
-      description: 'Votre billet vous a été envoyé par email.',
+      title: t('teNatiraaSuccess.toastOkTitle'),
+      description: t('teNatiraaSuccess.toastOkDesc'),
       color: 'success',
     })
   }
@@ -89,22 +90,22 @@ const hasNoSessionId = computed(() => !sessionId.value && !isProcessing.value &&
           </div>
         </div>
         <h1 class="mb-4 text-3xl font-bold text-white">
-          {{ (isProcessing || isProcessingServer) ? 'Traitement en cours...' : hasNoSessionId ? 'Paiement effectué' : 'Inscription confirmée' }}
+          {{ (isProcessing || isProcessingServer) ? t('teNatiraaSuccess.processing') : hasNoSessionId ? t('teNatiraaSuccess.paidNoSession') : t('teNatiraaSuccess.confirmed') }}
         </h1>
         <p v-if="isProcessing || isProcessingServer" class="mb-8 text-lg text-white/80">
-          Nous enregistrons votre inscription et préparons votre billet...
+          {{ t('teNatiraaSuccess.processingDesc') }}
         </p>
         <p v-else-if="hasNoSessionId" class="mb-8 text-lg text-white/80">
-          Si vous venez de payer, vérifiez votre email pour recevoir votre billet. L'inscription a bien été enregistrée.
+          {{ t('teNatiraaSuccess.paidDesc') }}
         </p>
         <p v-else class="mb-8 text-lg text-white/80">
-          Votre inscription au Te Natira'a est confirmée. Votre billet vous a été envoyé par email.
+          {{ t('teNatiraaSuccess.confirmedDesc') }}
         </p>
         <p v-if="error" class="mb-4 text-red-400">
           {{ error }}
         </p>
         <p class="mb-8 text-sm text-white/60">
-          Un seul billet sera envoyé pour toutes les personnes inscrites. Présentez-le à l'entrée le jour de l'événement.
+          {{ t('teNatiraaSuccess.ticketNote') }}
         </p>
         <div class="flex flex-col gap-4 sm:flex-row sm:justify-center">
           <UButton
@@ -114,13 +115,13 @@ const hasNoSessionId = computed(() => !sessionId.value && !isProcessing.value &&
             icon="i-heroicons-arrow-path"
             @click="processPayment"
           >
-            Réessayer
+            {{ t('teNatiraaSuccess.retry') }}
           </UButton>
           <UButton to="/te-natiraa" color="primary" size="lg" :disabled="isProcessing || isProcessingServer">
-            Retour au Te Natira'a
+            {{ t('teNatiraaSuccess.backTeNatiraa') }}
           </UButton>
           <UButton to="/" variant="outline" size="lg" :disabled="isProcessing || isProcessingServer">
-            Retour à l'accueil
+            {{ t('teNatiraaSuccess.backHome') }}
           </UButton>
         </div>
       </div>

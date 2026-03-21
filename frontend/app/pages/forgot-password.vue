@@ -6,7 +6,7 @@ definePageMeta({
 import { useAuthStore } from '~/stores/useAuthStore'
 
 const authStore = useAuthStore()
-const router = useRouter()
+const { t } = useI18n()
 
 const email = ref('')
 const isLoading = ref(false)
@@ -18,7 +18,7 @@ const handleForgotPassword = async () => {
   success.value = ''
 
   if (!email.value) {
-    error.value = 'Veuillez entrer votre adresse email'
+    error.value = t('auth.forgot.emailRequired')
     return
   }
 
@@ -27,9 +27,9 @@ const handleForgotPassword = async () => {
   isLoading.value = false
 
   if (result.success) {
-    success.value = result.message || 'Si un compte avec cet email existe, un lien de réinitialisation a été envoyé.'
+    success.value = result.message || t('auth.forgot.successGeneric')
   } else {
-    error.value = result.error || 'Erreur lors de la demande de réinitialisation'
+    error.value = result.error || t('auth.forgot.errorGeneric')
   }
 }
 </script>
@@ -40,7 +40,7 @@ const handleForgotPassword = async () => {
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-key" />
-            <span class="font-medium text-lg">Mot de passe oublié</span>
+            <span class="font-medium text-lg">{{ t('auth.forgot.title') }}</span>
           </div>
         </template>
 
@@ -54,14 +54,14 @@ const handleForgotPassword = async () => {
           </div>
 
           <p class="text-sm text-white/70">
-            Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+            {{ t('auth.forgot.intro') }}
           </p>
 
-          <UFormGroup label="Email" name="email" required>
+          <UFormGroup :label="t('auth.login.email')" name="email" required>
             <UInput
               v-model="email"
               type="email"
-              placeholder="votre@email.com"
+              :placeholder="t('auth.login.emailPlaceholder')"
               icon="i-heroicons-envelope"
               :disabled="isLoading"
               size="lg"
@@ -76,7 +76,7 @@ const handleForgotPassword = async () => {
             :loading="isLoading"
             :disabled="isLoading"
           >
-            Envoyer le lien de réinitialisation
+            {{ t('auth.forgot.submit') }}
           </UButton>
         </form>
 
@@ -85,7 +85,7 @@ const handleForgotPassword = async () => {
             to="/login"
             class="text-sm text-primary-400 hover:text-primary-300 font-medium"
           >
-            ← Retour à la connexion
+            {{ t('auth.forgot.backLogin') }}
           </NuxtLink>
         </div>
     </UCard>

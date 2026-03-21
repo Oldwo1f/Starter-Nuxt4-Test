@@ -2,84 +2,86 @@
 definePageMeta({
   layout: 'default',
 })
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
     <div class="mb-8">
       <h1 class="mb-4 text-4xl font-bold">
-        Suppression de vos données
+        {{ t('privacySuppression.title') }}
       </h1>
       <p class="text-white/60">
-        Comment demander la suppression de vos données personnelles sur Nuna Heritage
+        {{ t('privacySuppression.subtitle') }}
       </p>
     </div>
 
     <UCard>
       <div class="prose prose-invert max-w-none space-y-6">
         <section>
-          <h2 class="text-2xl font-semibold mb-4">
-            Compte créé avec Facebook
+          <h2 class="mb-4 text-2xl font-semibold">
+            {{ t('privacySuppression.fbh') }}
           </h2>
           <p class="text-white/80">
-            Si vous vous êtes inscrit(e) avec Facebook, vous pouvez demander la suppression de vos données de deux façons :
+            {{ t('privacySuppression.fbp1') }}
           </p>
-          <ol class="list-decimal list-inside space-y-2 text-white/80">
+          <ol class="list-inside list-decimal space-y-2 text-white/80">
             <li>
-              Allez sur <strong>Paramètres Facebook</strong> → <strong>Paramètres et confidentialité</strong> → <strong>Paramètres</strong> → <strong>Applications et sites web</strong>
+              {{ t('privacySuppression.fbl1') }}
             </li>
             <li>
-              Trouvez <strong>Nuna Heritage</strong> dans la liste de vos applications
+              {{ t('privacySuppression.fbl2') }}
             </li>
             <li>
-              Cliquez sur <strong>Supprimer</strong> ou <strong>Envoyer une demande</strong> pour demander la suppression de vos données
+              {{ t('privacySuppression.fbl3') }}
             </li>
           </ol>
           <p class="text-white/80">
-            Votre demande sera traitée automatiquement et toutes les données associées à votre compte Facebook sur Nuna Heritage seront supprimées de nos serveurs.
+            {{ t('privacySuppression.fbp2') }}
           </p>
         </section>
 
         <section>
-          <h2 class="text-2xl font-semibold mb-4">
-            Compte créé avec email
+          <h2 class="mb-4 text-2xl font-semibold">
+            {{ t('privacySuppression.emailh') }}
           </h2>
           <p class="text-white/80">
-            Si vous vous êtes inscrit(e) avec une adresse email et un mot de passe, vous pouvez :
+            {{ t('privacySuppression.emailp1') }}
           </p>
-          <ul class="list-disc list-inside space-y-2 text-white/80">
+          <ul class="list-inside list-disc space-y-2 text-white/80">
             <li>
-              Nous contacter directement pour demander la suppression de votre compte et de vos données
+              {{ t('privacySuppression.emailli1') }}
             </li>
             <li>
-              Consulter notre
+              {{ t('privacySuppression.emailLi2Lead') }}
               <NuxtLink to="/politique-de-confidentialite" class="text-primary-400 hover:underline">
-                politique de confidentialité
+                {{ t('privacySuppression.privacyLink') }}
               </NuxtLink>
-              pour plus d'informations sur vos droits
+              {{ t('privacySuppression.emailLi2Tail') }}
             </li>
           </ul>
         </section>
 
         <section>
-          <h2 class="text-2xl font-semibold mb-4">
-            Données supprimées
+          <h2 class="mb-4 text-2xl font-semibold">
+            {{ t('privacySuppression.dataDeletedh') }}
           </h2>
           <p class="text-white/80">
-            Lors d'une suppression, nous supprimons toutes les données associées à votre compte : profil, annonces, transactions, messages, progressions de cours, et tout autre contenu lié à votre identité.
+            {{ t('privacySuppression.dataDeletedp') }}
           </p>
         </section>
 
         <section>
-          <h2 class="text-2xl font-semibold mb-4">
-            Questions ?
+          <h2 class="mb-4 text-2xl font-semibold">
+            {{ t('privacySuppression.footerQh') }}
           </h2>
           <p class="text-white/80">
-            Pour toute question concernant la protection de vos données, consultez notre
+            {{ t('privacySuppression.footerQLead') }}
             <NuxtLink to="/politique-de-confidentialite" class="text-primary-400 hover:underline">
-              politique de confidentialité
+              {{ t('privacySuppression.privacyLink') }}
             </NuxtLink>
-            ou contactez-nous.
+            {{ t('privacySuppression.footerQTail') }}
           </p>
         </section>
       </div>

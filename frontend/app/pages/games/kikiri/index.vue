@@ -12,7 +12,7 @@ const unreadChatCount = ref(0)
 definePageMeta({
   layout: 'default',
   middleware: 'auth',
-  meta: { title: 'Kikiri' },
+  titleKey: 'games.metaKikiri',
 })
 
 const config = useRuntimeConfig()
@@ -21,6 +21,7 @@ const authStore = useAuthStore()
 const { getImageUrl } = useApi()
 const walletStore = useWalletStore()
 const toast = useToast()
+const { t } = useI18n()
 
 interface KikiriStatus {
   isOpen: boolean
@@ -41,14 +42,14 @@ const closedMessage = computed(() => {
   const s = kikiriStatus.value
   if (!s) return null
   if (s.mode === 'manual') {
-    return 'Revenez plus tard, le jeu est désactivé.'
+    return t('games.closedDisabled')
   }
   if (s.nextOpenAt) {
     const hh = new Date(s.nextOpenAt).getHours().toString().padStart(2, '0')
     const mm = new Date(s.nextOpenAt).getMinutes().toString().padStart(2, '0')
-    return `La table de kikiri ouvre à ${hh}:${mm}`
+    return t('games.kikiriOpensAt', { time: `${hh}:${mm}` })
   }
-  return 'Revenez plus tard.'
+  return t('games.closedLater')
 })
 
 const countdownToOpenFormatted = computed(() => {
@@ -90,6 +91,7 @@ const {
   disconnect,
   placeBet,
   moveBet,
+  moveAllBets,
   emitBetPreview,
   sendChat,
   onState,
@@ -164,18 +166,23 @@ const effectiveBalance = computed(() =>
 let resultNotificationTimeout: ReturnType<typeof setTimeout> | null = null
 let resultFallbackTimeout: ReturnType<typeof setTimeout> | null = null
 
-function onBetMove({ from, to }: { from: number; to: number }) {
+function onBetMove({ from, to, amount = 1 }: { from: number; to: number; amount?: number }) {
   const draw = currentDraw.value
   if (!draw || draw.status !== 'betting' || hasSubmittedForCurrentDraw.value) return
-  emitBetPreview(draw.id, -1, from)
-  emitBetPreview(draw.id, 1, to)
+  const n = Math.max(1, Math.floor(amount))
+  emitBetPreview(draw.id, -n, from)
+  emitBetPreview(draw.id, n, to)
   const knownOnSource = lastKnownUserBets.value[from] ?? 0
-  if (knownOnSource > 0) {
-    moveBet(draw.id, from, to)
+  if (knownOnSource >= n) {
+    if (n > 1) {
+      moveAllBets(draw.id, from, to)
+    } else {
+      moveBet(draw.id, from, to)
+    }
     lastKnownUserBets.value = {
       ...lastKnownUserBets.value,
-      [from]: knownOnSource - 1,
-      [to]: (lastKnownUserBets.value[to] ?? 0) + 1,
+      [from]: knownOnSource - n,
+      [to]: (lastKnownUserBets.value[to] ?? 0) + n,
     }
   }
 }
@@ -266,10 +273,10 @@ const finishDraw = async () => {
       const err = await res.json().catch(() => ({}))
       // Ne pas afficher si un autre client a déjà fini le tirage (race condition normale)
       if (err.message === 'Draw already resolved or in progress') return
-      toast.add({ title: 'Erreur', description: err.message || 'Impossible de finir le tirage', color: 'error' })
+      toast.add({ title: t('common.error'), description: err.message || t('gameUi.finishDrawFail'), color: 'error' })
     }
   } catch (e) {
-    toast.add({ title: 'Erreur', description: 'Impossible de finir le tirage', color: 'error' })
+    toast.add({ title: t('common.error'), description: t('gameUi.finishDrawFail'), color: 'error' })
   } finally {
     isFinishLoading.value = false
   }
@@ -288,10 +295,10 @@ const triggerDraw = async () => {
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      toast.add({ title: 'Erreur', description: err.message || 'Impossible de lancer le tirage', color: 'error' })
+      toast.add({ title: t('common.error'), description: err.message || t('gameUi.triggerDrawFail'), color: 'error' })
     }
   } catch (e) {
-    toast.add({ title: 'Erreur', description: 'Impossible de lancer le tirage', color: 'error' })
+    toast.add({ title: t('common.error'), description: t('gameUi.triggerDrawFail'), color: 'error' })
   } finally {
     isTriggerLoading.value = false
   }

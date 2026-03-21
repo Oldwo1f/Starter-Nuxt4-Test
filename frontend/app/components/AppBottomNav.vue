@@ -1,28 +1,29 @@
 <script setup lang="ts">
 const route = useRoute()
+const { t } = useI18n()
 
-const bottomNavItems = [
+const bottomNavItems = computed(() => [
   {
-    label: 'Blog',
+    label: t('bottomNav.blog'),
     icon: 'i-heroicons-document-text',
     to: '/blog',
   },
   {
-    label: 'Troc',
+    label: t('bottomNav.troc'),
     icon: 'i-heroicons-shopping-bag',
     to: '/marketplace',
   },
   {
-    label: 'Academy',
+    label: t('bottomNav.academy'),
     icon: 'i-heroicons-academic-cap',
     to: '/academy',
   },
   {
-    label: 'Jeux',
+    label: t('bottomNav.games'),
     icon: 'i-heroicons-play',
     to: '/games',
   },
-]
+])
 
 const isActive = (path: string) => {
   if (path === '/marketplace') {

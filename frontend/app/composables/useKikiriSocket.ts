@@ -111,6 +111,11 @@ export const useKikiriSocket = () => {
     if (s) s.emit('kikiri:moveBet', { drawId, from, to })
   }
 
+  const moveAllBets = (drawId: number, from: number, to: number) => {
+    const s = getSocket()
+    if (s) s.emit('kikiri:moveAllBets', { drawId, from, to })
+  }
+
   const emitBetPreview = (drawId: number, delta: number, caseNum: number) => {
     const s = getSocket()
     if (s) s.emit('kikiri:betPreview', { drawId, delta, case: caseNum })
@@ -276,6 +281,7 @@ export const useKikiriSocket = () => {
     getSocket,
     placeBet,
     moveBet,
+    moveAllBets,
     emitBetPreview,
     requestState,
     requestAllBets,

@@ -10,6 +10,7 @@ definePageMeta({
  */
 const authStore = useAuthStore()
 const router = useRouter()
+const { t } = useI18n()
 const error = ref('')
 const isLoading = ref(true)
 
@@ -19,7 +20,7 @@ onMounted(async () => {
   try {
     const parsed = parseFacebookCallbackFromHash()
     if (!parsed) {
-      error.value = 'Aucun token Facebook reçu. Veuillez réessayer.'
+      error.value = t('auth.facebookCallback.noToken')
       isLoading.value = false
       return
     }
@@ -39,10 +40,10 @@ onMounted(async () => {
     if (result.success) {
       router.replace(returnTo)
     } else {
-      error.value = result.error || 'Erreur lors de la connexion Facebook'
+      error.value = result.error || t('auth.login.facebookError')
     }
   } catch (err: any) {
-    error.value = err.message || 'Erreur lors de la connexion Facebook'
+    error.value = err.message || t('auth.login.facebookError')
   } finally {
     isLoading.value = false
   }
@@ -55,13 +56,13 @@ onMounted(async () => {
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-simple-icons-facebook" />
-          <span class="font-medium text-lg">Connexion Facebook</span>
+          <span class="font-medium text-lg">{{ t('auth.facebookCallback.title') }}</span>
         </div>
       </template>
 
       <div v-if="isLoading" class="flex flex-col items-center gap-4 py-8">
         <UIcon name="i-heroicons-arrow-path" class="w-12 h-12 text-primary-400 animate-spin" />
-        <p class="text-white/70">Connexion en cours...</p>
+        <p class="text-white/70">{{ t('auth.facebookCallback.connecting') }}</p>
       </div>
 
       <div v-else-if="error" class="space-y-4">
@@ -73,7 +74,7 @@ onMounted(async () => {
           color="primary"
           block
         >
-          Retour à la connexion
+          {{ t('auth.facebookCallback.backLogin') }}
         </UButton>
       </div>
     </UCard>

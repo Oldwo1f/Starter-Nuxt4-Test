@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const STORAGE_KEY = 'marketplace_how_it_works_visited'
 
+const { t } = useI18n()
 const hasVisited = ref(false)
 
 onMounted(() => {
@@ -23,8 +24,8 @@ const markAsVisited = () => {
     color="primary"
     variant="soft"
     icon="i-heroicons-information-circle"
-    title="Merci de visiter au moins une fois la page «Comment ça marche»"
-    description="Découvrez les règles du troc, le fonctionnement des Pūpū 🐚 et le processus d'échange."
+    :title="t('marketplaceBanner.title')"
+    :description="t('marketplaceBanner.description')"
     class="mb-6"
   >
     <template #actions>
@@ -36,7 +37,7 @@ const markAsVisited = () => {
           size="sm"
           @click="markAsVisited"
         >
-          Découvrir comment ça marche
+          {{ t('marketplaceBanner.discover') }}
         </UButton>
         <UButton
           color="neutral"
@@ -44,7 +45,7 @@ const markAsVisited = () => {
           size="sm"
           @click="markAsVisited"
         >
-          Ne plus afficher
+          {{ t('marketplaceBanner.dismiss') }}
         </UButton>
       </div>
     </template>

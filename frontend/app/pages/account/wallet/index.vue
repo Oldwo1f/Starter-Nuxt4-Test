@@ -6,11 +6,14 @@ import { useProfileValidation } from '~/composables/useProfileValidation'
 definePageMeta({
   layout: 'account',
   middleware: 'auth',
+  titleKey: 'account.menuWallet',
 })
 
 const walletStore = useWalletStore()
 const authStore = useAuthStore()
 const { isProfileComplete } = useProfileValidation()
+const { t } = useI18n()
+const { formatDate } = useLocaleDate()
 
 // Fetch data
 const fetchData = async () => {
@@ -24,6 +27,15 @@ const fetchData = async () => {
 onMounted(() => {
   fetchData()
 })
+
+const formatTxDate = (date: string) =>
+  formatDate(date, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 </script>
 
 <template>
@@ -31,8 +43,8 @@ onMounted(() => {
     <ProfileIncompleteBanner />
     
     <div class="space-y-2">
-      <h1 class="text-3xl font-bold">Mon portefeuille</h1>
-      <p class="text-white/60">Gérez vos Pūpū, vos Jiji et consultez vos transactions</p>
+      <h1 class="text-3xl font-bold">{{ t('account.walletPage.title') }}</h1>
+      <p class="text-white/60">{{ t('account.walletPage.subtitle') }}</p>
     </div>
 
     <!-- Balances -->
@@ -40,7 +52,7 @@ onMounted(() => {
     <!-- Pūpū Balance Card -->
     <UCard class="bg-gradient-to-r from-primary-500/20 to-primary-600/20">
       <div class="text-center">
-        <div class="mb-2 text-sm text-white/60">Solde disponible</div>
+        <div class="mb-2 text-sm text-white/60">{{ t('account.walletPage.available') }}</div>
         <div class="mb-4 flex items-center justify-center gap-2 text-5xl font-bold text-primary-500">
           <span>🐚</span>
           <span>{{ Math.round(walletStore.balance) }}</span>
@@ -56,7 +68,7 @@ onMounted(() => {
           icon="i-heroicons-arrow-path"
           :disabled="!isProfileComplete"
         >
-          Transférer des Pūpū
+          {{ t('account.walletPage.transferCta') }}
         </UButton>
       </div>
     </UCard>
@@ -64,13 +76,13 @@ onMounted(() => {
     <!-- Jiji Balance Card -->
     <UCard class="bg-gradient-to-r from-amber-500/20 to-amber-600/20">
       <div class="text-center">
-        <div class="mb-2 text-sm text-white/60">Jetons de jeu</div>
+        <div class="mb-2 text-sm text-white/60">{{ t('account.walletPage.jijiLabel') }}</div>
         <div class="mb-4 flex items-center justify-center gap-2 text-5xl font-bold text-amber-500">
           <JijiIcon size="lg" />
           <span>{{ Math.round(walletStore.jijiBalance) }}</span>
         </div>
         <div class="text-sm text-white/60">
-          Pour Bingo et Kikiri
+          {{ t('account.walletPage.jijiHint') }}
         </div>
         <UButton
           to="/games/bingo"
@@ -80,7 +92,7 @@ onMounted(() => {
           class="mt-6"
           icon="i-heroicons-play"
         >
-          Jouer
+          {{ t('account.walletPage.play') }}
         </UButton>
       </div>
     </UCard>
@@ -90,9 +102,9 @@ onMounted(() => {
     <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <template #header>
         <div class="flex items-center justify-between">
-          <h2 class="text-xl font-semibold">Historique des transactions</h2>
+          <h2 class="text-xl font-semibold">{{ t('account.walletPage.historyTitle') }}</h2>
           <UButton to="/account/transactions" variant="ghost" size="sm">
-            Voir tout
+            {{ t('account.walletPage.seeAll') }}
           </UButton>
         </div>
       </template>
@@ -107,19 +119,13 @@ onMounted(() => {
         >
           <div class="flex-1">
             <div class="font-semibold">
-              {{ transaction.description || 'Transaction' }}
+              {{ transaction.description || t('account.walletPage.transactionFallback') }}
             </div>
             <div class="text-sm text-white/60">
-              {{ new Date(transaction.createdAt).toLocaleDateString('fr-FR', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              }) }}
+              {{ formatTxDate(transaction.createdAt) }}
             </div>
             <div v-if="transaction.listing" class="mt-1 text-xs text-white/40">
-              Annonce: {{ transaction.listing.title }}
+              {{ t('account.walletPage.listingPrefix') }} {{ transaction.listing.title }}
             </div>
           </div>
           <div class="text-right">
@@ -135,7 +141,7 @@ onMounted(() => {
               {{ transaction.amount }} 🐚
             </div>
             <div class="text-xs text-white/60">
-              Solde: {{ Math.round(transaction.balanceAfter) }} 🐚
+              {{ t('account.walletPage.balanceAfter') }} {{ Math.round(transaction.balanceAfter) }} 🐚
             </div>
           </div>
         </div>
@@ -148,10 +154,10 @@ onMounted(() => {
             icon="i-heroicons-chevron-left"
             @click="walletStore.fetchTransactions(walletStore.pagination.page - 1)"
           >
-            Précédent
+            {{ t('account.walletPage.prev') }}
           </UButton>
           <span class="text-sm text-white/60">
-            Page {{ walletStore.pagination.page }} sur {{ walletStore.pagination.totalPages }}
+            {{ t('account.walletPage.pageOf', { page: walletStore.pagination.page, total: walletStore.pagination.totalPages }) }}
           </span>
           <UButton
             :disabled="!walletStore.pagination.hasNext"
@@ -159,13 +165,13 @@ onMounted(() => {
             trailing-icon="i-heroicons-chevron-right"
             @click="walletStore.fetchTransactions(walletStore.pagination.page + 1)"
           >
-            Suivant
+            {{ t('account.walletPage.next') }}
           </UButton>
         </div>
       </div>
       <div v-else class="py-12 text-center text-white/60">
         <UIcon name="i-heroicons-inbox" class="mx-auto mb-4 h-12 w-12" />
-        <p>Aucune transaction</p>
+        <p>{{ t('account.walletPage.empty') }}</p>
       </div>
     </UCard>
   </div>

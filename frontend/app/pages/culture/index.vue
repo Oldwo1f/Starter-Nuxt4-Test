@@ -9,6 +9,8 @@ definePageMeta({
 })
 
 const cultureStore = useCultureStore()
+const { t } = useI18n()
+const { formatDate } = useLocaleDate()
 
 // Helper pour obtenir l'URL d'embed YouTube à partir d'une URL YouTube
 const getYouTubeEmbedUrl = (url: string) => {
@@ -44,16 +46,16 @@ const videoCategories = computed(() => {
   const categories = [
     {
       id: 'reportages',
-      title: 'Reportages',
+      title: t('culturePage.catReportagesTitle'),
       icon: 'i-heroicons-video-camera',
-      description: 'Découvrez nos reportages sur la culture polynésienne',
+      description: t('culturePage.catReportagesDesc'),
       type: 'reportage' as const,
     },
     {
       id: 'interviews',
-      title: 'Interviews',
+      title: t('culturePage.catInterviewsTitle'),
       icon: 'i-heroicons-microphone',
-      description: 'Rencontres avec les acteurs de la culture polynésienne',
+      description: t('culturePage.catInterviewsDesc'),
       type: 'interview' as const,
     },
   ]
@@ -85,15 +87,6 @@ const closeVideo = () => {
   selectedVideo.value = null
 }
 
-// Formatage de la date
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-}
-
 // Charger les vidéos au montage
 onMounted(() => {
   cultureStore.fetchCultures()
@@ -104,9 +97,9 @@ onMounted(() => {
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
     <!-- En-tête -->
     <div class="mb-12 text-center">
-      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Culture</h1>
+      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">{{ t('culturePage.title') }}</h1>
       <p class="mx-auto max-w-2xl text-lg text-white/70">
-        Découvrez nos reportages et interviews sur la culture polynésienne
+        {{ t('culturePage.subtitle') }}
       </p>
     </div>
 
@@ -118,7 +111,7 @@ onMounted(() => {
         color="primary"
         icon="i-heroicons-video-camera"
       >
-        Reportages
+        {{ t('culturePage.navReportages') }}
       </UButton>
       <UButton
         to="#interviews"
@@ -126,7 +119,7 @@ onMounted(() => {
         color="primary"
         icon="i-heroicons-microphone"
       >
-        Interviews
+        {{ t('culturePage.navInterviews') }}
       </UButton>
     </div>
 
@@ -202,7 +195,7 @@ onMounted(() => {
         </div>
         <div v-else class="py-8 text-center text-white/60">
           <UIcon :name="category.icon" class="mx-auto mb-4 h-12 w-12" />
-          <p>Aucune vidéo disponible dans cette catégorie</p>
+          <p>{{ t('culturePage.noVideos') }}</p>
         </div>
       </div>
     </div>
@@ -222,7 +215,7 @@ onMounted(() => {
             </h3>
             <div v-if="selectedVideo?.director" class="mt-2 flex items-center gap-2 text-sm text-white/70">
               <UIcon name="i-heroicons-user" class="h-4 w-4" />
-              <span>Réalisateur : {{ selectedVideo.director }}</span>
+              <span>{{ t('culturePage.director', { name: selectedVideo.director }) }}</span>
             </div>
           </div>
         </div>
@@ -244,7 +237,7 @@ onMounted(() => {
               v-else
               class="flex h-full w-full items-center justify-center"
             >
-              <p class="text-white/60">URL YouTube invalide</p>
+              <p class="text-white/60">{{ t('culturePage.invalidYoutube') }}</p>
             </div>
           </div>
 
@@ -262,7 +255,7 @@ onMounted(() => {
               "
               variant="subtle"
             >
-              {{ selectedVideo.type === 'reportage' ? 'Reportage' : 'Interview' }}
+              {{ selectedVideo.type === 'reportage' ? t('culturePage.badgeReportage') : t('culturePage.badgeInterview') }}
             </UBadge>
           </div>
         </div>
@@ -275,7 +268,7 @@ onMounted(() => {
       <div class="relative block overflow-hidden rounded-lg md:hidden">
         <img
           :src="tahitiVodVerticale"
-          alt="Tahiti VOD"
+          :alt="t('culturePage.tahitiVodAlt')"
           class="h-full w-full object-cover"
         />
         <div class="absolute inset-0 flex flex-col items-center justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6">
@@ -287,7 +280,7 @@ onMounted(() => {
             size="lg"
             class="w-full"
           >
-            Accéder à TAHITI-VOD
+            {{ t('culturePage.tahitiVodCta') }}
           </UButton>
         </div>
       </div>
@@ -296,7 +289,7 @@ onMounted(() => {
       <div class="relative hidden overflow-hidden rounded-lg md:block">
         <img
           :src="tahitiVodHorizontale"
-          alt="Tahiti VOD"
+          :alt="t('culturePage.tahitiVodAlt')"
           class="h-full w-full object-cover"
         />
         <div class="absolute inset-0 flex items-center justify-end bg-gradient-to-l from-black/80 via-black/40 to-transparent pr-8">
@@ -307,7 +300,7 @@ onMounted(() => {
             color="primary"
             size="lg"
           >
-            Accéder à TAHITI-VOD
+            {{ t('culturePage.tahitiVodCta') }}
           </UButton>
         </div>
       </div>

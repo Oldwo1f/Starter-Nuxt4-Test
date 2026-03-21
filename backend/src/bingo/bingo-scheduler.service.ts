@@ -3,14 +3,18 @@ import { BingoService } from './bingo.service';
 import { BingoConfigService } from './bingo-config.service';
 import { BingoGateway } from './bingo.gateway';
 import { BingoRoundPhase } from '../entities/bingo-round.entity';
-const CHECK_INTERVAL_MS = 2000;
-const OPENING_CHECK_MS = 30 * 1000;
+
+/** Tirage actif : boules / achat de grilles */
+const FAST_INTERVAL_MS = 2000;
+/** Jeu fermé (config) : peu de charge SQL, même s’il reste une manche purchase/drawing en base */
+const IDLE_INTERVAL_MS = 60 * 1000;
 
 @Injectable()
 export class BingoSchedulerService {
-  private checkId: ReturnType<typeof setInterval> | null = null;
-  private openingCheckId: ReturnType<typeof setInterval> | null = null;
+  private schedulerTimer: ReturnType<typeof setTimeout> | null = null;
   private isRunning = false;
+  /** Dernier tick : jeu fermé selon la config (pas seulement « aucune manche ») */
+  private lastCycleIdle = true;
 
   constructor(
     private bingoService: BingoService,
@@ -20,26 +24,33 @@ export class BingoSchedulerService {
   ) {}
 
   onModuleInit() {
-    this.runCycle();
-    this.checkId = setInterval(() => this.runCycle(), CHECK_INTERVAL_MS);
-    this.openingCheckId = setInterval(() => this.checkOpeningAndStartFirstRound(), OPENING_CHECK_MS);
+    this.queueNext(0);
   }
 
   onModuleDestroy() {
-    if (this.checkId) clearInterval(this.checkId);
-    if (this.openingCheckId) clearInterval(this.openingCheckId);
+    if (this.schedulerTimer) {
+      clearTimeout(this.schedulerTimer);
+      this.schedulerTimer = null;
+    }
   }
 
-  private async checkOpeningAndStartFirstRound() {
-    if (this.isRunning) return;
+  private queueNext(delayMs: number) {
+    if (this.schedulerTimer) {
+      clearTimeout(this.schedulerTimer);
+    }
+    this.schedulerTimer = setTimeout(() => {
+      void this.runTick();
+    }, delayMs);
+  }
+
+  private async runTick() {
     try {
-      const isOpen = await this.configService.isGameOpen();
-      const currentRound = await this.bingoService.getCurrentRound();
-      if (isOpen && !currentRound) {
-        await this.runCycle();
-      }
-    } catch {
-      // Ignore errors
+      await this.runCycle();
+    } catch (error) {
+      console.error('[BingoScheduler] tick error:', error);
+    } finally {
+      const delay = this.lastCycleIdle ? IDLE_INTERVAL_MS : FAST_INTERVAL_MS;
+      this.queueNext(delay);
     }
   }
 
@@ -53,6 +64,8 @@ export class BingoSchedulerService {
     try {
       const isOpen = await this.configService.isGameOpen();
       const currentRound = await this.bingoService.getCurrentRound();
+      // Important : une manche orpheline (purchase/drawing) gardait l’ancien code en mode 2 s pour toujours.
+      this.lastCycleIdle = !isOpen;
 
       if (currentRound) {
         if (currentRound.phase === BingoRoundPhase.PURCHASE) {

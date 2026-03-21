@@ -8,6 +8,7 @@ import { useMemberCheck } from '~/composables/useMemberCheck'
 definePageMeta({
   layout: 'account',
   middleware: 'auth',
+  titleKey: 'account.menuDashboard',
 })
 
 const authStore = useAuthStore()
@@ -17,6 +18,8 @@ const toast = useToast()
 const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
 const { isProfileComplete } = useProfileValidation()
 const { canCreateListing, canCreateBlogPost } = useMemberCheck()
+const { t } = useI18n()
+const { formatDate: formatDateLocale } = useLocaleDate()
 
 // Stats
 const stats = ref({
@@ -78,8 +81,8 @@ const fetchData = async () => {
   } catch (error) {
     console.error('Error fetching dashboard data:', error)
     toast.add({
-      title: 'Erreur',
-      description: 'Impossible de charger les données du dashboard',
+      title: t('pollUi.errorTitle'),
+      description: t('account.toast.loadDashError'),
       color: 'red',
     })
   } finally {
@@ -93,14 +96,8 @@ const getImageUrl = (imagePath: string | null | undefined) => {
   return getImageUrlHelper(imagePath)
 }
 
-// Format date
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
+const formatDate = (date: string) =>
+  formatDateLocale(date, { day: 'numeric', month: 'short', year: 'numeric' })
 
 onMounted(() => {
   fetchData()
@@ -112,8 +109,8 @@ onMounted(() => {
     <ProfileIncompleteBanner />
     
     <div class="space-y-2">
-      <h1 class="text-3xl font-bold">Dashboard</h1>
-      <p class="text-white/60">Vue d'ensemble de votre activité</p>
+      <h1 class="text-3xl font-bold">{{ t('account.dashboard.title') }}</h1>
+      <p class="text-white/60">{{ t('account.dashboard.subtitle') }}</p>
     </div>
 
     <div v-if="isLoading" class="text-center py-12">
@@ -125,58 +122,58 @@ onMounted(() => {
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <UCard class="bg-gradient-to-r from-primary-500/20 to-primary-600/20">
           <div class="text-center">
-            <div class="mb-2 text-sm text-white/60">Solde Pūpū</div>
+            <div class="mb-2 text-sm text-white/60">{{ t('account.dashboard.balancePupu') }}</div>
             <div class="mb-2 flex items-center justify-center gap-2 text-3xl font-bold text-primary-500">
               <span>🐚</span>
               <span>{{ Math.round(stats.balance) }}</span>
             </div>
             <UButton to="/account/wallet" variant="ghost" size="sm" class="mt-2">
-              Voir le portefeuille
+              {{ t('account.dashboard.seeWallet') }}
             </UButton>
           </div>
         </UCard>
 
         <UCard class="bg-gradient-to-r from-amber-500/20 to-amber-600/20">
           <div class="text-center">
-            <div class="mb-2 text-sm text-white/60">Jetons de jeu</div>
+            <div class="mb-2 text-sm text-white/60">{{ t('account.dashboard.gameTokens') }}</div>
             <div class="mb-2 flex items-center justify-center gap-2 text-3xl font-bold text-amber-500">
               <JijiIcon size="md" />
               <span>{{ Math.round(walletStore.jijiBalance) }}</span>
             </div>
             <UButton to="/games/bingo" variant="ghost" size="sm" class="mt-2">
-              Jouer
+              {{ t('account.dashboard.play') }}
             </UButton>
           </div>
         </UCard>
 
         <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <div class="text-center">
-            <div class="mb-2 text-sm text-white/60">Annonces actives</div>
+            <div class="mb-2 text-sm text-white/60">{{ t('account.dashboard.activeListings') }}</div>
             <div class="text-3xl font-bold">{{ stats.activeListings }}</div>
             <div class="mt-1 text-xs text-white/60">
-              sur {{ stats.totalListings }} total
+              {{ t('account.dashboard.ofTotal', { n: stats.totalListings }) }}
             </div>
             <UButton to="/account/listings" variant="ghost" size="sm" class="mt-2">
-              Mes annonces
+              {{ t('account.dashboard.myListingsBtn') }}
             </UButton>
           </div>
         </UCard>
 
         <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <div class="text-center">
-            <div class="mb-2 text-sm text-white/60">Transactions</div>
+            <div class="mb-2 text-sm text-white/60">{{ t('account.dashboard.transactions') }}</div>
             <div class="text-3xl font-bold">{{ stats.totalTransactions }}</div>
             <UButton to="/account/transactions" variant="ghost" size="sm" class="mt-2">
-              Historique
+              {{ t('account.dashboard.history') }}
             </UButton>
           </div>
         </UCard>
 
         <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <div class="text-center">
-            <div class="mb-2 text-sm text-white/60">Vues totales</div>
+            <div class="mb-2 text-sm text-white/60">{{ t('account.dashboard.totalViews') }}</div>
             <div class="text-3xl font-bold">{{ stats.totalViews }}</div>
-            <div class="mt-1 text-xs text-white/60">sur toutes vos annonces</div>
+            <div class="mt-1 text-xs text-white/60">{{ t('account.dashboard.viewsHint') }}</div>
           </div>
         </UCard>
       </div>
@@ -184,7 +181,7 @@ onMounted(() => {
       <!-- Quick Actions -->
       <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
         <template #header>
-          <h2 class="text-xl font-semibold">Actions rapides</h2>
+          <h2 class="text-xl font-semibold">{{ t('account.dashboard.quickActions') }}</h2>
         </template>
         <div class="flex flex-wrap gap-3">
           <UButton
@@ -194,7 +191,7 @@ onMounted(() => {
             icon="i-heroicons-plus-circle"
             :disabled="!isProfileComplete"
           >
-            Créer une annonce
+            {{ t('account.dashboard.createListing') }}
           </UButton>
           <UButton
             v-else
@@ -203,7 +200,7 @@ onMounted(() => {
             variant="outline"
             icon="i-heroicons-lock-closed"
           >
-            Devenir membre pour poster
+            {{ t('account.dashboard.memberToPost') }}
           </UButton>
           <UButton 
             to="/account/wallet/transfer" 
@@ -212,10 +209,10 @@ onMounted(() => {
             icon="i-heroicons-arrow-path"
             :disabled="!isProfileComplete"
           >
-            Transférer des Pūpū
+            {{ t('account.dashboard.transferPupu') }}
           </UButton>
           <UButton to="/account/listings" variant="outline" icon="i-heroicons-rectangle-stack">
-            Gérer mes annonces
+            {{ t('account.dashboard.manageListings') }}
           </UButton>
           <UButton
             v-if="canCreateBlogPost"
@@ -223,10 +220,10 @@ onMounted(() => {
             variant="outline"
             icon="i-heroicons-document-text"
           >
-            Écrire un article
+            {{ t('account.dashboard.writeArticle') }}
           </UButton>
           <UButton to="/account/articles" variant="outline" icon="i-heroicons-document-text">
-            Mes articles
+            {{ t('account.dashboard.myArticles') }}
           </UButton>
         </div>
       </UCard>
@@ -236,15 +233,15 @@ onMounted(() => {
         <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <template #header>
             <div class="flex items-center justify-between">
-              <h2 class="text-xl font-semibold">Annonces récentes</h2>
+              <h2 class="text-xl font-semibold">{{ t('account.dashboard.recentListings') }}</h2>
               <UButton to="/account/listings" variant="ghost" size="sm">
-                Voir tout
+                {{ t('account.dashboard.seeAll') }}
               </UButton>
             </div>
           </template>
           <div v-if="recentListings.length === 0" class="py-8 text-center text-white/60">
             <UIcon name="i-heroicons-inbox" class="mx-auto mb-2 h-8 w-8" />
-            <p>Aucune annonce</p>
+            <p>{{ t('account.dashboard.noListings') }}</p>
           </div>
           <div v-else class="space-y-3">
             <div
@@ -266,7 +263,7 @@ onMounted(() => {
               <div class="flex-1 min-w-0">
                 <h3 class="font-semibold line-clamp-1">{{ listing.title }}</h3>
                 <div class="mt-1 flex items-center gap-2 text-xs text-white/60">
-                  <span>{{ listing.viewCount || 0 }} vues</span>
+                  <span>{{ t('account.dashboard.views', { n: listing.viewCount || 0 }) }}</span>
                   <span>•</span>
                   <span>{{ formatDate(listing.createdAt) }}</span>
                 </div>
@@ -276,7 +273,7 @@ onMounted(() => {
                     variant="subtle"
                     size="xs"
                   >
-                    {{ listing.status === 'active' ? 'Active' : listing.status === 'sold' ? 'Vendue' : 'Archivée' }}
+                    {{ listing.status === 'active' ? t('account.dashboard.statusActive') : listing.status === 'sold' ? t('account.dashboard.statusSold') : t('account.dashboard.statusArchived') }}
                   </UBadge>
                   <span class="text-sm font-semibold text-primary-500">
                     🐚 {{ listing.price }}
@@ -297,15 +294,15 @@ onMounted(() => {
         <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
           <template #header>
             <div class="flex items-center justify-between">
-              <h2 class="text-xl font-semibold">Transactions récentes</h2>
+              <h2 class="text-xl font-semibold">{{ t('account.dashboard.recentTransactions') }}</h2>
               <UButton to="/account/transactions" variant="ghost" size="sm">
-                Voir tout
+                {{ t('account.dashboard.seeAll') }}
               </UButton>
             </div>
           </template>
           <div v-if="recentTransactions.length === 0" class="py-8 text-center text-white/60">
             <UIcon name="i-heroicons-inbox" class="mx-auto mb-2 h-8 w-8" />
-            <p>Aucune transaction</p>
+            <p>{{ t('account.dashboard.noTransactions') }}</p>
           </div>
           <div v-else class="space-y-3">
             <div
@@ -315,13 +312,13 @@ onMounted(() => {
             >
               <div class="flex-1 min-w-0">
                 <div class="font-semibold">
-                  {{ transaction.description || 'Transaction' }}
+                  {{ transaction.description || t('account.dashboard.transactionFallback') }}
                 </div>
                 <div class="mt-1 text-xs text-white/60">
                   {{ formatDate(transaction.createdAt) }}
                 </div>
                 <div v-if="transaction.listing" class="mt-1 text-xs text-white/40">
-                  Annonce: {{ transaction.listing.title }}
+                  {{ t('account.dashboard.listingPrefix') }} {{ transaction.listing.title }}
                 </div>
               </div>
               <div class="text-right">
@@ -337,7 +334,7 @@ onMounted(() => {
                     {{ transaction.amount }} 🐚
                   </div>
                 <div class="text-xs text-white/60">
-                  Solde: {{ Math.round(transaction.balanceAfter) }} 🐚
+                  {{ t('account.dashboard.balanceAfter') }} {{ Math.round(transaction.balanceAfter) }} 🐚
                 </div>
               </div>
             </div>

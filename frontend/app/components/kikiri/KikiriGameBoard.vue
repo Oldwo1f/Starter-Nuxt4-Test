@@ -23,13 +23,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:betAmounts': [Record<number, number>]
-  'move': [{ from: number; to: number }]
+  'move': [{ from: number; to: number; amount?: number }]
   'betPreview': [{ delta: number; case: number }]
   'animations-complete': []
   'game-ready': []
 }>()
 
 const { getImageUrl } = useApi()
+const { t } = useI18n()
 
 const betAmounts = computed({
   get: () => props.betAmounts,
@@ -111,6 +112,8 @@ const flyingPupus = ref<FlyingPupu[]>([])
 const flyingPupuProgress = ref(0)
 const flyingPupuStartTime = ref(0)
 const flyingPupuDelayPerUnit = ref(500)
+/** Durée du trajet d’un jeton (banque → case) pendant bank-to-win ; ajustée avec l’espacement pour tenir le budget. */
+const flyingPupuFlightDurationMs = ref(700)
 const casesGridRef = ref<HTMLElement | null>(null)
 const gameBoardWrapperRef = ref<HTMLElement | null>(null)
 const balanceRef = ref<HTMLElement | null>(null)
@@ -224,7 +227,11 @@ function getWinAmountPerCase(): Record<number, number> {
 
 const PER_PUPU_DELAY_MS = 500
 const PER_PUPU_DURATION_MS = 700
-const BANK_TO_WIN_MAX_DURATION_MS = 7500
+const BANK_TO_WIN_MAX_DURATION_MS = 5000
+const BANK_TO_WIN_TIMING_BUFFER_MS = 80
+const BANK_TO_WIN_RAF_END_BUFFER_MS = 50
+const BANK_TO_WIN_MIN_STAGGER_MS = 40
+const BANK_TO_WIN_MIN_FLIGHT_MS = 120
 const LOST_TO_BANK_DURATION_MS = 900
 const DOME_LIFT_DURATION_MS = 1100
 const DOME_CLOSE_DURATION_MS = 800
@@ -238,8 +245,51 @@ function getFlyingPupuProgress(fp: FlyingPupu): number {
   const elapsed = performance.now() - flyingPupuStartTime.value
   const idx = fp.index ?? 0
   const startAt = idx * flyingPupuDelayPerUnit.value
-  const p = Math.max(0, Math.min(1, (elapsed - startAt) / PER_PUPU_DURATION_MS))
+  const dur = flyingPupuFlightDurationMs.value
+  const p = Math.max(0, Math.min(1, (elapsed - startAt) / dur))
   return p
+}
+
+/** Espacement et durée de vol pour que le dernier jeton termine dans le budget (5 s). */
+function computeBankToWinStaggerAndFlight(n: number): { stagger: number; flight: number } {
+  const budget = BANK_TO_WIN_MAX_DURATION_MS - BANK_TO_WIN_TIMING_BUFFER_MS
+
+  if (n <= 0) {
+    return { stagger: PER_PUPU_DELAY_MS, flight: PER_PUPU_DURATION_MS }
+  }
+  if (n === 1) {
+    return { stagger: 0, flight: Math.min(PER_PUPU_DURATION_MS, budget) }
+  }
+
+  const nominal = (n - 1) * PER_PUPU_DELAY_MS + PER_PUPU_DURATION_MS
+  let stagger = PER_PUPU_DELAY_MS
+  let flight = PER_PUPU_DURATION_MS
+
+  if (nominal <= budget) {
+    return { stagger, flight }
+  }
+
+  let scale = budget / nominal
+  stagger = Math.max(BANK_TO_WIN_MIN_STAGGER_MS, PER_PUPU_DELAY_MS * scale)
+  flight = Math.max(BANK_TO_WIN_MIN_FLIGHT_MS, PER_PUPU_DURATION_MS * scale)
+
+  let end = (n - 1) * stagger + flight
+  if (end <= budget) {
+    return { stagger, flight }
+  }
+
+  scale = budget / end
+  stagger = Math.max(BANK_TO_WIN_MIN_STAGGER_MS, stagger * scale)
+  flight = Math.max(BANK_TO_WIN_MIN_FLIGHT_MS, flight * scale)
+  end = (n - 1) * stagger + flight
+  if (end <= budget) {
+    return { stagger, flight }
+  }
+
+  scale = budget / end
+  stagger = Math.max(20, stagger * scale)
+  flight = Math.max(80, flight * scale)
+  return { stagger, flight }
 }
 
 const ARRIVED_THRESHOLD = 0.98
@@ -260,6 +310,20 @@ const myBetsFromAllBets = computed(() => {
   }
   return result
 })
+
+/** Si la mise sur la case est strictement supérieure à ce seuil, un drag déplace tout le tas d'un coup. */
+const CELL_BULK_DRAG_THRESHOLD = 10
+
+function getMyStakeOnCase(caseNum: number): number {
+  return Math.max(betAmounts.value[caseNum] ?? 0, myBetsFromAllBets.value[caseNum] ?? 0)
+}
+
+/** Montant à déplacer en un geste depuis une case (tout le tas) ou undefined = 1 jeton. */
+function cellBulkDragAmount(caseNum: number): number | undefined {
+  const stake = getMyStakeOnCase(caseNum)
+  if (stake > CELL_BULK_DRAG_THRESHOLD) return stake
+  return undefined
+}
 
 function getDisplayedPileCount(caseNum: number): number {
   if (resolutionPhase.value !== 'bank-to-win' && resolutionPhase.value !== 'pile-visible') {
@@ -324,9 +388,14 @@ function startBankToWinAnimation(): number {
   flyingPupuStartTime.value = performance.now()
 
   const totalCount = toAdd.length
-  const rawDuration = totalCount * PER_PUPU_DELAY_MS + PER_PUPU_DURATION_MS + 100
-  const totalDuration = Math.min(rawDuration, BANK_TO_WIN_MAX_DURATION_MS)
-  flyingPupuDelayPerUnit.value = totalCount > 0 ? Math.max(80, (totalDuration - PER_PUPU_DURATION_MS - 100) / totalCount) : PER_PUPU_DELAY_MS
+  const { stagger, flight } = computeBankToWinStaggerAndFlight(totalCount)
+  flyingPupuDelayPerUnit.value = totalCount > 0 ? stagger : PER_PUPU_DELAY_MS
+  flyingPupuFlightDurationMs.value = totalCount > 0 ? flight : PER_PUPU_DURATION_MS
+
+  const lastArrivalMs =
+    totalCount <= 1 ? flight : (totalCount - 1) * stagger + flight
+  const totalDuration = lastArrivalMs + BANK_TO_WIN_RAF_END_BUFFER_MS
+
   function animate() {
     const elapsed = performance.now() - flyingPupuStartTime.value
     flyingPupuProgress.value = elapsed
@@ -457,6 +526,13 @@ const removeBet = (num: number) => {
   betAmounts.value = { ...betAmounts.value, [num]: current - 1 }
 }
 
+const removeBetAmount = (num: number, amount: number) => {
+  if (!props.canBet || props.isPlacing || amount <= 0) return
+  const current = Math.max(betAmounts.value[num] || 0, myBetsFromAllBets.value[num] || 0)
+  const nextVal = Math.max(0, current - amount)
+  betAmounts.value = { ...betAmounts.value, [num]: nextVal }
+}
+
 function clearAllBets() {
   if (!props.canBet || props.isPlacing) return
   betAmounts.value = {}
@@ -549,12 +625,13 @@ function onBalanceDragStart(e: DragEvent, amount = 1) {
 }
 
 function onCellDragStart(e: DragEvent, num: number) {
-  if (!props.canBet || props.isPlacing || (betAmounts.value[num] ?? 0) <= 0) {
+  if (!props.canBet || props.isPlacing || getMyStakeOnCase(num) <= 0) {
     e.preventDefault()
     return
   }
-  dragSource.value = { source: 'cell', num }
-  e.dataTransfer?.setData(DRAG_TYPE, getDragData('cell', num))
+  const bulk = cellBulkDragAmount(num)
+  dragSource.value = bulk != null ? { source: 'cell', num, amount: bulk } : { source: 'cell', num }
+  e.dataTransfer?.setData(DRAG_TYPE, getDragData('cell', num, bulk))
   e.dataTransfer!.effectAllowed = 'move'
 }
 
@@ -620,8 +697,9 @@ function onBalanceDrop(e: DragEvent) {
   dragOverBalance.value = false
   const src = dragSource.value
   if (!src || src.source !== 'cell' || src.num == null) return
-  removeBet(src.num)
-  emit('betPreview', { delta: -1, case: src.num })
+  const amt = src.amount ?? 1
+  removeBetAmount(src.num, amt)
+  emit('betPreview', { delta: -amt, case: src.num })
 }
 
 function onCellDrop(e: DragEvent, targetNum: number) {
@@ -636,13 +714,14 @@ function onCellDrop(e: DragEvent, targetNum: number) {
   } else if (src.source === 'cell' && src.num != null && src.num !== targetNum) {
     const from = src.num
     const to = targetNum
+    const moveAmt = src.amount ?? 1
     const next = { ...betAmounts.value }
-    next[from] = Math.max(0, (next[from] ?? 0) - 1)
-    next[to] = (next[to] ?? 0) + 1
+    next[from] = Math.max(0, (next[from] ?? 0) - moveAmt)
+    next[to] = (next[to] ?? 0) + moveAmt
     betAmounts.value = next
-    emit('move', { from, to })
-    emit('betPreview', { delta: -1, case: from })
-    emit('betPreview', { delta: 1, case: to })
+    emit('move', { from, to, amount: moveAmt })
+    emit('betPreview', { delta: -moveAmt, case: from })
+    emit('betPreview', { delta: moveAmt, case: to })
   }
 }
 
@@ -1402,7 +1481,7 @@ onUnmounted(() => {
       @drop="onBalanceDrop"
     >
       <div class="flex items-center justify-center gap-4 flex-1">
-      <span class="text-xl font-bold text-blue-100 flex items-center gap-2">Mon solde <JijiIcon size="sm" /> : {{ displayedBalance }}</span>
+      <span class="text-xl font-bold text-blue-100 flex items-center gap-2">{{ t('gamesKikiriUi.balance') }} <JijiIcon size="sm" /> : {{ displayedBalance }}</span>
       <div
         class="pupu-stack flex items-center ml-6 md:ml-10"
         :class="[
@@ -1430,23 +1509,6 @@ onUnmounted(() => {
           <img :src="jijiTokenImg" alt="Jiji" class="w-10 h-10 opacity-50" />
         </template>
       </div>
-      <!-- Jeton 5 : drag 5 jetons d'un coup -->
-      <div
-        v-if="displayedBalance >= 5"
-        class="pupu-stack flex items-center ml-2"
-        :class="[
-          canBet && !isPlacing && displayedBalance >= 5 ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none',
-          canBet && !isPlacing && displayedBalance >= 5 ? 'kikiri-touch-draggable' : '',
-        ]"
-        :draggable="!!(canBet && !isPlacing && displayedBalance >= 5)"
-        @dragstart="onBalanceDragStart($event, 5)"
-        @dragend="onDragEnd"
-      >
-        <div class="relative flex-shrink-0">
-          <img :src="jijiTokenImg" alt="Jiji x5" class="w-10 h-10 block" :class="canBet && !isPlacing && displayedBalance >= 5 ? 'kikiri-touch-draggable' : ''" />
-          <span class="absolute inset-0 flex items-center justify-center text-xl font-extrabold text-blue-100 pointer-events-none -translate-y-[3px] [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">5</span>
-        </div>
-      </div>
       <!-- Jeton 10 : drag 10 jetons d'un coup -->
       <div
         v-if="displayedBalance >= 10"
@@ -1464,6 +1526,40 @@ onUnmounted(() => {
           <span class="absolute inset-0 flex items-center justify-center text-xl font-extrabold text-blue-100 pointer-events-none -translate-y-[3px] [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">10</span>
         </div>
       </div>
+      <!-- Jeton 50 : drag 50 jetons d'un coup -->
+      <div
+        v-if="displayedBalance >= 50"
+        class="pupu-stack flex items-center ml-2"
+        :class="[
+          canBet && !isPlacing && displayedBalance >= 50 ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none',
+          canBet && !isPlacing && displayedBalance >= 50 ? 'kikiri-touch-draggable' : '',
+        ]"
+        :draggable="!!(canBet && !isPlacing && displayedBalance >= 50)"
+        @dragstart="onBalanceDragStart($event, 50)"
+        @dragend="onDragEnd"
+      >
+        <div class="relative flex-shrink-0">
+          <img :src="jijiTokenImg" alt="Jiji x50" class="w-10 h-10 block" :class="canBet && !isPlacing && displayedBalance >= 50 ? 'kikiri-touch-draggable' : ''" />
+          <span class="absolute inset-0 flex items-center justify-center text-lg font-extrabold text-blue-100 pointer-events-none -translate-y-[3px] [text-shadow:0_1px_3px_rgba(0,0,0,0.6)] tabular-nums">50</span>
+        </div>
+      </div>
+      <!-- Jeton 100 : drag 100 jetons d'un coup -->
+      <div
+        v-if="displayedBalance >= 100"
+        class="pupu-stack flex items-center ml-2"
+        :class="[
+          canBet && !isPlacing && displayedBalance >= 100 ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none',
+          canBet && !isPlacing && displayedBalance >= 100 ? 'kikiri-touch-draggable' : '',
+        ]"
+        :draggable="!!(canBet && !isPlacing && displayedBalance >= 100)"
+        @dragstart="onBalanceDragStart($event, 100)"
+        @dragend="onDragEnd"
+      >
+        <div class="relative flex-shrink-0">
+          <img :src="jijiTokenImg" alt="Jiji x100" class="w-10 h-10 block" :class="canBet && !isPlacing && displayedBalance >= 100 ? 'kikiri-touch-draggable' : ''" />
+          <span class="absolute inset-0 flex items-center justify-center text-base font-extrabold text-blue-100 pointer-events-none -translate-y-[3px] [text-shadow:0_1px_3px_rgba(0,0,0,0.6)] tabular-nums">100</span>
+        </div>
+      </div>
       </div>
     <button
       v-if="canBet && totalBetAmount > 0"
@@ -1472,7 +1568,7 @@ onUnmounted(() => {
       :disabled="isPlacing"
       @click="clearAllBets"
     >
-      Retirer tout
+      {{ t('gamesKikiriUi.clearAll') }}
     </button>
     </div>
 
@@ -1481,13 +1577,13 @@ onUnmounted(() => {
       v-if="showTips"
       class="mt-4 px-4 py-3 rounded-xl border border-amber-600/50 bg-amber-900/30 text-amber-100 text-sm space-y-2"
     >
-      <p class="font-medium text-amber-200">Règles / Conseils</p>
+      <p class="font-medium text-amber-200">{{ t('gamesKikiriUi.rulesTitle') }}</p>
       <ul class="list-disc list-inside space-y-1 text-amber-100/90">
-        <li>Pour miser, faites glisser des jetons <JijiIcon size="xs" class="inline align-middle" /> de votre solde sur le plateau.</li>
-        <li>Vous pouvez déplacer vos jetons <JijiIcon size="xs" class="inline align-middle" /> sur le plateau ou encore les ramener dans votre solde avant la fin du décompte.</li>
-        <li>À la fin du décompte, tous les jetons <JijiIcon size="xs" class="inline align-middle" /> présents sur le plateau sont considérés comme misés.</li>
-        <li>Si vous avez une déconnexion ou si vous quittez la page avant la fin du décompte, vos jetons <JijiIcon size="xs" class="inline align-middle" /> ne seront pas misés sur ce tirage.</li>
-        <li>On ne peut pas encore déplacer les jetons <JijiIcon size="xs" class="inline align-middle" /> des autres joueurs (Taviri opo).</li>
+        <li>{{ t('gamesKikiriUi.rule1a') }}<JijiIcon size="xs" class="inline align-middle" />{{ t('gamesKikiriUi.rule1b') }}</li>
+        <li>{{ t('gamesKikiriUi.rule2a') }}<JijiIcon size="xs" class="inline align-middle" />{{ t('gamesKikiriUi.rule2b') }}</li>
+        <li>{{ t('gamesKikiriUi.rule3a') }}<JijiIcon size="xs" class="inline align-middle" />{{ t('gamesKikiriUi.rule3b') }}</li>
+        <li>{{ t('gamesKikiriUi.rule4a') }}<JijiIcon size="xs" class="inline align-middle" />{{ t('gamesKikiriUi.rule4b') }}</li>
+        <li>{{ t('gamesKikiriUi.rule5a') }}<JijiIcon size="xs" class="inline align-middle" />{{ t('gamesKikiriUi.rule5b') }}</li>
       </ul>
       <div class="flex gap-2 pt-2">
         <button
@@ -1495,14 +1591,14 @@ onUnmounted(() => {
           class="px-3 py-1.5 rounded-lg border border-amber-600/60 bg-amber-800/50 text-amber-100 text-xs font-medium hover:bg-amber-800/70 transition-colors"
           @click="closeTips"
         >
-          Fermer
+          {{ t('gamesKikiriUi.closeTips') }}
         </button>
         <button
           type="button"
           class="px-3 py-1.5 rounded-lg border border-amber-600/60 bg-amber-800/50 text-amber-100 text-xs font-medium hover:bg-amber-800/70 transition-colors"
           @click="hideTipsForever"
         >
-          Ne plus afficher
+          {{ t('gamesKikiriUi.hideTipsForever') }}
         </button>
       </div>
     </div>

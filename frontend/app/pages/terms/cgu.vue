@@ -3,94 +3,91 @@ definePageMeta({
   layout: 'default',
 })
 
-const lastUpdateDate = computed(() => new Date().toLocaleDateString('fr-FR'))
+const { t } = useI18n()
+const { formatDate } = useLocaleDate()
+
+const lastUpdateDate = computed(() => formatDate(new Date()))
 </script>
 
 <template>
   <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
     <div class="mb-8">
-      <h1 class="mb-4 text-4xl font-bold">Conditions Générales d'Utilisation</h1>
-      <p class="text-white/60">Dernière mise à jour : {{ lastUpdateDate }}</p>
+      <h1 class="mb-4 text-4xl font-bold">{{ t('cguPage.title') }}</h1>
+      <p class="text-white/60">{{ t('cguPage.updated') }} {{ lastUpdateDate }}</p>
     </div>
 
     <UCard>
       <div class="prose prose-invert max-w-none space-y-6">
         <section>
-          <h2 class="text-2xl font-semibold mb-4">1. Acceptation des conditions</h2>
+          <h2 class="mb-4 text-2xl font-semibold">{{ t('cguPage.s1h') }}</h2>
           <p class="text-white/80">
-            En accédant et en utilisant le site Nuna'a Heritage, vous acceptez d'être lié par les présentes Conditions Générales d'Utilisation.
-            Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser notre site.
+            {{ t('cguPage.s1p') }}
           </p>
         </section>
 
         <section>
-          <h2 class="text-2xl font-semibold mb-4">2. Description du service</h2>
+          <h2 class="mb-4 text-2xl font-semibold">{{ t('cguPage.s2h') }}</h2>
           <p class="text-white/80">
-            Nuna'a Heritage est une plateforme communautaire offrant :
+            {{ t('cguPage.s2p') }}
           </p>
-          <ul class="list-disc list-inside text-white/80 space-y-2 ml-4">
-            <li>Une marketplace de troc (Nuna'a Troc)</li>
-            <li>Un blog communautaire</li>
-            <li>Des ressources téléchargeables (goodies)</li>
-            <li>Des informations sur nos partenaires</li>
+          <ul class="ml-4 list-inside list-disc space-y-2 text-white/80">
+            <li>{{ t('cguPage.s2li0') }}</li>
+            <li>{{ t('cguPage.s2li1') }}</li>
+            <li>{{ t('cguPage.s2li2') }}</li>
+            <li>{{ t('cguPage.s2li3') }}</li>
           </ul>
         </section>
 
         <section>
-          <h2 class="text-2xl font-semibold mb-4">3. Compte utilisateur</h2>
+          <h2 class="mb-4 text-2xl font-semibold">{{ t('cguPage.s3h') }}</h2>
           <p class="text-white/80">
-            Pour utiliser certaines fonctionnalités, vous devez créer un compte. Vous êtes responsable de :
+            {{ t('cguPage.s3p') }}
           </p>
-          <ul class="list-disc list-inside text-white/80 space-y-2 ml-4">
-            <li>Maintenir la confidentialité de vos identifiants</li>
-            <li>Toutes les activités sous votre compte</li>
-            <li>Fournir des informations exactes et à jour</li>
+          <ul class="ml-4 list-inside list-disc space-y-2 text-white/80">
+            <li>{{ t('cguPage.s3li0') }}</li>
+            <li>{{ t('cguPage.s3li1') }}</li>
+            <li>{{ t('cguPage.s3li2') }}</li>
           </ul>
         </section>
 
         <section>
-          <h2 class="text-2xl font-semibold mb-4">4. Utilisation du service</h2>
+          <h2 class="mb-4 text-2xl font-semibold">{{ t('cguPage.s4h') }}</h2>
           <p class="text-white/80">
-            Vous vous engagez à utiliser le service de manière légale et conforme aux présentes conditions.
-            Il est interdit d'utiliser le service pour :
+            {{ t('cguPage.s4p') }}
           </p>
-          <ul class="list-disc list-inside text-white/80 space-y-2 ml-4">
-            <li>Violer des lois ou réglementations</li>
-            <li>Porter atteinte aux droits d'autrui</li>
-            <li>Transmettre des contenus illicites ou nuisibles</li>
-            <li>Tenter d'accéder de manière non autorisée au système</li>
+          <ul class="ml-4 list-inside list-disc space-y-2 text-white/80">
+            <li>{{ t('cguPage.s4li0') }}</li>
+            <li>{{ t('cguPage.s4li1') }}</li>
+            <li>{{ t('cguPage.s4li2') }}</li>
+            <li>{{ t('cguPage.s4li3') }}</li>
           </ul>
         </section>
 
         <section>
-          <h2 class="text-2xl font-semibold mb-4">5. Propriété intellectuelle</h2>
+          <h2 class="mb-4 text-2xl font-semibold">{{ t('cguPage.s5h') }}</h2>
           <p class="text-white/80">
-            Tous les contenus du site (textes, images, logos, etc.) sont protégés par les droits de propriété intellectuelle.
-            Vous ne pouvez pas reproduire, modifier ou distribuer ces contenus sans autorisation.
+            {{ t('cguPage.s5p') }}
           </p>
         </section>
 
         <section>
-          <h2 class="text-2xl font-semibold mb-4">6. Limitation de responsabilité</h2>
+          <h2 class="mb-4 text-2xl font-semibold">{{ t('cguPage.s6h') }}</h2>
           <p class="text-white/80">
-            Nuna'a Heritage ne peut être tenu responsable des dommages directs ou indirects résultant de l'utilisation
-            ou de l'impossibilité d'utiliser le service.
+            {{ t('cguPage.s6p') }}
           </p>
         </section>
 
         <section>
-          <h2 class="text-2xl font-semibold mb-4">7. Modification des conditions</h2>
+          <h2 class="mb-4 text-2xl font-semibold">{{ t('cguPage.s7h') }}</h2>
           <p class="text-white/80">
-            Nous nous réservons le droit de modifier ces conditions à tout moment. Les modifications prendront effet
-            dès leur publication sur le site.
+            {{ t('cguPage.s7p') }}
           </p>
         </section>
 
         <section>
-          <h2 class="text-2xl font-semibold mb-4">8. Contact</h2>
+          <h2 class="mb-4 text-2xl font-semibold">{{ t('cguPage.s8h') }}</h2>
           <p class="text-white/80">
-            Pour toute question concernant ces conditions, veuillez nous contacter via les moyens de contact
-            disponibles sur le site.
+            {{ t('cguPage.s8p') }}
           </p>
         </section>
       </div>

@@ -4,72 +4,72 @@ definePageMeta({
 })
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
-// Pricing plans data
-const plans = ref([
+const plans = computed(() => [
   {
-    name: 'Gratuit',
+    name: t('pricingPage.freeName'),
     price: 0,
-    description: 'Accès de base à la communauté',
+    description: t('pricingPage.freeDesc'),
     features: [
-      'Accès à la marketplace',
-      'Création d\'annonces',
-      'Participation aux échanges',
-      'Accès au blog',
+      t('pricingPage.freeF0'),
+      t('pricingPage.freeF1'),
+      t('pricingPage.freeF2'),
+      t('pricingPage.freeF3'),
     ],
     button: {
-      label: authStore.isAuthenticated ? 'Déjà membre' : 'S\'inscrire',
+      label: authStore.isAuthenticated ? t('pricingPage.freeBtnMember') : t('pricingPage.freeBtnSignup'),
       to: authStore.isAuthenticated ? undefined : '/register',
       color: 'primary' as const,
     },
   },
   {
-    name: 'Membre',
+    name: t('pricingPage.memberName'),
     price: 10,
-    description: 'Accès complet avec avantages',
+    description: t('pricingPage.memberDesc'),
     features: [
-      'Tout du plan Gratuit',
-      'Goodies exclusifs',
-      'Support prioritaire',
-      'Badge membre',
+      t('pricingPage.memberF0'),
+      t('pricingPage.memberF1'),
+      t('pricingPage.memberF2'),
+      t('pricingPage.memberF3'),
     ],
     button: {
-      label: 'Devenir membre',
+      label: t('pricingPage.memberBtn'),
       to: '/register',
       color: 'primary' as const,
     },
   },
   {
-    name: 'Premium',
+    name: t('pricingPage.premiumName'),
     price: 25,
-    description: 'Le meilleur pour les utilisateurs actifs',
+    description: t('pricingPage.premiumDesc'),
     features: [
-      'Tout du plan Membre',
-      'Annonces illimitées',
-      'Mise en avant des annonces',
-      'Statistiques détaillées',
-      'Support dédié',
+      t('pricingPage.premiumF0'),
+      t('pricingPage.premiumF1'),
+      t('pricingPage.premiumF2'),
+      t('pricingPage.premiumF3'),
+      t('pricingPage.premiumF4'),
     ],
     button: {
-      label: 'Passer Premium',
+      label: t('pricingPage.premiumBtn'),
       to: '/register',
       color: 'primary' as const,
     },
-    badge: 'Populaire',
+    badge: t('pricingPage.badgePopular'),
   },
   {
-    name: 'VIP',
+    name: t('pricingPage.vipName'),
     price: 50,
-    description: 'Pour les membres les plus engagés',
+    description: t('pricingPage.vipDesc'),
     features: [
-      'Tout du plan Premium',
-      'Accès early à nouvelles fonctionnalités',
-      'Événements exclusifs',
-      'Badge VIP',
-      'Support 24/7',
+      t('pricingPage.vipF0'),
+      t('pricingPage.vipF1'),
+      t('pricingPage.vipF2'),
+      t('pricingPage.vipF3'),
+      t('pricingPage.vipF4'),
     ],
     button: {
-      label: 'Devenir VIP',
+      label: t('pricingPage.vipBtn'),
       to: '/register',
       color: 'primary' as const,
     },
@@ -80,9 +80,9 @@ const plans = ref([
 <template>
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
     <div class="mb-12 text-center">
-      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Tarifs</h1>
+      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">{{ t('pricingPage.title') }}</h1>
       <p class="mx-auto max-w-2xl text-lg text-white/70">
-        Choisissez le plan qui vous convient le mieux
+        {{ t('pricingPage.subtitle') }}
       </p>
     </div>
 

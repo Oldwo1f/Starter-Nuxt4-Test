@@ -5,6 +5,8 @@ definePageMeta({
 
 const route = useRoute()
 const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
+const { t } = useI18n()
+const { formatDate } = useLocaleDate()
 
 const post = ref<any>(null)
 const isLoading = ref(false)
@@ -92,7 +94,7 @@ const fetchPost = async () => {
     // Charger les derniers articles après avoir chargé l'article actuel
     await fetchLatestPosts()
   } catch (err: any) {
-    error.value = err.data?.message || err.message || 'Erreur lors du chargement de l\'article'
+    error.value = err.data?.message || err.message || t('blogPost.loadError')
     console.error('Error fetching blog post:', err)
   } finally {
     isLoading.value = false
@@ -114,7 +116,7 @@ onMounted(() => {
       <UIcon name="i-heroicons-exclamation-triangle" class="mx-auto mb-4 h-12 w-12 text-red-500" />
       <p class="text-red-500">{{ error }}</p>
       <UButton to="/blog" class="mt-4" icon="i-heroicons-arrow-left">
-        Retour au blog
+        {{ t('blogPost.backBlog') }}
       </UButton>
     </div>
 
@@ -132,7 +134,7 @@ onMounted(() => {
           />
           <div v-else class="flex h-full items-center justify-center bg-white/10">
             <a :href="rawPost.videoUrl" target="_blank" class="text-primary-500 hover:underline">
-              Voir la vidéo
+              {{ t('blogPost.watchVideo') }}
             </a>
           </div>
         </div>
@@ -182,13 +184,13 @@ onMounted(() => {
 
       <div class="mt-8 flex justify-center">
         <UButton to="/blog" variant="outline" icon="i-heroicons-arrow-left">
-          Retour au blog
+          {{ t('blogPost.backBlog') }}
         </UButton>
       </div>
 
       <!-- Section 3 derniers articles -->
       <div v-if="latestPosts.length > 0" class="mt-16">
-        <h2 class="mb-6 text-2xl font-bold">Derniers articles</h2>
+        <h2 class="mb-6 text-2xl font-bold">{{ t('blogPost.latestTitle') }}</h2>
         <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
           <UCard
             v-for="latestPost in latestPosts"
@@ -231,7 +233,7 @@ onMounted(() => {
               </p>
               <div class="flex items-center gap-2 text-xs text-white/60">
                 <UIcon name="i-heroicons-calendar" class="h-4 w-4" />
-                <span>{{ new Date(latestPost.createdAt).toLocaleDateString('fr-FR') }}</span>
+                <span>{{ formatDate(latestPost.createdAt) }}</span>
               </div>
             </div>
           </UCard>

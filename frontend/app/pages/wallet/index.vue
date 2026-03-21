@@ -9,6 +9,8 @@ definePageMeta({
 
 const walletStore = useWalletStore()
 const authStore = useAuthStore()
+const { t } = useI18n()
+const { formatDate } = useLocaleDate()
 
 // Fetch data
 const fetchData = async () => {
@@ -26,14 +28,14 @@ onMounted(() => {
 <template>
   <div class="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold">Mon portefeuille</h1>
-      <p class="text-white/60">Gérez vos Pūpū et consultez vos transactions</p>
+      <h1 class="text-3xl font-bold">{{ t('walletPublic.title') }}</h1>
+      <p class="text-white/60">{{ t('walletPublic.subtitle') }}</p>
     </div>
 
     <!-- Balance Card -->
     <UCard class="mb-6 bg-gradient-to-r from-primary-500/20 to-primary-600/20">
       <div class="text-center">
-        <div class="mb-2 text-sm text-white/60">Solde disponible</div>
+        <div class="mb-2 text-sm text-white/60">{{ t('walletPublic.available') }}</div>
         <div class="mb-4 flex items-center justify-center gap-2 text-5xl font-bold text-primary-500">
           <span>🐚</span>
           <span>{{ walletStore.balance.toFixed(2) }}</span>
@@ -48,7 +50,7 @@ onMounted(() => {
           class="mt-6"
           icon="i-heroicons-arrow-path"
         >
-          Transférer des Pūpū
+          {{ t('walletPublic.transferCta') }}
         </UButton>
       </div>
     </UCard>
@@ -56,7 +58,7 @@ onMounted(() => {
     <!-- Transactions -->
     <UCard>
       <template #header>
-        <h2 class="text-xl font-semibold">Historique des transactions</h2>
+        <h2 class="text-xl font-semibold">{{ t('walletPublic.historyTitle') }}</h2>
       </template>
       <div v-if="walletStore.isLoading" class="text-center py-8">
         <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
@@ -69,10 +71,10 @@ onMounted(() => {
         >
           <div class="flex-1">
             <div class="font-semibold">
-              {{ transaction.description || 'Transaction' }}
+              {{ transaction.description || t('walletPublic.transactionFallback') }}
             </div>
             <div class="text-sm text-white/60">
-              {{ new Date(transaction.createdAt).toLocaleDateString('fr-FR', {
+              {{ formatDate(transaction.createdAt, {
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',
@@ -81,7 +83,7 @@ onMounted(() => {
               }) }}
             </div>
             <div v-if="transaction.listing" class="mt-1 text-xs text-white/40">
-              Annonce: {{ transaction.listing.title }}
+              {{ t('walletPublic.listingPrefix') }} {{ transaction.listing.title }}
             </div>
           </div>
           <div class="text-right">
@@ -97,7 +99,7 @@ onMounted(() => {
               {{ transaction.amount }} 🐚
             </div>
             <div class="text-xs text-white/60">
-              Solde: {{ transaction.balanceAfter.toFixed(2) }} 🐚
+              {{ t('walletPublic.balanceAfter') }} {{ transaction.balanceAfter.toFixed(2) }} 🐚
             </div>
           </div>
         </div>
@@ -110,10 +112,10 @@ onMounted(() => {
             icon="i-heroicons-chevron-left"
             @click="walletStore.fetchTransactions(walletStore.pagination.page - 1)"
           >
-            Précédent
+            {{ t('walletPublic.prev') }}
           </UButton>
           <span class="text-sm text-white/60">
-            Page {{ walletStore.pagination.page }} sur {{ walletStore.pagination.totalPages }}
+            {{ t('walletPublic.pageOf', { page: walletStore.pagination.page, total: walletStore.pagination.totalPages }) }}
           </span>
           <UButton
             :disabled="!walletStore.pagination.hasNext"
@@ -121,13 +123,13 @@ onMounted(() => {
             trailing-icon="i-heroicons-chevron-right"
             @click="walletStore.fetchTransactions(walletStore.pagination.page + 1)"
           >
-            Suivant
+            {{ t('walletPublic.next') }}
           </UButton>
         </div>
       </div>
       <div v-else class="py-12 text-center text-white/60">
         <UIcon name="i-heroicons-inbox" class="mx-auto mb-4 h-12 w-12" />
-        <p>Aucune transaction</p>
+        <p>{{ t('walletPublic.empty') }}</p>
       </div>
     </UCard>
   </div>

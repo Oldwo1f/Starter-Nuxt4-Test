@@ -8,7 +8,8 @@ import { useAuthStore } from '~/stores/useAuthStore'
 const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
 const authStore = useAuthStore()
 const { canCreateBlogPost } = useMemberCheck()
-const route = useRoute()
+const { t } = useI18n()
+const { formatDate } = useLocaleDate()
 
 // Pagination
 const page = ref(1)
@@ -118,9 +119,9 @@ onMounted(() => {
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
     <div class="mb-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-between sm:items-start">
       <div class="text-center sm:text-left">
-        <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Blog</h1>
+        <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">{{ t('blogPage.title') }}</h1>
         <p class="mx-auto max-w-2xl text-lg text-white/70 sm:mx-0">
-          Découvrez nos articles, actualités et ressources sur la communauté Nuna'a Heritage
+          {{ t('blogPage.subtitle') }}
         </p>
       </div>
       <UButton
@@ -130,7 +131,7 @@ onMounted(() => {
         icon="i-heroicons-plus"
         size="lg"
       >
-        Créer un article
+        {{ t('blogPage.createArticle') }}
       </UButton>
     </div>
 
@@ -182,7 +183,7 @@ onMounted(() => {
           </div>
           <div class="flex items-center gap-2 text-xs text-white/60">
             <UIcon name="i-heroicons-calendar" class="h-4 w-4" />
-            <span>{{ new Date(post.date).toLocaleDateString('fr-FR') }}</span>
+            <span>{{ formatDate(post.date) }}</span>
           </div>
         </div>
       </UCard>
@@ -190,7 +191,7 @@ onMounted(() => {
 
     <div v-else class="py-12 text-center text-white/60">
       <UIcon name="i-heroicons-document-text" class="mx-auto mb-4 h-12 w-12" />
-      <p>Aucun article pour le moment</p>
+      <p>{{ t('blogPage.empty') }}</p>
     </div>
 
     <!-- Pagination -->

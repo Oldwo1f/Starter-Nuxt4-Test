@@ -7,6 +7,7 @@ import { usePartnerStore } from '~/stores/usePartnerStore'
 
 const partnerStore = usePartnerStore()
 const { apiBaseUrl } = useApi()
+const { t } = useI18n()
 
 // Charger les partenaires au montage
 onMounted(async () => {
@@ -30,15 +31,15 @@ const sortedPartners = computed(() => {
 <template>
   <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
     <div class="mb-12 text-center">
-      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">Nos Partenaires</h1>
+      <h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">{{ t('partnersPage.title') }}</h1>
       <p class="mx-auto max-w-2xl text-lg text-white/70">
-        Découvrez nos partenaires qui nous accompagnent dans notre mission
+        {{ t('partnersPage.subtitle') }}
       </p>
     </div>
 
     <div v-if="partnerStore.isLoading" class="py-12 text-center">
       <UIcon name="i-heroicons-arrow-path" class="mx-auto mb-4 h-12 w-12 animate-spin text-white/60" />
-      <p class="text-white/60">Chargement des partenaires...</p>
+      <p class="text-white/60">{{ t('partnersPage.loading') }}</p>
     </div>
 
     <div v-else-if="partnerStore.partners.length > 0" class="space-y-8">
@@ -118,7 +119,7 @@ const sortedPartners = computed(() => {
               icon="i-heroicons-arrow-top-right-on-square"
               size="lg"
             >
-              Découvrir {{ partner.name }}
+              {{ t('partnersPage.discover', { name: partner.name }) }}
             </UButton>
           </div>
         </div>
@@ -127,7 +128,7 @@ const sortedPartners = computed(() => {
 
     <div v-else class="py-12 text-center text-white/60">
       <UIcon name="i-heroicons-building-office-2" class="mx-auto mb-4 h-12 w-12" />
-      <p>Aucun partenaire pour le moment</p>
+      <p>{{ t('partnersPage.empty') }}</p>
     </div>
   </div>
 </template>

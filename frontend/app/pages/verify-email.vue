@@ -8,6 +8,7 @@ import { useAuthStore } from '~/stores/useAuthStore'
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
 const token = ref((route.query.token as string) || '')
 const isLoading = ref(false)
@@ -16,7 +17,7 @@ const success = ref('')
 
 onMounted(async () => {
   if (!token.value) {
-    error.value = 'Lien de vérification invalide ou expiré'
+    error.value = t('auth.verify.invalidLink')
     return
   }
 
@@ -25,12 +26,12 @@ onMounted(async () => {
   isLoading.value = false
 
   if (result.success) {
-    success.value = result.message || 'Votre adresse email a été vérifiée avec succès.'
+    success.value = result.message || t('auth.verify.successGeneric')
     setTimeout(() => {
       router.push('/login')
     }, 2000)
   } else {
-    error.value = result.error || 'Ce lien de vérification est invalide ou a expiré.'
+    error.value = result.error || t('auth.verify.errorGeneric')
   }
 })
 </script>
@@ -41,7 +42,7 @@ onMounted(async () => {
       <template #header>
         <div class="flex items-center gap-2">
           <UIcon name="i-heroicons-envelope-check" />
-          <span class="font-medium text-lg">Vérification de l'email</span>
+          <span class="font-medium text-lg">{{ t('auth.verify.title') }}</span>
         </div>
       </template>
 
@@ -52,16 +53,16 @@ onMounted(async () => {
 
         <div v-if="success" class="rounded-lg bg-green-500/10 border border-green-500/20 p-3">
           <p class="text-sm text-green-400">{{ success }}</p>
-          <p class="text-xs text-white/50 mt-1">Redirection vers la page de connexion...</p>
+          <p class="text-xs text-white/50 mt-1">{{ t('auth.verify.redirecting') }}</p>
         </div>
 
         <div v-if="isLoading" class="flex flex-col items-center gap-3 py-6">
           <UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary-400" />
-          <p class="text-sm text-white/70">Vérification en cours...</p>
+          <p class="text-sm text-white/70">{{ t('auth.verify.verifying') }}</p>
         </div>
 
         <p v-else-if="!token" class="text-sm text-white/70">
-          Le lien de vérification est manquant. Vérifiez que vous avez bien cliqué sur le lien complet reçu par email.
+          {{ t('auth.verify.missingLink') }}
         </p>
       </div>
 
@@ -70,7 +71,7 @@ onMounted(async () => {
           to="/login"
           class="text-sm text-primary-400 hover:text-primary-300 font-medium"
         >
-          ← Retour à la connexion
+          {{ t('auth.verify.backLogin') }}
         </NuxtLink>
       </div>
     </UCard>

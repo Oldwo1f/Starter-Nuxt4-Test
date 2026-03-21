@@ -33,6 +33,8 @@ export class KikiriSchedulerService {
   private async checkBettingEndAndResolve() {
     if (this.isRunning) return;
     try {
+      const isOpen = await this.configService.isGameOpen();
+      if (!isOpen) return;
       const currentDraw = await this.kikiriService.getCurrentDraw();
       if (!currentDraw || !currentDraw.bettingEndsAt) return;
       const now = Date.now();
@@ -95,8 +97,9 @@ export class KikiriSchedulerService {
     if (this.isRunning) return;
     try {
       const isOpen = await this.configService.isGameOpen();
+      if (!isOpen) return;
       const currentDraw = await this.kikiriService.getCurrentDraw();
-      if (isOpen && !currentDraw) {
+      if (!currentDraw) {
         await this.runCycle();
       }
     } catch {

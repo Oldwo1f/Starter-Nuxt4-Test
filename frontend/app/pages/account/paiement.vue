@@ -5,29 +5,29 @@ import { useAuthStore } from '~/stores/useAuthStore'
 definePageMeta({
   layout: 'account',
   middleware: 'auth',
-  meta: {
-    title: 'Paiement',
-  },
+  titleKey: 'account.pages.paiement',
 })
 
 const billingStore = useBillingStore()
 const authStore = useAuthStore()
 const toast = useToast()
+const { t } = useI18n()
+const { formatDate: formatDateLocale } = useLocaleDate()
 
 const pack = ref<BankTransferPack>('teOhi')
 
-const packOptions = [
-  { label: 'Te Ohi — 5 000 XPF / an', value: 'teOhi' },
-  { label: 'Umete — 20 000 XPF / an', value: 'umete' },
-]
+const packOptions = computed(() => [
+  { label: t('account.paiement.packTeOhi'), value: 'teOhi' as const },
+  { label: t('account.paiement.packUmete'), value: 'umete' as const },
+])
 
 const expectedAmount = computed(() => (pack.value === 'umete' ? 20000 : 5000))
 
-const formatDate = (isoOrNull?: string | null) => {
+const formatAccessDate = (isoOrNull?: string | null) => {
   if (!isoOrNull) return null
   const d = new Date(isoOrNull)
   if (Number.isNaN(d.getTime())) return null
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  return formatDateLocale(d, { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 const refresh = async () => {
@@ -38,15 +38,15 @@ const generateReference = async () => {
   const res = await billingStore.createOrReuseIntent(pack.value)
   if (!res.success) {
     toast.add({
-      title: 'Erreur',
-      description: res.error || 'Impossible de générer la référence',
+      title: t('pollUi.errorTitle'),
+      description: res.error || t('account.paiement.toastGenError'),
       color: 'red',
     })
     return
   }
   toast.add({
-    title: 'Référence générée',
-    description: 'Copiez la référence et utilisez-la comme libellé de votre virement.',
+    title: t('account.paiement.toastGenOkTitle'),
+    description: t('account.paiement.toastGenOkDesc'),
     color: 'success',
   })
 }
@@ -56,15 +56,15 @@ const copyReference = async () => {
   if (!refId) return
   try {
     await navigator.clipboard.writeText(refId)
-    toast.add({ title: 'Copié', description: 'Référence copiée dans le presse-papier', color: 'success' })
+    toast.add({ title: t('account.paiement.toastCopyOkTitle'), description: t('account.paiement.toastCopyOkDesc'), color: 'success' })
   } catch {
-    toast.add({ title: 'Erreur', description: 'Copie impossible (navigateur)', color: 'red' })
+    toast.add({ title: t('account.paiement.toastCopyErrTitle'), description: t('account.paiement.toastCopyErrDesc'), color: 'red' })
   }
 }
 
 const paidAccessUntil = computed(() => {
   const expiresAt = billingStore.userAccess?.paidAccessExpiresAt || authStore.user?.paidAccessExpiresAt || null
-  return formatDate(expiresAt)
+  return formatAccessDate(expiresAt)
 })
 
 onMounted(async () => {
@@ -75,36 +75,36 @@ onMounted(async () => {
 <template>
   <div class="space-y-6">
     <div class="space-y-2">
-      <h1 class="text-3xl font-bold">Paiement (virement)</h1>
+      <h1 class="text-3xl font-bold">{{ t('account.paiement.title') }}</h1>
       <p class="text-white/60">
-        Générez une référence unique, puis faites votre virement. Une fois détecté, vos droits sont activés 1 an.
+        {{ t('account.paiement.subtitle') }}
       </p>
     </div>
 
     <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <template #header>
-        <h2 class="text-xl font-semibold">1) Choisir un pack</h2>
+        <h2 class="text-xl font-semibold">{{ t('account.paiement.step1Title') }}</h2>
       </template>
 
       <div class="space-y-4">
-        <UFormGroup label="Pack" name="pack">
+        <UFormGroup :label="t('account.paiement.packLabel')" name="pack">
           <USelect v-model="pack" :items="packOptions" size="xl" class="w-full" />
         </UFormGroup>
 
         <div class="rounded-lg border border-white/10 bg-black/20 p-4">
-          <div class="text-sm text-white/60">Montant à virer</div>
+          <div class="text-sm text-white/60">{{ t('account.paiement.amountToTransfer') }}</div>
           <div class="mt-1 text-2xl font-bold">{{ expectedAmount.toLocaleString('fr-FR') }} XPF</div>
           <div class="mt-2 text-sm text-white/60">
-            La facture sera disponible automatiquement après confirmation (phase suivante).
+            {{ t('account.paiement.invoiceNote') }}
           </div>
         </div>
 
         <div class="flex flex-wrap gap-3">
           <UButton color="primary" :loading="billingStore.isLoading" @click="generateReference">
-            Générer ma référence
+            {{ t('account.paiement.generateRef') }}
           </UButton>
           <UButton variant="outline" :loading="billingStore.isLoading" @click="refresh">
-            Rafraîchir le statut
+            {{ t('account.paiement.refreshStatus') }}
           </UButton>
         </div>
       </div>
@@ -112,51 +112,50 @@ onMounted(async () => {
 
     <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <template #header>
-        <h2 class="text-xl font-semibold">2) Référence à utiliser</h2>
+        <h2 class="text-xl font-semibold">{{ t('account.paiement.step2Title') }}</h2>
       </template>
 
       <div v-if="!billingStore.payment" class="text-white/60">
-        Aucune référence générée pour l’instant.
+        {{ t('account.paiement.noRef') }}
       </div>
 
       <div v-else class="space-y-4">
         <div class="rounded-lg border border-white/10 bg-black/30 p-4">
-          <div class="text-sm text-white/60">Libellé / Référence</div>
+          <div class="text-sm text-white/60">{{ t('account.paiement.refFieldLabel') }}</div>
           <div class="mt-1 font-mono text-lg break-all">
             {{ billingStore.payment.referenceId }}
           </div>
           <div class="mt-3 flex flex-wrap gap-3">
             <UButton size="sm" color="primary" variant="outline" @click="copyReference">
-              Copier
+              {{ t('account.paiement.copy') }}
             </UButton>
           </div>
         </div>
 
         <div class="flex items-center gap-3">
-          <div class="text-sm text-white/60">Statut</div>
+          <div class="text-sm text-white/60">{{ t('account.paiement.statusLabel') }}</div>
           <UBadge
             v-if="billingStore.payment.status === 'paid'"
             color="green"
             variant="subtle"
           >
-            Payé
+            {{ t('account.paiement.statusPaid') }}
           </UBadge>
           <UBadge
             v-else-if="billingStore.payment.status === 'pending'"
             color="amber"
             variant="subtle"
           >
-            En attente
+            {{ t('account.paiement.statusPending') }}
           </UBadge>
-          <UBadge v-else color="gray" variant="subtle">Annulé</UBadge>
+          <UBadge v-else color="gray" variant="subtle">{{ t('account.paiement.statusCanceled') }}</UBadge>
         </div>
 
         <div v-if="billingStore.payment.status === 'paid'" class="rounded-lg border border-green-500/30 bg-green-500/10 p-4">
-          <div class="font-semibold">Paiement confirmé</div>
+          <div class="font-semibold">{{ t('account.paiement.confirmedTitle') }}</div>
           <div class="mt-1 text-sm text-white/70">
-            Vos droits sont actifs
-            <span v-if="paidAccessUntil">jusqu’au {{ paidAccessUntil }}</span>
-            <span v-else>pour 1 an</span>.
+            <span v-if="paidAccessUntil">{{ t('account.paiement.confirmedUntil', { date: paidAccessUntil }) }}</span>
+            <span v-else>{{ t('account.paiement.confirmedYear') }}</span>
           </div>
         </div>
       </div>
@@ -164,16 +163,16 @@ onMounted(async () => {
 
     <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <template #header>
-        <h2 class="text-xl font-semibold">3) Facture</h2>
+        <h2 class="text-xl font-semibold">{{ t('account.paiement.step3Title') }}</h2>
       </template>
 
       <div class="text-white/60">
-        Facture disponible après confirmation du paiement (phase suivante).
+        {{ t('account.paiement.invoiceLater') }}
       </div>
 
       <div class="mt-4">
         <UButton disabled variant="outline" icon="i-heroicons-document-arrow-down">
-          Télécharger ma facture
+          {{ t('account.paiement.downloadInvoice') }}
         </UButton>
       </div>
     </UCard>

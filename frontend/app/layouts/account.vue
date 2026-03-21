@@ -10,6 +10,7 @@ const router = useRouter()
 const route = useRoute()
 
 const { appName } = useAppInfo()
+const { t } = useI18n()
 const isSidebarOpen = ref(true)
 const isDrawerOpen = ref(false)
 
@@ -81,12 +82,12 @@ const isStaffOrAdmin = computed(() => {
 const userMenuItems = computed<DropdownMenuItem[][]>(() => {
   const profileItems: DropdownMenuItem[] = [
     {
-      label: 'Mon espace',
+      label: t('common.mySpace'),
       icon: 'i-heroicons-home',
       to: '/account',
     },
     {
-      label: 'Mon profil',
+      label: t('common.myProfile'),
       icon: 'i-heroicons-user-circle',
       to: '/account/profile',
     },
@@ -95,7 +96,7 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
   // Ajouter le lien Administration si l'utilisateur est staff ou admin
   if (isStaffOrAdmin.value) {
     profileItems.push({
-      label: 'Administration',
+      label: t('common.administration'),
       icon: 'i-heroicons-squares-2x2',
       to: '/admin/dashboard',
     })
@@ -104,15 +105,15 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
   return [
     [
       {
-        label: authStore.user?.email || 'Utilisateur',
+        label: authStore.user?.email || t('common.user'),
         avatar: getAvatarUrl.value
           ? {
               src: getAvatarUrl.value,
-              alt: authStore.user?.email || 'User',
+              alt: authStore.user?.email || t('common.userAlt'),
             }
           : {
               text: getAvatarText.value,
-              alt: authStore.user?.email || 'User',
+              alt: authStore.user?.email || t('common.userAlt'),
             },
         type: 'label',
       },
@@ -120,7 +121,7 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
     profileItems,
     [
       {
-        label: 'Déconnexion',
+        label: t('common.logout'),
         icon: 'i-heroicons-arrow-right-on-rectangle',
         onSelect: handleLogout,
       },
@@ -128,83 +129,88 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
   ]
 })
 
-const accountMenuItems = [
+const accountMenuItems = computed(() => [
   {
-    label: 'Dashboard',
+    label: t('account.menuDashboard'),
     icon: 'i-heroicons-squares-2x2',
     to: '/account',
   },
   {
-    label: 'Messages',
+    label: t('account.menuMessages'),
     icon: 'i-heroicons-chat-bubble-left-right',
     to: '/account/messages',
   },
   {
-    label: 'Cotisation',
+    label: t('account.menuCotisation'),
     icon: 'i-heroicons-banknotes',
     to: '/account/cotisation',
   },
   {
-    label: 'Mes annonces',
+    label: t('account.menuListings'),
     icon: 'i-heroicons-rectangle-stack',
     to: '/account/listings',
   },
   {
-    label: 'Mes articles',
+    label: t('account.menuArticles'),
     icon: 'i-heroicons-document-text',
     to: '/account/articles',
   },
   {
-    label: 'Mon portefeuille',
+    label: t('account.menuWallet'),
     icon: 'i-heroicons-wallet',
     to: '/account/wallet',
   },
   {
-    label: 'Transactions',
+    label: t('account.menuTransactions'),
     icon: 'i-heroicons-arrow-path',
     to: '/account/transactions',
   },
   {
-    label: 'Parrainage',
+    label: t('account.menuReferral'),
     icon: 'i-heroicons-user-plus',
     to: '/account/referral',
   },
   {
-    label: 'Mes badges',
+    label: t('account.menuBadges'),
     icon: 'i-heroicons-trophy',
     to: '/account/badges',
   },
   {
-    label: 'Mon profil',
+    label: t('account.menuProfile'),
     icon: 'i-heroicons-user-circle',
     to: '/account/profile',
-  }
-]
+  },
+])
 
 // Menu de navigation rapide en bas (mobile uniquement)
-const bottomNavItems = [
+const bottomNavItems = computed(() => [
   {
-    label: 'Annonces',
+    label: t('account.bottomListings'),
     icon: 'i-heroicons-rectangle-stack',
     to: '/account/listings',
   },
-
   {
-    label: 'TROC',
+    label: t('account.bottomTroc'),
     icon: 'i-heroicons-shopping-bag',
     to: '/marketplace',
   },
   {
-    label: 'Portefeuille',
+    label: t('account.bottomWallet'),
     icon: 'i-heroicons-wallet',
     to: '/account/wallet',
   },
   {
-    label: 'Transactions',
+    label: t('account.bottomTransactions'),
     icon: 'i-heroicons-arrow-path',
     to: '/account/transactions',
   },
-]
+])
+
+const headerTitle = computed(() => {
+  const key = route.meta.titleKey as string | undefined
+  if (key) return t(key)
+  return t('account.titleFallback')
+})
 
 const isActive = (path: string) => {
   // For dashboard (/account), only match exact path
@@ -365,7 +371,7 @@ const isActive = (path: string) => {
               ]"
               @click="isDrawerOpen = false"
             >
-              Place de TROC
+              {{ t('common.placeTroc') }}
             </UButton>
             <UButton
               to="/academy"
@@ -381,7 +387,7 @@ const isActive = (path: string) => {
               ]"
               @click="isDrawerOpen = false"
             >
-              Academy
+              {{ t('common.academy') }}
             </UButton>
           </div>
         </div>
@@ -405,10 +411,11 @@ const isActive = (path: string) => {
                 @click="isDrawerOpen = true"
               />
               <h1 class="text-lg md:text-xl font-semibold truncate">
-                {{ route.meta?.title || 'Mon espace' }}
+                {{ headerTitle }}
               </h1>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
+              <LanguageSwitcher class="hidden sm:flex" />
               <!-- Buttons container: cachés sur mobile, visibles sur desktop -->
               <div class="hidden md:flex md:flex-row gap-2">
                 <!-- Place de TROC button -->
@@ -424,7 +431,7 @@ const isActive = (path: string) => {
                       : '!text-green-500 border border-green-500 rounded-md',
                   ]"
                 >
-                  Place de TROC
+                  {{ t('common.placeTroc') }}
                 </UButton>
                 <!-- Academy button -->
                 <UButton
@@ -439,14 +446,14 @@ const isActive = (path: string) => {
                       : '!text-green-500 border border-green-500 rounded-md',
                   ]"
                 >
-                  Academy
+                  {{ t('common.academy') }}
                 </UButton>
               </div>
               <!-- Messages -->
               <NuxtLink
                 to="/account/messages"
                 class="relative flex items-center justify-center rounded-lg p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-                aria-label="Messages"
+                :aria-label="t('common.messages')"
               >
                 <UIcon name="i-heroicons-chat-bubble-left-right" class="h-5 w-5" />
                 <UBadge
@@ -469,7 +476,7 @@ const isActive = (path: string) => {
                   <div class="flex items-center gap-3 px-3 py-2">
                     <CertifiedAvatar
                       :src="getAvatarUrl"
-                      :alt="authStore.user?.email || 'User'"
+                      :alt="authStore.user?.email || t('common.userAlt')"
                       :text="getAvatarText"
                       size="sm"
                       :is-certified="authStore.user?.isCertified === true"

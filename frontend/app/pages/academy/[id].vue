@@ -1,4 +1,4 @@
-²<script setup lang="ts">
+<script setup lang="ts">
 definePageMeta({
   layout: 'default',
 })
@@ -12,6 +12,7 @@ const router = useRouter()
 const academyStore = useAcademyStore()
 const authStore = useAuthStore()
 const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
+const { t } = useI18n()
 
 // Helper to get image URL
 const getImageUrl = (imagePath: string | null | undefined) => {
@@ -32,10 +33,16 @@ const canAccessCourse = computed(() => {
   return academyStore.canAccessCourse(academyStore.currentCourse)
 })
 
-// Get access message for the course
-const getAccessMessage = computed(() => {
-  if (!academyStore.currentCourse) return ''
-  return academyStore.getAccessMessage(academyStore.currentCourse)
+// Message d'accès au cours (selon accessLevel)
+const courseAccessHint = computed(() => {
+  const course = academyStore.currentCourse
+  if (!course) return ''
+  const level = course.accessLevel
+  if (level === 'public') return t('academyCourse.access.public')
+  if (level === 'member') return t('academyCourse.access.member')
+  if (level === 'premium') return t('academyCourse.access.premium')
+  if (level === 'vip') return t('academyCourse.access.vip')
+  return t('academyCourse.access.default')
 })
 
 // Check if user has partial access (first module only)
@@ -353,9 +360,9 @@ const overallProgress = computed(() => {
 
     <div v-else-if="!academyStore.currentCourse" class="py-12 text-center">
       <UIcon name="i-heroicons-exclamation-triangle" class="mx-auto mb-4 h-12 w-12 text-red-500" />
-      <p class="text-red-500">Cours non trouvé</p>
+      <p class="text-red-500">{{ t('academyCourse.notFound') }}</p>
       <UButton to="/academy" class="mt-4" icon="i-heroicons-arrow-left">
-        Retour à l'academy
+        {{ t('academyCourse.backAcademy') }}
       </UButton>
     </div>
 
@@ -363,7 +370,7 @@ const overallProgress = computed(() => {
       <!-- Header -->
       <div>
         <UButton to="/academy" variant="ghost" icon="i-heroicons-arrow-left" class="mb-4">
-          Retour
+          {{ t('academyCourse.back') }}
         </UButton>
         
         <!-- Thumbnail image -->
@@ -396,7 +403,7 @@ const overallProgress = computed(() => {
           </div>
           <div class="flex-1">
             <h3 class="font-semibold">
-              {{ [academyStore.currentCourse.instructorFirstName, academyStore.currentCourse.instructorLastName].filter(Boolean).join(' ') || 'Formateur' }}
+              {{ [academyStore.currentCourse.instructorFirstName, academyStore.currentCourse.instructorLastName].filter(Boolean).join(' ') || t('academyCourse.instructorFallback') }}
             </h3>
             <p v-if="academyStore.currentCourse.instructorTitle" class="mt-1 text-sm text-white/70">
               {{ academyStore.currentCourse.instructorTitle }}
@@ -409,7 +416,7 @@ const overallProgress = computed(() => {
               class="mt-2 inline-flex items-center gap-1 text-sm text-primary-400 hover:text-primary-300"
             >
               <UIcon name="i-heroicons-link" class="h-4 w-4" />
-              En savoir plus
+              {{ t('academyCourse.learnMore') }}
             </a>
           </div>
         </div>
@@ -417,7 +424,7 @@ const overallProgress = computed(() => {
         <!-- Overall progress -->
         <div v-if="academyStore.currentCourse.progress" class="mt-4 space-y-2">
           <div class="flex items-center justify-between text-sm text-white/60">
-            <span>Progression globale</span>
+            <span>{{ t('academyCourse.globalProgress') }}</span>
             <span>{{ overallProgress }}%</span>
           </div>
           <div class="h-2 w-full overflow-hidden rounded-full bg-white/10">
@@ -442,7 +449,7 @@ const overallProgress = computed(() => {
               >
                 <div class="text-center">
                   <UIcon name="i-heroicons-lock-closed" class="mx-auto mb-2 h-12 w-12 text-white/80" />
-                  <p class="text-sm font-medium text-white">{{ getAccessMessage }}</p>
+                  <p class="text-sm font-medium text-white">{{ courseAccessHint }}</p>
                   <UButton
                     to="/pricing"
                     size="sm"
@@ -450,7 +457,7 @@ const overallProgress = computed(() => {
                     class="mt-3"
                     icon="i-heroicons-arrow-up-right"
                   >
-                    Voir les tarifs
+                    {{ t('home.seePricing') }}
                   </UButton>
                 </div>
               </div>
@@ -526,7 +533,7 @@ const overallProgress = computed(() => {
                   >
                     <div class="text-center">
                       <UIcon name="i-heroicons-lock-closed" class="mx-auto mb-2 h-12 w-12 text-white/80" />
-                      <p class="text-sm font-medium text-white">Cette vidéo nécessite un abonnement premium</p>
+                      <p class="text-sm font-medium text-white">{{ t('academyCourse.premiumVideo') }}</p>
                       <UButton
                         to="/pricing"
                         size="sm"
@@ -534,7 +541,7 @@ const overallProgress = computed(() => {
                         class="mt-3"
                         icon="i-heroicons-arrow-up-right"
                       >
-                        Voir les tarifs
+                        {{ t('home.seePricing') }}
                       </UButton>
                     </div>
                   </div>
@@ -562,7 +569,7 @@ const overallProgress = computed(() => {
                 </span>
                 <span v-if="isVideoCompleted(currentVideo.id)" class="text-primary-400">
                   <UIcon name="i-heroicons-check-circle" class="mr-1 inline h-4 w-4" />
-                  Complété
+                  {{ t('academyCourse.completed') }}
                 </span>
               </div>
             </div>
@@ -575,7 +582,7 @@ const overallProgress = computed(() => {
                 icon="i-heroicons-arrow-left"
                 @click="selectVideo(previousVideo.video)"
               >
-                Précédent
+                {{ t('academyCourse.prev') }}
               </UButton>
               <UButton
                 v-if="nextVideo"
@@ -583,13 +590,13 @@ const overallProgress = computed(() => {
                 trailing-icon="i-heroicons-arrow-right"
                 @click="selectVideo(nextVideo.video)"
               >
-                Suivant
+                {{ t('academyCourse.next') }}
               </UButton>
             </div>
           </div>
 
           <div v-else class="flex h-96 items-center justify-center rounded-lg bg-white/5">
-            <p class="text-white/60">Sélectionnez une vidéo pour commencer</p>
+            <p class="text-white/60">{{ t('academyCourse.selectVideo') }}</p>
           </div>
         </div>
 
@@ -597,7 +604,7 @@ const overallProgress = computed(() => {
         <div class="lg:col-span-1">
           <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
             <template #header>
-              <h3 class="font-semibold">Sommaire</h3>
+              <h3 class="font-semibold">{{ t('academyCourse.summary') }}</h3>
             </template>
 
             <div class="space-y-4">
@@ -632,7 +639,7 @@ const overallProgress = computed(() => {
                   v-if="!canAccessModule(module)"
                   class="rounded-lg bg-white/5 px-3 py-2 text-xs text-white/70"
                 >
-                  <p>Ce module nécessite un abonnement premium. <NuxtLink to="/pricing" class="text-primary-400 hover:underline">Upgradez</NuxtLink> pour accéder à tout le contenu.</p>
+                  <p>{{ t('academyCourse.modulePremium') }} <NuxtLink to="/pricing" class="text-primary-400 hover:underline">{{ t('academyCourse.upgradeLink') }}</NuxtLink>{{ t('academyCourse.upgradeSuffix') }}</p>
                 </div>
                 
                 <!-- Module progress bar -->

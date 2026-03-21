@@ -11,6 +11,7 @@ const router = useRouter()
 const pollStore = usePollStore()
 const authStore = useAuthStore()
 const toast = useToast()
+const { t } = useI18n()
 
 const pollId = computed(() => parseInt(route.params.id as string, 10))
 const hasResponded = ref(false)
@@ -35,8 +36,8 @@ onMounted(async () => {
     }
   } catch (err: any) {
     toast.add({
-      title: 'Erreur',
-      description: err.data?.message || err.message || 'Erreur lors du chargement du sondage',
+      title: t('pollUi.errorTitle'),
+      description: err.data?.message || err.message || t('pollDetail.loadError'),
       color: 'red',
     })
   }
@@ -50,8 +51,8 @@ const handleSubmit = async (response: any) => {
     const returnUrl = `/polls/${pollId.value}`
     router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`)
     toast.add({
-      title: 'Connexion requise',
-      description: 'Vous devez être connecté pour voter',
+      title: t('pollUi.loginTitle'),
+      description: t('pollUi.loginDesc'),
       color: 'yellow',
     })
     return
@@ -63,8 +64,8 @@ const handleSubmit = async (response: any) => {
     const memberRoles = ['member', 'premium', 'vip', 'admin', 'superadmin', 'moderator']
     if (!memberRoles.includes(userRole)) {
       toast.add({
-        title: 'Accès restreint',
-        description: 'Ce sondage est réservé aux membres',
+        title: t('pollUi.restrictedTitle'),
+        description: t('pollUi.restrictedDesc'),
         color: 'red',
       })
       return
@@ -76,27 +77,27 @@ const handleSubmit = async (response: any) => {
     hasResponded.value = true
     // Les résultats sont déjà chargés par submitResponse
     toast.add({
-      title: 'Réponse enregistrée',
-      description: 'Votre réponse a été enregistrée avec succès',
+      title: t('pollUi.savedTitle'),
+      description: t('pollUi.savedDesc'),
       color: 'success',
     })
   } catch (err: any) {
-    const errorMessage = err.data?.message || err.message || 'Erreur lors de l\'enregistrement de la réponse'
+    const errorMessage = err.data?.message || err.message || t('pollUi.saveError')
     
     // Si l'erreur indique qu'une connexion est requise, rediriger
     if (errorMessage.includes('restricted to members') || errorMessage.includes('Unauthorized')) {
       const returnUrl = `/polls/${pollId.value}`
       router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`)
       toast.add({
-        title: 'Connexion requise',
-        description: 'Vous devez être connecté pour voter',
+        title: t('pollUi.loginTitle'),
+        description: t('pollUi.loginDesc'),
         color: 'yellow',
       })
       return
     }
     
     toast.add({
-      title: 'Erreur',
+      title: t('pollUi.errorTitle'),
       description: errorMessage,
       color: 'red',
     })
@@ -122,7 +123,7 @@ const canAccess = computed(() => {
       icon="i-heroicons-arrow-left"
       class="mb-6"
     >
-      Retour aux sondages
+      {{ t('pollDetail.back') }}
     </UButton>
 
     <div v-if="pollStore.isLoading" class="flex justify-center py-12">
@@ -136,14 +137,14 @@ const canAccess = computed(() => {
 
     <div v-else-if="!pollStore.currentPoll" class="py-12 text-center">
       <UIcon name="i-heroicons-exclamation-triangle" class="mx-auto mb-4 h-12 w-12 text-white/40" />
-      <p class="text-white/60">Sondage non trouvé</p>
+      <p class="text-white/60">{{ t('pollDetail.notFound') }}</p>
     </div>
 
     <div v-else-if="!canAccess" class="py-12 text-center">
       <UIcon name="i-heroicons-lock-closed" class="mx-auto mb-4 h-12 w-12 text-white/40" />
-      <p class="mb-4 text-white/60">Ce sondage est réservé aux membres</p>
+      <p class="mb-4 text-white/60">{{ t('pollDetail.membersOnly') }}</p>
       <UButton to="/register" color="primary">
-        Devenir membre
+        {{ t('pollDetail.becomeMember') }}
       </UButton>
     </div>
 
@@ -161,7 +162,7 @@ const canAccess = computed(() => {
           <div class="mb-4 rounded-lg bg-primary-500/10 border border-primary-500/30 p-4">
             <div class="flex items-center gap-2">
               <UIcon name="i-heroicons-check-circle" class="h-5 w-5 text-primary-400" />
-              <p class="text-sm font-medium text-primary-300">Vous avez déjà répondu à ce sondage</p>
+              <p class="text-sm font-medium text-primary-300">{{ t('pollDetail.alreadyAnswered') }}</p>
             </div>
           </div>
           <div class="border-t border-white/10 pt-6">

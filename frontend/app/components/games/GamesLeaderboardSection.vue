@@ -3,6 +3,7 @@ import { useAuthStore } from '~/stores/useAuthStore'
 import type { LeaderboardEntry, LatestWinners, MyScore } from '~/composables/useGamesLeaderboard'
 
 const authStore = useAuthStore()
+const { t, locale } = useI18n()
 const {
   kikiriLeaderboard,
   bingoLeaderboard,
@@ -35,20 +36,35 @@ const currentMyScore = computed<MyScore | null>(() =>
 )
 
 const scoreDetail = (s: MyScore) =>
-  `J×${s.dailyWins} + S×${s.weeklyWins} + M×${s.monthlyWins}`
+  t('gamesLeaderboard.scoreDetail', {
+    d: s.dailyWins,
+    w: s.weeklyWins,
+    m: s.monthlyWins,
+  })
+
+const dateLocale = computed(() => (locale.value === 'ty' ? 'fr-FR' : 'fr-FR'))
 
 const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') => {
   if (!periodStart) return ''
-  const [y, m, d] = periodStart.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
-  const formatter = new Intl.DateTimeFormat('fr-FR', {
+  const parts = periodStart.split('-').map(Number)
+  const y = parts[0]
+  const mo = parts[1]
+  const d = parts[2]
+  if (y == null || mo == null || d == null || Number.isNaN(y) || Number.isNaN(mo) || Number.isNaN(d)) return ''
+  const date = new Date(y, mo - 1, d)
+  const loc = dateLocale.value
+  const formatter = new Intl.DateTimeFormat(loc, {
     day: 'numeric',
     month: 'long',
     year: type === 'day' ? 'numeric' : type === 'month' ? 'numeric' : undefined,
   })
   if (type === 'day') return formatter.format(date)
-  if (type === 'week') return `semaine du ${date.getDate()} ${date.toLocaleDateString('fr-FR', { month: 'long' })}`
-  if (type === 'month') return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+  if (type === 'week')
+    return t('gamesLeaderboard.weekOf', {
+      day: String(date.getDate()),
+      month: date.toLocaleDateString(loc, { month: 'long' }),
+    })
+  if (type === 'month') return date.toLocaleDateString(loc, { month: 'long', year: 'numeric' })
   return ''
 }
 </script>
@@ -56,11 +72,10 @@ const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') =
 <template>
   <section class="mt-12">
     <h2 class="text-xl font-bold text-white mb-4">
-      Classement
+      {{ t('gamesLeaderboard.title') }}
     </h2>
     <p class="mx-auto mb-6 max-w-2xl text-center text-sm text-white/80 leading-relaxed">
-      C'est là que tout se passe. Pour la <span class="font-bold text-amber-400">Gloire</span>, pour le <span class="font-bold text-amber-400">Prestige</span>, et pour l'<span class="font-bold text-primary-400">Amour du jeu</span>.
-      On verra au mois de <span class="font-bold text-white">décembre</span> qui sera sacré <span class="font-bold text-amber-400">Champion</span> du <span class="font-bold text-green-400">Kikiri</span> et du <span class="font-bold text-amber-500">Bingo</span>.
+      {{ t('gamesLeaderboard.introPart1') }}<span class="font-bold text-amber-400">{{ t('gamesLeaderboard.glory') }}</span>{{ t('gamesLeaderboard.introPart2') }}<span class="font-bold text-amber-400">{{ t('gamesLeaderboard.prestige') }}</span>{{ t('gamesLeaderboard.introPart3') }}<span class="font-bold text-primary-400">{{ t('gamesLeaderboard.love') }}</span>{{ t('gamesLeaderboard.introPart4') }}<span class="font-bold text-white">{{ t('gamesLeaderboard.december') }}</span>{{ t('gamesLeaderboard.introPart5') }}<span class="font-bold text-amber-400">{{ t('gamesLeaderboard.champion') }}</span>{{ t('gamesLeaderboard.introPart6') }}<span class="font-bold text-green-400">{{ t('gamesLeaderboard.kikiriName') }}</span>{{ t('gamesLeaderboard.introPart7') }}<span class="font-bold text-amber-500">{{ t('gamesLeaderboard.bingoName') }}</span>{{ t('gamesLeaderboard.introPart8') }}
     </p>
 
     <!-- Loading -->
@@ -84,7 +99,7 @@ const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') =
             : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10'"
           @click="activeTab = 'kikiri'"
         >
-          Kikiri
+          {{ t('gamesLeaderboard.tabKikiri') }}
         </button>
         <button
           type="button"
@@ -94,7 +109,7 @@ const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') =
             : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10'"
           @click="activeTab = 'bingo'"
         >
-          Bingo
+          {{ t('gamesLeaderboard.tabBingo') }}
         </button>
       </div>
 
@@ -102,11 +117,11 @@ const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') =
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div
           v-for="slot in [
-            { label: 'Gagnant du jour', data: currentWinners.day, icon: 'i-heroicons-sun', periodType: 'day' as const },
-            { label: 'Gagnant de la semaine', data: currentWinners.week, icon: 'i-heroicons-calendar-days', periodType: 'week' as const },
-            { label: 'Gagnant du mois', data: currentWinners.month, icon: 'i-heroicons-calendar', periodType: 'month' as const },
+            { label: t('gamesLeaderboard.winnerDay'), data: currentWinners.day, icon: 'i-heroicons-sun', periodType: 'day' as const },
+            { label: t('gamesLeaderboard.winnerWeek'), data: currentWinners.week, icon: 'i-heroicons-calendar-days', periodType: 'week' as const },
+            { label: t('gamesLeaderboard.winnerMonth'), data: currentWinners.month, icon: 'i-heroicons-calendar', periodType: 'month' as const },
           ]"
-          :key="slot.label"
+          :key="slot.periodType"
           class="rounded-xl bg-white/5 border border-white/10 p-4 flex flex-col items-center"
         >
           <p class="text-xs font-medium text-white/60 mb-3 uppercase tracking-wider">
@@ -134,7 +149,7 @@ const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') =
             <div class="h-14 w-14 rounded-full bg-white/5 flex items-center justify-center mb-2 border border-dashed border-white/20">
               <UIcon :name="slot.icon" class="h-7 w-7" />
             </div>
-            <span class="text-sm text-center">À déterminer</span>
+            <span class="text-sm text-center">{{ t('gamesLeaderboard.tbd') }}</span>
           </div>
         </div>
       </div>
@@ -143,15 +158,15 @@ const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') =
         <!-- Mon score -->
         <div class="p-4 border-b border-white/10 bg-white/5">
           <p class="text-sm font-medium text-white/80 mb-2">
-            Mon score
+            {{ t('gamesLeaderboard.myScore') }}
           </p>
           <div v-if="authStore.isAuthenticated">
             <div v-if="currentMyScore" class="flex items-center gap-4">
               <span class="text-2xl font-bold text-primary-400">
-                {{ currentMyScore.score }} pts
+                {{ currentMyScore.score }} {{ t('gamesLeaderboard.pts') }}
               </span>
               <span class="text-white/60">
-                Rang #{{ currentMyScore.rank }}
+                {{ t('gamesLeaderboard.rank') }} #{{ currentMyScore.rank }}
               </span>
               <span
                 class="text-xs text-white/50"
@@ -161,7 +176,7 @@ const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') =
               </span>
             </div>
             <p v-else class="text-white/60">
-              Aucune victoire enregistrée pour l'instant. Jouez pour gagner des journées, semaines ou mois !
+              {{ t('gamesLeaderboard.noWins') }}
             </p>
           </div>
           <div v-else class="flex items-center gap-2">
@@ -169,9 +184,9 @@ const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') =
               to="/login"
               class="text-primary-400 hover:text-primary-300 underline"
             >
-              Connectez-vous
+              {{ t('gamesLeaderboard.loginPrompt') }}
             </NuxtLink>
-            <span class="text-white/60">pour voir votre score</span>
+            <span class="text-white/60">{{ t('gamesLeaderboard.loginSuffix') }}</span>
           </div>
         </div>
 
@@ -181,22 +196,22 @@ const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') =
             <thead>
               <tr class="border-b border-white/10">
                 <th class="px-4 py-3 text-sm font-medium text-white/70">
-                  Rang
+                  {{ t('gamesLeaderboard.rankShort') }}
                 </th>
                 <th class="px-4 py-3 text-sm font-medium text-white/70">
-                  Joueur
+                  {{ t('gamesLeaderboard.player') }}
                 </th>
-                <th class="px-4 py-3 text-sm font-medium text-white/70 text-center" title="Gagnant du jour × 1">
-                  Jour
+                <th class="px-4 py-3 text-sm font-medium text-white/70 text-center" :title="t('gamesLeaderboard.titleDayWin')">
+                  {{ t('gamesLeaderboard.day') }}
                 </th>
-                <th class="px-4 py-3 text-sm font-medium text-white/70 text-center" title="Gagnant de la semaine × 5">
-                  Semaine
+                <th class="px-4 py-3 text-sm font-medium text-white/70 text-center" :title="t('gamesLeaderboard.titleWeekWin')">
+                  {{ t('gamesLeaderboard.week') }}
                 </th>
-                <th class="px-4 py-3 text-sm font-medium text-white/70 text-center" title="Gagnant du mois × 20">
-                  Mois
+                <th class="px-4 py-3 text-sm font-medium text-white/70 text-center" :title="t('gamesLeaderboard.titleMonthWin')">
+                  {{ t('gamesLeaderboard.month') }}
                 </th>
                 <th class="px-4 py-3 text-sm font-medium text-white/70 text-right">
-                  Score
+                  {{ t('gamesLeaderboard.score') }}
                 </th>
               </tr>
             </thead>
@@ -236,7 +251,7 @@ const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') =
                   {{ entry.monthlyWins }}
                 </td>
                 <td class="px-4 py-3 text-right">
-                  <span class="font-medium text-primary-400">{{ entry.score }} pts</span>
+                  <span class="font-medium text-primary-400">{{ entry.score }} {{ t('gamesLeaderboard.pts') }}</span>
                 </td>
               </tr>
             </tbody>
@@ -245,15 +260,15 @@ const formatPeriodDate = (periodStart: string, type: 'day' | 'week' | 'month') =
 
         <div v-if="currentLeaderboard.length === 0 && !isLoading" class="p-8 text-center text-white/60">
           <UIcon name="i-heroicons-trophy" class="mx-auto mb-2 h-12 w-12" />
-          <p>Aucun classement pour l'instant</p>
+          <p>{{ t('gamesLeaderboard.emptyLeaderboard') }}</p>
           <p class="text-sm mt-1">
-            Les gagnants du jour, de la semaine et du mois sont calculés automatiquement.
+            {{ t('gamesLeaderboard.emptyHint') }}
           </p>
         </div>
       </div>
 
       <p class="mt-3 text-xs text-white/50">
-        Score = (gagnant du jour × 1) + (gagnant de la semaine × 5) + (gagnant du mois × 20)
+        {{ t('gamesLeaderboard.scoreFormula') }}
       </p>
     </template>
   </section>

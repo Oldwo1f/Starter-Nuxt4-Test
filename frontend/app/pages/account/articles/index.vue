@@ -2,7 +2,7 @@
 definePageMeta({
   layout: 'account',
   middleware: 'auth',
-  title: 'Mes articles',
+  titleKey: 'account.pages.articles',
 })
 
 import { useAuthStore } from '~/stores/useAuthStore'
@@ -13,6 +13,8 @@ const { canCreateBlogPost } = useMemberCheck()
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
+const { formatDate: formatDateLocale } = useLocaleDate()
 
 const posts = ref<any[]>([])
 const total = ref(0)
@@ -23,11 +25,14 @@ const isCreateModalOpen = ref(false)
 const isEditModalOpen = ref(false)
 const editPostId = ref<number | null>(null)
 
-const statusLabels: Record<string, string> = {
-  draft: 'Brouillon',
-  pending: 'En attente de validation',
-  active: 'Publié',
-  archived: 'Archivé',
+const statusLabel = (status: string) => {
+  const map: Record<string, string> = {
+    draft: t('account.articles.statusDraft'),
+    pending: t('account.articles.statusPending'),
+    active: t('account.articles.statusActive'),
+    archived: t('account.articles.statusArchived'),
+  }
+  return map[status] || status
 }
 
 const statusColors: Record<string, string> = {
@@ -62,8 +67,8 @@ const fetchPosts = async () => {
     total.value = response.total
   } catch (err: any) {
     toast.add({
-      title: 'Erreur',
-      description: err.data?.message || err.message || 'Erreur lors du chargement',
+      title: t('pollUi.errorTitle'),
+      description: err.data?.message || err.message || t('account.articles.loadError'),
       color: 'red',
       icon: 'i-heroicons-exclamation-circle',
     })
@@ -73,13 +78,8 @@ const fetchPosts = async () => {
   }
 }
 
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
+const formatDate = (date: string) =>
+  formatDateLocale(date, { day: 'numeric', month: 'short', year: 'numeric' })
 
 watch(page, () => fetchPosts())
 
@@ -124,9 +124,9 @@ onMounted(() => {
   <div class="space-y-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-2xl font-bold">Mes articles</h1>
+        <h1 class="text-2xl font-bold">{{ t('account.articles.title') }}</h1>
         <p class="mt-1 text-white/60">
-          Gérez vos articles du blog. Les articles en attente de validation seront publiés après approbation par un modérateur.
+          {{ t('account.articles.subtitle') }}
         </p>
       </div>
       <UButton
@@ -135,7 +135,7 @@ onMounted(() => {
         icon="i-heroicons-plus"
         @click="isCreateModalOpen = true"
       >
-        Créer un article
+        {{ t('account.articles.create') }}
       </UButton>
     </div>
 
@@ -146,14 +146,14 @@ onMounted(() => {
 
       <div v-else-if="posts.length === 0" class="py-12 text-center text-white/60">
         <UIcon name="i-heroicons-document-text" class="mx-auto mb-4 h-12 w-12" />
-        <p class="mb-4">Aucun article pour le moment</p>
+        <p class="mb-4">{{ t('account.articles.empty') }}</p>
         <UButton
           v-if="canCreateBlogPost"
           color="primary"
           icon="i-heroicons-plus"
           @click="isCreateModalOpen = true"
         >
-          Créer un article
+          {{ t('account.articles.create') }}
         </UButton>
         <UButton
           v-else
@@ -162,7 +162,7 @@ onMounted(() => {
           variant="outline"
           icon="i-heroicons-lock-closed"
         >
-          Devenir membre pour poster
+          {{ t('account.articles.memberToPost') }}
         </UButton>
       </div>
 
@@ -195,7 +195,7 @@ onMounted(() => {
                   variant="soft"
                   size="xs"
                 >
-                  {{ statusLabels[post.status] || post.status }}
+                  {{ statusLabel(post.status) }}
                 </UBadge>
                 <span>{{ formatDate(post.createdAt) }}</span>
               </div>
@@ -209,7 +209,7 @@ onMounted(() => {
               icon="i-heroicons-pencil"
               @click="openEditModal(post)"
             >
-              Modifier
+              {{ t('account.articles.edit') }}
             </UButton>
             <UButton
               v-if="post.status === 'active'"
@@ -218,7 +218,7 @@ onMounted(() => {
               size="sm"
               icon="i-heroicons-eye"
             >
-              Voir
+              {{ t('account.articles.view') }}
             </UButton>
           </div>
         </div>
@@ -240,7 +240,7 @@ onMounted(() => {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-plus" class="w-5 h-5" />
-            <span class="font-medium">Créer un article</span>
+            <span class="font-medium">{{ t('account.articles.modalCreateTitle') }}</span>
           </div>
           <UButton
             color="neutral"
@@ -269,7 +269,7 @@ onMounted(() => {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-pencil" class="w-5 h-5" />
-            <span class="font-medium">Modifier l'article</span>
+            <span class="font-medium">{{ t('account.articles.modalEditTitle') }}</span>
           </div>
           <UButton
             color="neutral"

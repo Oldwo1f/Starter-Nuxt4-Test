@@ -10,15 +10,15 @@ import tamigaImage from '~/assets/images/staff/tamiga.png'
 definePageMeta({
   layout: 'account',
   middleware: 'auth',
-  meta: {
-    title: 'Cotisation',
-  },
+  titleKey: 'account.pages.cotisation',
 })
 
 const authStore = useAuthStore()
 const billingStore = useBillingStore()
 const stripeStore = useStripeStore()
 const toast = useToast()
+const { t } = useI18n()
+const { formatDate: formatDateLocale } = useLocaleDate()
 
 const pack = ref<BankTransferPack>('teOhi')
 const openAccordion = ref<string | null>(null)
@@ -100,28 +100,49 @@ const isOnlyMember = computed(() => {
   return role === 'member'
 })
 
-// Formater la date de renouvellement
-const formatDate = (isoOrNull?: string | null) => {
-  if (!isoOrNull) return null
-  const d = new Date(isoOrNull)
-  if (Number.isNaN(d.getTime())) return null
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-}
-
 const renewalDate = computed(() => {
-  const expiresAt = authStore.user?.paidAccessExpiresAt || 
-                    stripeStore.userAccess?.paidAccessExpiresAt || 
-                    billingStore.userAccess?.paidAccessExpiresAt
-  return formatDate(expiresAt)
+  const expiresAt = authStore.user?.paidAccessExpiresAt ||
+    stripeStore.userAccess?.paidAccessExpiresAt ||
+    billingStore.userAccess?.paidAccessExpiresAt
+  if (!expiresAt) return null
+  const d = new Date(expiresAt)
+  if (Number.isNaN(d.getTime())) return null
+  return formatDateLocale(d, { day: 'numeric', month: 'long', year: 'numeric' })
 })
+
+const memberRoleLabel = computed(() => {
+  const role = authStore.user?.role?.toLowerCase()
+  if (role === 'premium') return t('account.cotisation.rolePremium')
+  if (role === 'vip') return t('account.cotisation.roleVip')
+  return t('account.cotisation.roleMember')
+})
+
+const copyBankReference = async () => {
+  const refId = billingStore.payment?.referenceId
+  if (!refId) return
+  try {
+    await navigator.clipboard.writeText(refId)
+    toast.add({
+      title: t('account.cotisation.toastCopiedTitle'),
+      description: t('account.cotisation.toastCopiedDesc'),
+      color: 'success',
+    })
+  } catch {
+    toast.add({
+      title: t('pollUi.errorTitle'),
+      description: t('account.cotisation.toastCopyFail'),
+      color: 'red',
+    })
+  }
+}
 
 // Gérer le paiement par carte
 const handleCardPayment = async () => {
   const res = await stripeStore.createCheckoutSession(pack.value as StripePack)
   if (!res.success) {
     toast.add({
-      title: 'Erreur',
-      description: res.error || 'Impossible de créer la session de paiement',
+      title: t('pollUi.errorTitle'),
+      description: res.error || t('account.cotisation.toastSessionError'),
       color: 'red',
     })
   }
@@ -133,15 +154,15 @@ const handleBankTransfer = async () => {
   const res = await billingStore.createOrReuseIntent(pack.value)
   if (!res.success) {
     toast.add({
-      title: 'Erreur',
-      description: res.error || 'Impossible de générer la référence de virement',
+      title: t('pollUi.errorTitle'),
+      description: res.error || t('account.cotisation.toastBankError'),
       color: 'red',
     })
     return
   }
   toast.add({
-    title: 'Référence générée',
-    description: 'Copiez la référence et utilisez-la comme libellé de votre virement.',
+    title: t('account.cotisation.toastRefOkTitle'),
+    description: t('account.cotisation.toastRefOkDesc'),
     color: 'success',
   })
 }
@@ -157,8 +178,8 @@ const handleUpgradeToPremium = async () => {
 const handleLegacyVerification = async () => {
   if (!selectedPaidWith.value) {
     toast.add({
-      title: 'Erreur',
-      description: 'Veuillez sélectionner avec qui vous avez payé',
+      title: t('pollUi.errorTitle'),
+      description: t('account.cotisation.toastSelectPaidWith'),
       color: 'red',
     })
     return
@@ -173,8 +194,8 @@ const handleLegacyVerification = async () => {
     selectedPaidWith.value = null
   } else {
     toast.add({
-      title: 'Erreur',
-      description: res.error || 'Impossible de lancer la vérification',
+      title: t('pollUi.errorTitle'),
+      description: res.error || t('account.cotisation.toastVerificationError'),
       color: 'red',
     })
   }
@@ -199,16 +220,16 @@ onMounted(async () => {
       if (!res.success) {
         paymentOk = false
         toast.add({
-          title: 'Erreur',
-          description: stripeStore.error || 'Le paiement n\'a pas pu être finalisé. Contactez-nous si le problème persiste.',
+          title: t('pollUi.errorTitle'),
+          description: stripeStore.error || t('account.cotisation.toastStripeFail'),
           color: 'red',
         })
       }
     }
     if (paymentOk) {
       toast.add({
-        title: 'Paiement réussi',
-        description: 'Votre cotisation a été confirmée. Vos droits sont maintenant actifs.',
+        title: t('account.cotisation.toastPaymentOkTitle'),
+        description: t('account.cotisation.toastPaymentOkDesc'),
         color: 'success',
       })
     }
@@ -219,8 +240,8 @@ onMounted(async () => {
     router.replace({ query: {} })
   } else if (route.query.canceled === 'true') {
     toast.add({
-      title: 'Paiement annulé',
-      description: 'Le paiement a été annulé. Vous pouvez réessayer quand vous le souhaitez.',
+      title: t('account.cotisation.toastCanceledTitle'),
+      description: t('account.cotisation.toastCanceledDesc'),
       color: 'amber',
     })
     // Nettoyer l'URL
@@ -232,9 +253,9 @@ onMounted(async () => {
 <template>
   <div class="space-y-6">
     <div class="space-y-2">
-      <h1 class="text-3xl font-bold">Cotisation</h1>
+      <h1 class="text-3xl font-bold">{{ t('account.cotisation.title') }}</h1>
       <p class="text-white/60">
-        Choisissez votre pack et votre méthode de paiement pour activer votre cotisation annuelle.
+        {{ t('account.cotisation.subtitle') }}
       </p>
     </div>
 
@@ -248,35 +269,35 @@ onMounted(async () => {
           <div class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/20">
             <UIcon name="i-heroicons-clock" class="h-6 w-6 text-purple-400" />
           </div>
-          <h2 class="text-xl font-semibold">Vérification en cours</h2>
+          <h2 class="text-xl font-semibold">{{ t('account.cotisation.verificationHeader') }}</h2>
         </div>
       </template>
 
       <div class="space-y-4">
         <div class="rounded-lg border border-purple-500/30 bg-purple-500/10 p-4">
           <p class="text-sm text-purple-300 font-medium">
-            La vérification peut prendre jusqu'à 48h. Vos droits de membre sont disponibles.
+            {{ t('account.cotisation.verificationP1') }}
           </p>
         </div>
 
         <div class="space-y-3 text-white/80">
           <p>
-            Vos Pūpū d'inscription seront crédités lors de la vérification. Si vous avez souscrit un abonnement premium, vos droits premium seront ouverts après la vérification.
+            {{ t('account.cotisation.verificationP2') }}
           </p>
           
           <p>
-            En attendant, vous pouvez :
+            {{ t('account.cotisation.verificationMeantime') }}
           </p>
           
           <ul class="list-disc list-inside space-y-2 ml-4 text-white/70">
-            <li>Créer / explorer les annonces de la troc place</li>
-            <li>Télécharger des goodies</li>
-            <li>Profiter de l'académie et de l'espace culture</li>
+            <li>{{ t('account.cotisation.verificationLi1') }}</li>
+            <li>{{ t('account.cotisation.verificationLi2') }}</li>
+            <li>{{ t('account.cotisation.verificationLi3') }}</li>
           </ul>
         </div>
 
         <div v-if="billingStore.legacyVerification" class="rounded-lg border border-white/10 bg-black/20 p-4">
-          <div class="text-sm text-white/60 mb-1">Payé avec</div>
+          <div class="text-sm text-white/60 mb-1">{{ t('account.cotisation.paidWith') }}</div>
           <div class="text-lg font-semibold text-white">
             {{ billingStore.legacyVerification.paidWith === 'naho' ? 'Naho' : 'Tamiga' }}
           </div>
@@ -290,7 +311,7 @@ onMounted(async () => {
       class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0"
     >
       <template #header>
-        <h2 class="text-xl font-semibold">Paiement des cotisations</h2>
+        <h2 class="text-xl font-semibold">{{ t('account.cotisation.paymentHeader') }}</h2>
       </template>
 
       <div class="space-y-6">
@@ -303,16 +324,13 @@ onMounted(async () => {
             <UIcon name="i-heroicons-check-circle" class="h-6 w-6 text-green-400 shrink-0 mt-0.5" />
             <div class="flex-1">
               <h3 class="text-lg font-semibold text-green-300 mb-2">
-                Vos cotisations sont à jour
+                {{ t('account.cotisation.upToDateTitle') }}
               </h3>
               <p class="text-white/80 mb-3">
-                Vous pouvez profiter pleinement de vos droits en tant que membre
-                <span v-if="authStore.user?.role?.toLowerCase() === 'premium'">Premium</span>
-                <span v-else-if="authStore.user?.role?.toLowerCase() === 'vip'">VIP</span>
-                <span v-else>Nuna'a Heritage</span>.
+                {{ t('account.cotisation.upToDateLine', { role: memberRoleLabel }) }}
               </p>
               <div v-if="renewalDate" class="text-sm text-white/70">
-                <span class="font-medium">Date de renouvellement :</span>
+                <span class="font-medium">{{ t('account.cotisation.renewalLabel') }}</span>
                 <span class="ml-2">{{ renewalDate }}</span>
               </div>
             </div>
@@ -336,7 +354,7 @@ onMounted(async () => {
         <div v-else class="space-y-4">
           <!-- Sélection du pack avec cards -->
           <div class="space-y-3">
-            <label class="text-sm font-medium text-white/80">Choisir un pack</label>
+            <label class="text-sm font-medium text-white/80">{{ t('account.cotisation.choosePack') }}</label>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
                 v-for="packOption in packs"
@@ -381,7 +399,7 @@ onMounted(async () => {
                     >
                       {{ packOption.price.toLocaleString('fr-FR') }} XPF
                     </div>
-                    <div class="text-xs text-white/60 mt-1">/ an</div>
+                    <div class="text-xs text-white/60 mt-1">{{ t('account.cotisation.perYear') }}</div>
                   </div>
                   
                   <!-- Indicateur de sélection -->
@@ -408,10 +426,10 @@ onMounted(async () => {
               @click="handleCardPayment"
             >
               <UIcon name="i-heroicons-credit-card" class="h-5 w-5 mr-2" />
-              Procéder au paiement par carte
+              {{ t('account.cotisation.payCard') }}
             </UButton>
             <p class="mt-2 text-sm text-white/60 text-center">
-              Paiement sécurisé par carte bancaire via Stripe
+              {{ t('account.cotisation.stripeHint') }}
             </p>
           </div>
 
@@ -448,7 +466,7 @@ onMounted(async () => {
                       'text-purple-400': openAccordion === 'legacy',
                     }"
                   >
-                    J'ai déjà payé ma cotisation
+                    {{ t('account.cotisation.accordionLegacy') }}
                   </h3>
                 </div>
                 <UIcon
@@ -471,7 +489,7 @@ onMounted(async () => {
                 <div class="border-t border-white/10 p-6 space-y-6">
                   <!-- Question -->
                   <div class="space-y-3">
-                    <h4 class="text-lg font-semibold text-white">Avec qui as-tu payé ?</h4>
+                    <h4 class="text-lg font-semibold text-white">{{ t('account.cotisation.paidWithQuestion') }}</h4>
                     
                     <!-- Sélection Naho/Tamiga -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -554,7 +572,7 @@ onMounted(async () => {
                   <!-- Avertissement en rouge -->
                   <div class="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
                     <p class="text-sm text-red-300">
-                      Lancer la vérification nous fait intervenir manuellement. Nous sommes de simples êtres humains, parfois on dort. Parfois on est à la pêche. Parfois on fait des rando en montagne. La vérification peut prendre jusqu'à 48H.
+                      {{ t('account.cotisation.legacyWarning') }}
                     </p>
                   </div>
 
@@ -569,7 +587,7 @@ onMounted(async () => {
                     class="bg-purple-600 hover:bg-purple-700 text-white font-semibold"
                     @click="handleLegacyVerification"
                   >
-                    Lancer la vérification
+                    {{ t('account.cotisation.startVerification') }}
                   </UButton>
                 </div>
               </div>
@@ -609,7 +627,7 @@ onMounted(async () => {
                       'text-orange-400': openAccordion === 'bank',
                     }"
                   >
-                    Je ne peux pas payer par carte
+                    {{ t('account.cotisation.accordionBank') }}
                   </h3>
                 </div>
                 <UIcon
@@ -632,7 +650,7 @@ onMounted(async () => {
                 <div class="border-t border-white/10 p-6 space-y-6">
                   <!-- Vidéo YouTube -->
                   <div v-if="youtubeVideoUrl && getYouTubeEmbedUrl(youtubeVideoUrl)" class="space-y-2">
-                    <h4 class="text-lg font-semibold text-white">Vidéo explicative</h4>
+                    <h4 class="text-lg font-semibold text-white">{{ t('account.cotisation.videoTitle') }}</h4>
                     <div class="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
                       <iframe
                         :src="getYouTubeEmbedUrl(youtubeVideoUrl)!"
@@ -647,7 +665,7 @@ onMounted(async () => {
                   <!-- Bouton virement bancaire -->
                   <div class="space-y-4">
                     <p class="text-white/80">
-                      Effectuez un virement bancaire avec la référence générée. Vos droits seront activés automatiquement après confirmation du paiement.
+                      {{ t('account.cotisation.bankIntro') }}
                     </p>
                     <UButton
                       color="orange"
@@ -656,7 +674,7 @@ onMounted(async () => {
                       :loading="billingStore.isLoading"
                       @click="handleBankTransfer"
                     >
-                      Payer par virement bancaire
+                      {{ t('account.cotisation.payBank') }}
                     </UButton>
 
                     <!-- Affichage de la référence si disponible -->
@@ -665,7 +683,7 @@ onMounted(async () => {
                       class="rounded-lg border border-white/10 bg-black/20 p-4 space-y-3"
                     >
                       <div class="text-sm text-white/60">
-                        Référence à indiquer dans le libellé de votre virement
+                        {{ t('account.cotisation.refForTransfer') }}
                       </div>
                       <div class="flex items-center gap-3">
                         <div class="flex-1 font-mono text-sm break-all text-white">
@@ -675,16 +693,9 @@ onMounted(async () => {
                           size="xs"
                           color="primary"
                           variant="outline"
-                          @click="async () => {
-                            try {
-                              await navigator.clipboard.writeText(billingStore.payment!.referenceId)
-                              toast.add({ title: 'Copié', description: 'Référence copiée', color: 'success' })
-                            } catch {
-                              toast.add({ title: 'Erreur', description: 'Copie impossible', color: 'red' })
-                            }
-                          }"
+                          @click="copyBankReference"
                         >
-                          Copier
+                          {{ t('account.paiement.copy') }}
                         </UButton>
                       </div>
                       <UBadge
@@ -692,14 +703,14 @@ onMounted(async () => {
                         color="green"
                         variant="subtle"
                       >
-                        Cotisation payée
+                        {{ t('account.cotisation.badgePaid') }}
                       </UBadge>
                       <UBadge
                         v-else-if="billingStore.payment.status === 'pending'"
                         color="amber"
                         variant="subtle"
                       >
-                        En attente de virement
+                        {{ t('account.cotisation.badgePendingTransfer') }}
                       </UBadge>
                     </div>
                   </div>

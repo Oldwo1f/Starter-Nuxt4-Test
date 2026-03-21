@@ -9,6 +9,7 @@ import { useFacebook } from '~/composables/useFacebook'
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
 const email = ref('')
 const password = ref('')
@@ -33,17 +34,17 @@ const handleRegister = async () => {
   success.value = ''
 
   if (!email.value || !password.value || !confirmPassword.value || !phoneNumber.value?.trim()) {
-    error.value = 'Veuillez remplir tous les champs'
+    error.value = t('auth.register.fillAll')
     return
   }
 
   if (password.value.length < 6) {
-    error.value = 'Le mot de passe doit contenir au moins 6 caractères'
+    error.value = t('auth.register.passwordShort')
     return
   }
 
   if (password.value !== confirmPassword.value) {
-    error.value = 'Les mots de passe ne correspondent pas'
+    error.value = t('auth.register.passwordMismatch')
     return
   }
 
@@ -57,12 +58,12 @@ const handleRegister = async () => {
   isLoading.value = false
 
   if (result.success) {
-    success.value = 'Inscription réussie ! Redirection...'
+    success.value = t('auth.register.success')
     setTimeout(() => {
       router.push('/')
     }, 1000)
   } else {
-    error.value = result.error || 'Erreur lors de l\'inscription'
+    error.value = result.error || t('auth.register.errorGeneric')
   }
 }
 
@@ -92,15 +93,15 @@ const handleFacebookLogin = async () => {
     )
 
     if (result.success) {
-      success.value = 'Connexion réussie ! Redirection...'
+      success.value = t('auth.register.facebookSuccess')
       setTimeout(() => {
         router.push('/')
       }, 1000)
     } else {
-      error.value = result.error || 'Erreur lors de la connexion Facebook'
+      error.value = result.error || t('auth.register.facebookError')
     }
   } catch (err: any) {
-    error.value = err.message || 'Erreur lors de la connexion Facebook'
+    error.value = err.message || t('auth.register.facebookError')
   } finally {
     isFacebookLoading.value = false
   }
@@ -113,7 +114,7 @@ const handleFacebookLogin = async () => {
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-user-plus" />
-            <span class="font-medium text-lg">Inscription</span>
+            <span class="font-medium text-lg">{{ t('auth.register.title') }}</span>
           </div>
         </template>
 
@@ -126,29 +127,29 @@ const handleFacebookLogin = async () => {
             <p class="text-sm text-green-400">{{ success }}</p>
           </div>
 
-          <UFormGroup label="Email" name="email" required>
+          <UFormGroup :label="t('auth.login.email')" name="email" required>
             <UInput
               v-model="email"
               type="email"
-              placeholder="votre@email.com"
+              :placeholder="t('auth.login.emailPlaceholder')"
               icon="i-heroicons-envelope"
               :disabled="isLoading"
               size="lg"
             />
           </UFormGroup>
 
-          <UFormGroup label="Téléphone" name="phoneNumber" required>
+          <UFormGroup :label="t('auth.register.phone')" name="phoneNumber" required>
             <UInput
               v-model="phoneNumber"
               type="tel"
-              placeholder="+689 87 12 34 56"
+              :placeholder="t('auth.register.phonePlaceholder')"
               icon="i-heroicons-phone"
               :disabled="isLoading"
               size="lg"
             />
           </UFormGroup>
 
-          <UFormGroup label="Mot de passe" name="password" required>
+          <UFormGroup :label="t('auth.login.password')" name="password" required>
             <UInput
               v-model="password"
               type="password"
@@ -158,11 +159,11 @@ const handleFacebookLogin = async () => {
               size="lg"
             />
             <template #hint>
-              <span class="text-xs text-white/50">Minimum 6 caractères</span>
+              <span class="text-xs text-white/50">{{ t('auth.register.passwordHint') }}</span>
             </template>
           </UFormGroup>
 
-          <UFormGroup label="Confirmer le mot de passe" name="confirmPassword" required>
+          <UFormGroup :label="t('auth.register.confirmPassword')" name="confirmPassword" required>
             <UInput
               v-model="confirmPassword"
               type="password"
@@ -173,7 +174,7 @@ const handleFacebookLogin = async () => {
             />
           </UFormGroup>
 
-          <UFormGroup label="Code de parrainage (optionnel)" name="referralCode">
+          <UFormGroup :label="t('auth.register.referralOptional')" name="referralCode">
             <UInput
               v-model="referralCode"
               type="text"
@@ -185,7 +186,7 @@ const handleFacebookLogin = async () => {
               @input="referralCode = referralCode.toUpperCase()"
             />
             <template #hint>
-              <span class="text-xs text-white/50">Si vous avez un code de parrainage, entrez-le ici</span>
+              <span class="text-xs text-white/50">{{ t('auth.register.referralHint') }}</span>
             </template>
           </UFormGroup>
 
@@ -197,7 +198,7 @@ const handleFacebookLogin = async () => {
             :loading="isLoading"
             :disabled="isLoading || isFacebookLoading"
           >
-            S'inscrire
+            {{ t('auth.register.submit') }}
           </UButton>
         </form>
 
@@ -207,7 +208,7 @@ const handleFacebookLogin = async () => {
               <div class="w-full border-t border-white/10"></div>
             </div>
             <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-gray-900 text-white/60">Ou</span>
+              <span class="px-2 bg-gray-900 text-white/60">{{ t('auth.register.or') }}</span>
             </div>
           </div>
 
@@ -222,18 +223,18 @@ const handleFacebookLogin = async () => {
             @click="handleFacebookLogin"
           >
             <UIcon name="i-simple-icons-facebook" class="w-5 h-5 mr-2" />
-            Continuer avec Facebook
+            {{ t('auth.register.facebook') }}
           </UButton>
         </div>
 
         <div class="mt-6 text-center">
           <p class="text-sm text-white/60">
-            Déjà un compte ?
+            {{ t('auth.register.hasAccount') }}
             <NuxtLink
               to="/login"
               class="text-primary-400 hover:text-primary-300 font-medium"
             >
-              Se connecter
+              {{ t('auth.register.loginLink') }}
             </NuxtLink>
           </p>
         </div>

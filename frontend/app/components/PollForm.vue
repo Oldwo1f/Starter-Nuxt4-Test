@@ -11,6 +11,7 @@ const emit = defineEmits<{
 }>()
 
 const toast = useToast()
+const { t } = useI18n()
 
 // Pour QCM
 const selectedOptionId = ref<number | null>(null)
@@ -69,8 +70,8 @@ const handleSubmit = () => {
   if (props.poll.type === 'qcm') {
     if (!selectedOptionId.value) {
       toast.add({
-        title: 'Erreur',
-        description: 'Veuillez sélectionner une réponse',
+        title: t('pollUi.errorTitle'),
+        description: t('pollUi.selectAnswer'),
         color: 'red',
       })
       return
@@ -134,7 +135,7 @@ const handleSubmit = () => {
     <!-- Ranking Form (Drag & Drop) -->
     <div v-else-if="poll.type === 'ranking'" class="space-y-4">
       <p class="text-sm text-white/70">
-        Cliquez et glissez les éléments pour les classer (du meilleur au moins bon)
+        {{ t('pollUi.rankingDragHint') }}
       </p>
       <div class="space-y-2">
         <div
@@ -167,7 +168,7 @@ const handleSubmit = () => {
         class="w-full sm:w-auto"
         @click="handleSubmit"
       >
-        Envoyer ma réponse
+        {{ t('pollUi.sendAnswer') }}
       </UButton>
     </div>
   </div>

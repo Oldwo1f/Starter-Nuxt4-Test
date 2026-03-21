@@ -5,10 +5,13 @@ import { useWalletStore } from '~/stores/useWalletStore'
 definePageMeta({
   layout: 'account',
   middleware: 'auth',
+  titleKey: 'account.menuTransactions',
 })
 
 const walletStore = useWalletStore()
 const authStore = useAuthStore()
+const { t } = useI18n()
+const { formatDate: formatDateLocale } = useLocaleDate()
 
 // Filters
 const typeFilter = ref<'all' | 'debit' | 'credit' | 'exchange'>('all')
@@ -20,15 +23,15 @@ const filteredTransactions = computed(() => {
 
   // Filter by type
   if (typeFilter.value !== 'all') {
-    transactions = transactions.filter((t) => {
+    transactions = transactions.filter((tx) => {
       if (typeFilter.value === 'debit') {
-        return t.type === 'debit' || (t.type === 'exchange' && t.fromUserId === authStore.user?.id)
+        return tx.type === 'debit' || (tx.type === 'exchange' && tx.fromUserId === authStore.user?.id)
       }
       if (typeFilter.value === 'credit') {
-        return t.type === 'credit' || (t.type === 'exchange' && t.toUserId === authStore.user?.id && t.fromUserId !== authStore.user?.id)
+        return tx.type === 'credit' || (tx.type === 'exchange' && tx.toUserId === authStore.user?.id && tx.fromUserId !== authStore.user?.id)
       }
       if (typeFilter.value === 'exchange') {
-        return t.type === 'exchange'
+        return tx.type === 'exchange'
       }
       return true
     })
@@ -37,9 +40,9 @@ const filteredTransactions = computed(() => {
   // Filter by search
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase()
-    transactions = transactions.filter((t) => {
-      const description = (t.description || '').toLowerCase()
-      const listingTitle = (t.listing?.title || '').toLowerCase()
+    transactions = transactions.filter((tx) => {
+      const description = (tx.description || '').toLowerCase()
+      const listingTitle = (tx.listing?.title || '').toLowerCase()
       return description.includes(query) || listingTitle.includes(query)
     })
   }
@@ -52,33 +55,29 @@ const fetchTransactions = async () => {
   await walletStore.fetchTransactions()
 }
 
-// Format date
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('fr-FR', {
+const formatDate = (date: string) =>
+  formatDateLocale(date, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   })
-}
 
-// Get transaction type label
 const getTransactionTypeLabel = (transaction: any) => {
   if (transaction.type === 'exchange') {
-    return 'Échange'
+    return t('account.transactions.typeExchange')
   }
   if (transaction.type === 'debit') {
-    return 'Débit'
+    return t('account.transactions.typeDebit')
   }
   if (transaction.type === 'credit') {
-    return 'Crédit'
+    return t('account.transactions.typeCredit')
   }
-  // Fallback: determine by user role
   if (transaction.fromUserId === authStore.user?.id) {
-    return 'Débit'
+    return t('account.transactions.typeDebit')
   }
-  return 'Crédit'
+  return t('account.transactions.typeCredit')
 }
 
 // Check if transaction is a debit for current user
@@ -101,8 +100,8 @@ onMounted(() => {
     <ProfileIncompleteBanner />
     
     <div class="space-y-2">
-      <h1 class="text-3xl font-bold">Transactions</h1>
-      <p class="text-white/60">Historique complet de vos transactions</p>
+      <h1 class="text-3xl font-bold">{{ t('account.transactions.title') }}</h1>
+      <p class="text-white/60">{{ t('account.transactions.subtitle') }}</p>
     </div>
 
     <!-- Filters -->
@@ -110,41 +109,41 @@ onMounted(() => {
       <div class="space-y-4">
         <!-- Type filter -->
         <div>
-          <label class="mb-2 block text-sm font-medium">Type de transaction</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('account.transactions.typeLabel') }}</label>
           <div class="flex flex-wrap gap-2">
             <UButton
               :variant="typeFilter === 'all' ? 'solid' : 'outline'"
               @click="typeFilter = 'all'"
             >
-              Toutes
+              {{ t('account.transactions.filterAll') }}
             </UButton>
             <UButton
               :variant="typeFilter === 'debit' ? 'solid' : 'outline'"
               @click="typeFilter = 'debit'"
             >
-              Débits
+              {{ t('account.transactions.filterDebits') }}
             </UButton>
             <UButton
               :variant="typeFilter === 'credit' ? 'solid' : 'outline'"
               @click="typeFilter = 'credit'"
             >
-              Crédits
+              {{ t('account.transactions.filterCredits') }}
             </UButton>
             <UButton
               :variant="typeFilter === 'exchange' ? 'solid' : 'outline'"
               @click="typeFilter = 'exchange'"
             >
-              Échanges
+              {{ t('account.transactions.filterExchanges') }}
             </UButton>
           </div>
         </div>
 
         <!-- Search -->
         <div>
-          <label class="mb-2 block text-sm font-medium">Rechercher</label>
+          <label class="mb-2 block text-sm font-medium">{{ t('account.transactions.searchLabel') }}</label>
           <UInput
             v-model="searchQuery"
-            placeholder="Rechercher par description ou annonce..."
+            :placeholder="t('account.transactions.searchPh')"
             icon="i-heroicons-magnifying-glass"
             size="lg"
           />
@@ -156,7 +155,11 @@ onMounted(() => {
     <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <template #header>
         <h2 class="text-xl font-semibold">
-          {{ filteredTransactions.length }} transaction{{ filteredTransactions.length > 1 ? 's' : '' }}
+          {{
+            filteredTransactions.length === 1
+              ? t('account.transactions.countOne', { n: filteredTransactions.length })
+              : t('account.transactions.countMany', { n: filteredTransactions.length })
+          }}
         </h2>
       </template>
 
@@ -187,7 +190,7 @@ onMounted(() => {
               </div>
               <div class="flex-1 min-w-0">
                 <div class="font-semibold">
-                  {{ transaction.description || 'Transaction' }}
+                  {{ transaction.description || t('account.transactions.transactionFallback') }}
                 </div>
                 <div class="mt-1 flex items-center gap-2 text-sm text-white/60">
                   <span>{{ formatDate(transaction.createdAt) }}</span>
@@ -197,7 +200,7 @@ onMounted(() => {
                   </UBadge>
                   <span v-if="transaction.listing">•</span>
                   <span v-if="transaction.listing" class="text-xs text-white/40">
-                    Annonce: {{ transaction.listing.title }}
+                    {{ t('account.transactions.listingPrefix') }} {{ transaction.listing.title }}
                   </span>
                 </div>
               </div>
@@ -216,7 +219,7 @@ onMounted(() => {
               {{ transaction.amount }} 🐚
             </div>
             <div class="text-xs text-white/60">
-              Solde: {{ Math.round(transaction.balanceAfter) }} 🐚
+              {{ t('account.transactions.balanceAfter') }} {{ Math.round(transaction.balanceAfter) }} 🐚
             </div>
           </div>
         </div>
@@ -229,10 +232,10 @@ onMounted(() => {
             icon="i-heroicons-chevron-left"
             @click="walletStore.fetchTransactions(walletStore.pagination.page - 1)"
           >
-            Précédent
+            {{ t('account.transactions.prev') }}
           </UButton>
           <span class="text-sm text-white/60">
-            Page {{ walletStore.pagination.page }} sur {{ walletStore.pagination.totalPages }}
+            {{ t('account.transactions.pageOf', { page: walletStore.pagination.page, total: walletStore.pagination.totalPages }) }}
           </span>
           <UButton
             :disabled="!walletStore.pagination.hasNext"
@@ -240,16 +243,16 @@ onMounted(() => {
             trailing-icon="i-heroicons-chevron-right"
             @click="walletStore.fetchTransactions(walletStore.pagination.page + 1)"
           >
-            Suivant
+            {{ t('account.transactions.next') }}
           </UButton>
         </div>
       </div>
 
       <div v-else class="py-12 text-center text-white/60">
         <UIcon name="i-heroicons-inbox" class="mx-auto mb-4 h-12 w-12" />
-        <p>Aucune transaction trouvée</p>
+        <p>{{ t('account.transactions.empty') }}</p>
         <p v-if="typeFilter !== 'all' || searchQuery" class="mt-2 text-sm">
-          Essayez de modifier vos filtres
+          {{ t('account.transactions.emptyHint') }}
         </p>
       </div>
     </UCard>

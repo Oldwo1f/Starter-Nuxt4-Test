@@ -7,10 +7,7 @@ import { useDebounceFn } from '@vueuse/core'
 definePageMeta({
   layout: 'account',
   middleware: 'auth',
-})
-
-useHead({
-  title: 'Conversation',
+  titleKey: 'account.pages.conversation',
 })
 
 const route = useRoute()
@@ -19,6 +16,7 @@ const authStore = useAuthStore()
 const messagesStore = useMessagesStore()
 const { apiBaseUrl, getImageUrl } = useApi()
 const { fromNow } = useDate()
+const { t } = useI18n()
 
 const conversationId = computed(() => parseInt(route.params.id as string, 10))
 const messageInput = ref('')
@@ -148,8 +146,8 @@ const handleSend = async () => {
 
       <div v-else-if="messagesStore.messages.length === 0 && !messagesStore.isOtherTyping" class="flex flex-col items-center justify-center py-12 text-center">
         <UIcon name="i-heroicons-chat-bubble-left-right" class="h-12 w-12 text-white/30" />
-        <p class="mt-4 text-white/60">Aucun message</p>
-        <p class="mt-1 text-sm text-white/40">Envoyez le premier message pour démarrer la conversation.</p>
+        <p class="mt-4 text-white/60">{{ t('account.messagesChat.emptyTitle') }}</p>
+        <p class="mt-1 text-sm text-white/40">{{ t('account.messagesChat.emptyHint') }}</p>
       </div>
 
       <div v-else class="space-y-3">
@@ -184,14 +182,14 @@ const handleSend = async () => {
         v-if="messagesStore.isOtherTyping"
         class="px-2 py-1.5 text-sm text-white/60 flex items-center gap-1"
       >
-        <span>{{ otherParticipant?.firstName || otherParticipant?.lastName || 'Quelqu\'un' }}</span>
-        <span>est en train d'écrire</span>
+        <span>{{ otherParticipant?.firstName || otherParticipant?.lastName || t('account.messagesChat.typingFallback') }}</span>
+        <span>{{ t('account.messagesChat.typingSuffix') }}</span>
         <span class="typing-dots">...</span>
       </div>
       <form @submit.prevent="handleSend" class="flex gap-3 items-center py-2">
         <UInput
           v-model="messageInput"
-          placeholder="Écrivez votre message..."
+          :placeholder="t('account.messagesChat.inputPh')"
           size="lg"
           class="flex-1 min-h-12"
           :disabled="messagesStore.isLoadingMessages"

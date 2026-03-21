@@ -8,6 +8,7 @@ import { useAuthStore } from '~/stores/useAuthStore'
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
 const token = ref(route.query.token as string || '')
 const newPassword = ref('')
@@ -18,7 +19,7 @@ const success = ref('')
 
 onMounted(() => {
   if (!token.value) {
-    error.value = 'Token de réinitialisation manquant'
+    error.value = t('auth.reset.tokenMissing')
   }
 })
 
@@ -27,22 +28,22 @@ const handleResetPassword = async () => {
   success.value = ''
 
   if (!token.value) {
-    error.value = 'Token de réinitialisation manquant'
+    error.value = t('auth.reset.tokenMissing')
     return
   }
 
   if (!newPassword.value || !confirmPassword.value) {
-    error.value = 'Veuillez remplir tous les champs'
+    error.value = t('auth.reset.fillAll')
     return
   }
 
   if (newPassword.value.length < 6) {
-    error.value = 'Le mot de passe doit contenir au moins 6 caractères'
+    error.value = t('auth.reset.passwordShort')
     return
   }
 
   if (newPassword.value !== confirmPassword.value) {
-    error.value = 'Les mots de passe ne correspondent pas'
+    error.value = t('auth.reset.passwordMismatch')
     return
   }
 
@@ -51,12 +52,12 @@ const handleResetPassword = async () => {
   isLoading.value = false
 
   if (result.success) {
-    success.value = result.message || 'Mot de passe réinitialisé avec succès !'
+    success.value = result.message || t('auth.reset.successGeneric')
     setTimeout(() => {
       router.push('/login')
     }, 2000)
   } else {
-    error.value = result.error || 'Erreur lors de la réinitialisation'
+    error.value = result.error || t('auth.reset.errorGeneric')
   }
 }
 </script>
@@ -67,7 +68,7 @@ const handleResetPassword = async () => {
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-key" />
-            <span class="font-medium text-lg">Réinitialiser le mot de passe</span>
+            <span class="font-medium text-lg">{{ t('auth.reset.title') }}</span>
           </div>
         </template>
 
@@ -81,10 +82,10 @@ const handleResetPassword = async () => {
           </div>
 
           <p class="text-sm text-white/70">
-            Entrez votre nouveau mot de passe ci-dessous.
+            {{ t('auth.reset.intro') }}
           </p>
 
-          <UFormGroup label="Nouveau mot de passe" name="newPassword" required>
+          <UFormGroup :label="t('auth.reset.newPassword')" name="newPassword" required>
             <UInput
               v-model="newPassword"
               type="password"
@@ -94,11 +95,11 @@ const handleResetPassword = async () => {
               size="lg"
             />
             <template #hint>
-              <span class="text-xs text-white/50">Minimum 6 caractères</span>
+              <span class="text-xs text-white/50">{{ t('auth.reset.hint') }}</span>
             </template>
           </UFormGroup>
 
-          <UFormGroup label="Confirmer le nouveau mot de passe" name="confirmPassword" required>
+          <UFormGroup :label="t('auth.reset.confirmNew')" name="confirmPassword" required>
             <UInput
               v-model="confirmPassword"
               type="password"
@@ -117,7 +118,7 @@ const handleResetPassword = async () => {
             :loading="isLoading"
             :disabled="isLoading || !token"
           >
-            Réinitialiser le mot de passe
+            {{ t('auth.reset.submit') }}
           </UButton>
         </form>
 
@@ -126,7 +127,7 @@ const handleResetPassword = async () => {
             to="/login"
             class="text-sm text-primary-400 hover:text-primary-300 font-medium"
           >
-            ← Retour à la connexion
+            {{ t('auth.reset.backLogin') }}
           </NuxtLink>
         </div>
     </UCard>

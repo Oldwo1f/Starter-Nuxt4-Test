@@ -239,6 +239,35 @@ export class KikiriService {
     return await this.betRepository.save(bet);
   }
 
+  /** Déplace toutes les mises de l'utilisateur de `from` vers `to` (même tirage). */
+  async moveAllBets(userId: number, drawId: number, from: number, to: number) {
+    const draw = await this.getDrawById(drawId);
+    if (draw.status !== KikiriDrawStatus.BETTING) {
+      throw new BadRequestException('Betting is closed for this draw');
+    }
+    const graceEnd = new Date(draw.bettingEndsAt.getTime() + 5000);
+    if (new Date() >= graceEnd) {
+      throw new BadRequestException('Betting period has ended');
+    }
+    if (from < 1 || from > 6 || to < 1 || to > 6) {
+      throw new BadRequestException('Number must be between 1 and 6');
+    }
+    if (from === to) {
+      throw new BadRequestException('Source and target must be different');
+    }
+    const bets = await this.betRepository.find({
+      where: { userId, drawId, number: from },
+      order: { id: 'ASC' },
+    });
+    if (bets.length === 0) {
+      throw new BadRequestException('No bet found on source case');
+    }
+    for (const bet of bets) {
+      bet.number = to;
+    }
+    return await this.betRepository.save(bets);
+  }
+
   rollDice(): number {
     return Math.floor(Math.random() * 6) + 1;
   }

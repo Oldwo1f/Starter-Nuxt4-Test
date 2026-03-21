@@ -13,6 +13,7 @@ const marketplaceStore = useMarketplaceStore()
 const router = useRouter()
 const toast = useToast()
 const { getImageUrl } = useApi()
+const { t } = useI18n()
 
 // Stats
 const stats = ref({
@@ -112,22 +113,22 @@ const saveProfile = async () => {
 
     if (result.success) {
       toast.add({
-        title: 'Profil mis à jour',
-        description: 'Vos informations ont été mises à jour avec succès.',
+        title: t('profilePublic.toastUpdatedTitle'),
+        description: t('profilePublic.toastUpdatedDesc'),
         color: 'success',
       })
       isEditing.value = false
     } else {
       toast.add({
-        title: 'Erreur',
-        description: result.error || 'Une erreur est survenue lors de la mise à jour.',
+        title: t('profilePublic.toastErrorTitle'),
+        description: result.error || t('profilePublic.toastErrorUpdate'),
         color: 'red',
       })
     }
   } catch (error: any) {
     toast.add({
-      title: 'Erreur',
-      description: error.message || 'Une erreur est survenue lors de la mise à jour.',
+      title: t('profilePublic.toastErrorTitle'),
+      description: error.message || t('profilePublic.toastErrorUpdate'),
       color: 'red',
     })
   } finally {
@@ -136,7 +137,7 @@ const saveProfile = async () => {
 }
 
 const getDisplayName = computed(() => {
-  if (!user.value) return 'Utilisateur'
+  if (!user.value) return t('profilePublic.userFallback')
   if (user.value.firstName && user.value.lastName) {
     return `${user.value.firstName} ${user.value.lastName}`
   }
@@ -196,8 +197,8 @@ const savePassword = async () => {
   // Validation
   if (!passwordForm.value.currentPassword || !passwordForm.value.newPassword || !passwordForm.value.confirmPassword) {
     toast.add({
-      title: 'Erreur',
-      description: 'Veuillez remplir tous les champs.',
+      title: t('profilePublic.toastErrorTitle'),
+      description: t('profilePublic.toastPwFill'),
       color: 'red',
     })
     return
@@ -205,8 +206,8 @@ const savePassword = async () => {
 
   if (passwordForm.value.newPassword.length < 6) {
     toast.add({
-      title: 'Erreur',
-      description: 'Le nouveau mot de passe doit contenir au moins 6 caractères.',
+      title: t('profilePublic.toastErrorTitle'),
+      description: t('profilePublic.toastPwShort'),
       color: 'red',
     })
     return
@@ -214,8 +215,8 @@ const savePassword = async () => {
 
   if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
     toast.add({
-      title: 'Erreur',
-      description: 'Les nouveaux mots de passe ne correspondent pas.',
+      title: t('profilePublic.toastErrorTitle'),
+      description: t('profilePublic.toastPwMismatch'),
       color: 'red',
     })
     return
@@ -230,22 +231,22 @@ const savePassword = async () => {
 
     if (result.success) {
       toast.add({
-        title: 'Mot de passe modifié',
-        description: 'Votre mot de passe a été modifié avec succès.',
+        title: t('profilePublic.toastPwSuccessTitle'),
+        description: t('profilePublic.toastPwSuccessDesc'),
         color: 'success',
       })
       cancelChangingPassword()
     } else {
       toast.add({
-        title: 'Erreur',
-        description: result.error || 'Une erreur est survenue lors du changement de mot de passe.',
+        title: t('profilePublic.toastErrorTitle'),
+        description: result.error || t('profilePublic.toastPwError'),
         color: 'red',
       })
     }
   } catch (error: any) {
     toast.add({
-      title: 'Erreur',
-      description: error.message || 'Une erreur est survenue lors du changement de mot de passe.',
+      title: t('profilePublic.toastErrorTitle'),
+      description: error.message || t('profilePublic.toastPwError'),
       color: 'red',
     })
   } finally {
@@ -258,48 +259,48 @@ const savePassword = async () => {
   <div class="mx-auto max-w-5xl px-6 py-10">
     <div class="space-y-6">
       <div class="space-y-2">
-        <h1 class="text-3xl font-semibold tracking-tight">Mon Profil</h1>
-        <p class="text-white/70">Gérez vos informations personnelles</p>
+        <h1 class="text-3xl font-semibold tracking-tight">{{ t('profilePublic.title') }}</h1>
+        <p class="text-white/70">{{ t('profilePublic.subtitle') }}</p>
       </div>
 
       <!-- Wallet Balance & Stats -->
       <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <UCard class="bg-gradient-to-r from-primary-500/20 to-primary-600/20">
           <div class="text-center">
-            <div class="mb-2 text-sm text-white/60">Solde Pūpū</div>
+            <div class="mb-2 text-sm text-white/60">{{ t('profilePublic.balancePupu') }}</div>
             <div class="mb-2 flex items-center justify-center gap-2 text-3xl font-bold text-primary-500">
               <span>🐚</span>
               <span>{{ walletStore.balance.toFixed(2) }}</span>
             </div>
             <UButton to="/account/wallet" variant="ghost" size="sm" class="mt-2">
-              Voir le portefeuille
+              {{ t('profilePublic.seeWallet') }}
             </UButton>
           </div>
         </UCard>
         <UCard>
           <div class="text-center">
-            <div class="mb-2 text-sm text-white/60">Annonces</div>
+            <div class="mb-2 text-sm text-white/60">{{ t('profilePublic.listings') }}</div>
             <div class="text-3xl font-bold">{{ stats.listingsCount }}</div>
             <UButton to="/account/listings" variant="ghost" size="sm" class="mt-2">
-              Mes annonces
+              {{ t('profilePublic.myListings') }}
             </UButton>
           </div>
         </UCard>
         <UCard>
           <div class="text-center">
-            <div class="mb-2 text-sm text-white/60">Transactions</div>
+            <div class="mb-2 text-sm text-white/60">{{ t('profilePublic.transactions') }}</div>
             <div class="text-3xl font-bold">{{ stats.transactionsCount }}</div>
             <UButton to="/account/transactions" variant="ghost" size="sm" class="mt-2">
-              Historique
+              {{ t('profilePublic.history') }}
             </UButton>
           </div>
         </UCard>
         <UCard>
           <div class="text-center">
-            <div class="mb-2 text-sm text-white/60">Rôle</div>
-            <div class="text-lg font-semibold">{{ user?.role || 'Membre' }}</div>
+            <div class="mb-2 text-sm text-white/60">{{ t('profilePublic.role') }}</div>
+            <div class="text-lg font-semibold">{{ user?.role || t('profilePublic.member') }}</div>
             <UBadge v-if="user?.role === 'member'" color="green" variant="subtle" class="mt-2">
-              Membre Certifié
+              {{ t('profilePublic.certifiedBadge') }}
             </UBadge>
           </div>
         </UCard>
@@ -310,7 +311,7 @@ const savePassword = async () => {
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <UIcon name="i-heroicons-user-circle" />
-              <span class="font-medium">Informations personnelles</span>
+              <span class="font-medium">{{ t('profilePublic.personalInfo') }}</span>
             </div>
             <UButton
               v-if="!isEditing"
@@ -320,7 +321,7 @@ const savePassword = async () => {
               size="sm"
             >
               <UIcon name="i-heroicons-pencil" class="mr-2" />
-              Modifier
+              {{ t('profilePublic.edit') }}
             </UButton>
           </div>
         </template>
@@ -342,25 +343,25 @@ const savePassword = async () => {
           </div>
 
           <div v-if="!isEditing" class="grid gap-4 sm:grid-cols-2">
-            <UFormGroup label="Prénom" name="firstName">
+            <UFormGroup :label="t('profilePublic.firstName')" name="firstName">
               <UInput
-                :value="user.firstName || 'Non renseigné'"
+                :value="user.firstName || t('profilePublic.notProvided')"
                 disabled
                 icon="i-heroicons-user"
                 size="lg"
               />
             </UFormGroup>
 
-            <UFormGroup label="Nom" name="lastName">
+            <UFormGroup :label="t('profilePublic.lastName')" name="lastName">
               <UInput
-                :value="user.lastName || 'Non renseigné'"
+                :value="user.lastName || t('profilePublic.notProvided')"
                 disabled
                 icon="i-heroicons-user"
                 size="lg"
               />
             </UFormGroup>
 
-            <UFormGroup label="Email" name="email">
+            <UFormGroup :label="t('profilePublic.email')" name="email">
               <UInput
                 :value="user.email"
                 disabled
@@ -369,7 +370,7 @@ const savePassword = async () => {
               />
             </UFormGroup>
 
-            <UFormGroup label="Rôle" name="role">
+            <UFormGroup :label="t('profilePublic.role')" name="role">
               <UInput
                 :value="user.role"
                 disabled
@@ -378,7 +379,7 @@ const savePassword = async () => {
               />
             </UFormGroup>
 
-            <UFormGroup label="Avatar" name="avatarImage">
+            <UFormGroup :label="t('profilePublic.avatar')" name="avatarImage">
               <div class="flex items-center gap-4">
                 <CertifiedAvatar
                   :src="user.avatarImage ? getImageUrl(user.avatarImage) : null"
@@ -389,7 +390,7 @@ const savePassword = async () => {
                   avatar-class="ring-2 ring-primary-500/20"
                 />
                 <p class="text-sm text-white/60">
-                  {{ user.avatarImage ? 'Avatar personnalisé' : 'Aucun avatar' }}
+                  {{ user.avatarImage ? t('profilePublic.avatarCustom') : t('profilePublic.avatarNone') }}
                 </p>
               </div>
             </UFormGroup>
@@ -397,25 +398,25 @@ const savePassword = async () => {
 
           <div v-else class="space-y-4">
             <div class="grid gap-4 sm:grid-cols-2">
-              <UFormGroup label="Prénom" name="firstName">
+              <UFormGroup :label="t('profilePublic.firstName')" name="firstName">
                 <UInput
                   v-model="formData.firstName"
-                  placeholder="Entrez votre prénom"
+                  :placeholder="t('profilePublic.placeholderFirstName')"
                   icon="i-heroicons-user"
                   size="lg"
                 />
               </UFormGroup>
 
-              <UFormGroup label="Nom" name="lastName">
+              <UFormGroup :label="t('profilePublic.lastName')" name="lastName">
                 <UInput
                   v-model="formData.lastName"
-                  placeholder="Entrez votre nom"
+                  :placeholder="t('profilePublic.placeholderLastName')"
                   icon="i-heroicons-user"
                   size="lg"
                 />
               </UFormGroup>
 
-              <UFormGroup label="Avatar" name="avatarImage" class="sm:col-span-2">
+              <UFormGroup :label="t('profilePublic.avatar')" name="avatarImage" class="sm:col-span-2">
                 <AvatarUpload
                   :current-avatar="user?.avatarImage ? getImageUrl(user.avatarImage) : null"
                   :user-id="user?.id"
@@ -431,7 +432,7 @@ const savePassword = async () => {
                 :loading="isSaving"
                 :disabled="isSaving"
               >
-                Enregistrer
+                {{ t('profilePublic.save') }}
               </UButton>
               <UButton
                 @click="cancelEditing"
@@ -439,14 +440,14 @@ const savePassword = async () => {
                 variant="outline"
                 :disabled="isSaving"
               >
-                Annuler
+                {{ t('profilePublic.cancel') }}
               </UButton>
             </div>
           </div>
         </div>
 
         <div v-else class="text-center py-8">
-          <p class="text-white/60">Chargement des informations...</p>
+          <p class="text-white/60">{{ t('profilePublic.loading') }}</p>
         </div>
       </UCard>
 
@@ -456,7 +457,7 @@ const savePassword = async () => {
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <UIcon name="i-heroicons-key" />
-              <span class="font-medium">Sécurité</span>
+              <span class="font-medium">{{ t('profilePublic.security') }}</span>
             </div>
             <UButton
               v-if="!isChangingPassword"
@@ -466,51 +467,51 @@ const savePassword = async () => {
               size="sm"
             >
               <UIcon name="i-heroicons-lock-closed" class="mr-2" />
-              Changer le mot de passe
+              {{ t('profilePublic.changePassword') }}
             </UButton>
           </div>
         </template>
 
         <div v-if="!isChangingPassword" class="space-y-2">
           <p class="text-sm text-white/60">
-            Pour votre sécurité, utilisez un mot de passe fort et unique.
+            {{ t('profilePublic.securityHint') }}
           </p>
           <p class="text-xs text-white/50">
-            Le mot de passe doit contenir au moins 6 caractères.
+            {{ t('profilePublic.passwordMinHint') }}
           </p>
         </div>
 
         <div v-else class="space-y-4">
-          <UFormGroup label="Mot de passe actuel" name="currentPassword" required>
+          <UFormGroup :label="t('profilePublic.currentPassword')" name="currentPassword" required>
             <UInput
               v-model="passwordForm.currentPassword"
               type="password"
-              placeholder="Entrez votre mot de passe actuel"
+              :placeholder="t('profilePublic.placeholderCurrentPw')"
               icon="i-heroicons-lock-closed"
               size="lg"
               :disabled="isSavingPassword"
             />
           </UFormGroup>
 
-          <UFormGroup label="Nouveau mot de passe" name="newPassword" required>
+          <UFormGroup :label="t('profilePublic.newPassword')" name="newPassword" required>
             <UInput
               v-model="passwordForm.newPassword"
               type="password"
-              placeholder="Entrez votre nouveau mot de passe"
+              :placeholder="t('profilePublic.placeholderNewPw')"
               icon="i-heroicons-lock-closed"
               size="lg"
               :disabled="isSavingPassword"
             />
             <template #hint>
-              <span class="text-xs text-white/50">Minimum 6 caractères</span>
+              <span class="text-xs text-white/50">{{ t('profilePublic.hintMin6') }}</span>
             </template>
           </UFormGroup>
 
-          <UFormGroup label="Confirmer le nouveau mot de passe" name="confirmPassword" required>
+          <UFormGroup :label="t('profilePublic.confirmNewPassword')" name="confirmPassword" required>
             <UInput
               v-model="passwordForm.confirmPassword"
               type="password"
-              placeholder="Confirmez votre nouveau mot de passe"
+              :placeholder="t('profilePublic.placeholderConfirmPw')"
               icon="i-heroicons-lock-closed"
               size="lg"
               :disabled="isSavingPassword"
@@ -524,7 +525,7 @@ const savePassword = async () => {
               :loading="isSavingPassword"
               :disabled="isSavingPassword"
             >
-              Enregistrer
+              {{ t('profilePublic.save') }}
             </UButton>
             <UButton
               @click="cancelChangingPassword"
@@ -532,7 +533,7 @@ const savePassword = async () => {
               variant="outline"
               :disabled="isSavingPassword"
             >
-              Annuler
+              {{ t('profilePublic.cancel') }}
             </UButton>
           </div>
         </div>

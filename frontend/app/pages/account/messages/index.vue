@@ -8,10 +8,7 @@ import { useDate } from '~/composables/useDate'
 definePageMeta({
   layout: 'account',
   middleware: 'auth',
-})
-
-useHead({
-  title: 'Messages',
+  titleKey: 'account.menuMessages',
 })
 
 const route = useRoute()
@@ -22,6 +19,7 @@ const messagesStore = useMessagesStore()
 const walletStore = useWalletStore()
 const authStore = useAuthStore()
 const toast = useToast()
+const { t } = useI18n()
 const { unlock: unlockSound } = useMessageSound()
 const { getImageUrl } = useApi()
 const { fromNow } = useDate()
@@ -171,8 +169,8 @@ const openNewConversation = () => {
 const createConversation = async () => {
   if (!selectedUser.value) {
     toast.add({
-      title: 'Utilisateur requis',
-      description: 'Veuillez sélectionner un utilisateur',
+      title: t('account.messages.toastUserRequiredTitle'),
+      description: t('account.messages.toastUserRequiredDesc'),
       color: 'red',
     })
     return
@@ -186,16 +184,18 @@ const createConversation = async () => {
     if (conv) {
       isNewConversationOpen.value = false
       toast.add({
-        title: 'Conversation créée',
-        description: `Conversation avec ${getUserDisplayName(selectedUser.value)}`,
+        title: t('account.messages.toastCreatedTitle'),
+        description: t('account.messages.toastCreatedDesc', {
+          name: getUserDisplayName(selectedUser.value),
+        }),
         color: 'success',
       })
       router.push(`/account/messages/${conv.id}`)
     }
   } catch (err: any) {
     toast.add({
-      title: 'Erreur',
-      description: err.data?.message || err.message || 'Impossible de créer la conversation',
+      title: t('pollUi.errorTitle'),
+      description: err.data?.message || err.message || t('account.messages.createError'),
       color: 'red',
     })
   } finally {
@@ -243,27 +243,27 @@ const getParticipantText = (participant: any) => {
 <template>
   <div class="space-y-4">
     <div class="flex items-center justify-between gap-4">
-      <h1 class="text-2xl font-bold">Messages</h1>
+      <h1 class="text-2xl font-bold">{{ t('account.messages.title') }}</h1>
       <UButton
         color="primary"
         icon="i-heroicons-plus"
         @click="openNewConversation"
       >
-        Nouvelle conversation
+        {{ t('account.messages.newConversation') }}
       </UButton>
     </div>
 
     <!-- Modal Nouvelle conversation -->
-    <UModal v-model:open="isNewConversationOpen" title="Nouvelle conversation">
+    <UModal v-model:open="isNewConversationOpen" :title="t('account.messages.modalTitle')">
       <template #content>
         <form class="space-y-4 p-4" @submit.prevent="createConversation">
           <!-- Utilisateur -->
           <div class="user-search-container relative">
-            <label class="mb-2 block text-sm font-medium">Utilisateur *</label>
+            <label class="mb-2 block text-sm font-medium">{{ t('account.messages.userLabel') }}</label>
             <div class="relative">
               <UInput
                 v-model="userSearchTerm"
-                placeholder="Rechercher un utilisateur..."
+                :placeholder="t('account.messages.searchUserPh')"
                 size="lg"
                 :disabled="!!selectedUser"
                 :loading="isSearchingUsers"
@@ -307,11 +307,11 @@ const getParticipantText = (participant: any) => {
 
           <!-- À propos (optionnel) -->
           <div class="listing-search-container relative">
-            <label class="mb-2 block text-sm font-medium">À propos de (optionnel)</label>
+            <label class="mb-2 block text-sm font-medium">{{ t('account.messages.aboutLabel') }}</label>
             <div class="relative">
               <UInput
                 v-model="listingSearchTerm"
-                placeholder="Rechercher une annonce..."
+                :placeholder="t('account.messages.searchListingPh')"
                 size="lg"
                 :disabled="!!selectedListing"
                 :loading="isSearchingListings"
@@ -346,7 +346,7 @@ const getParticipantText = (participant: any) => {
 
           <div class="flex justify-end gap-2 pt-2">
             <UButton variant="ghost" @click="isNewConversationOpen = false">
-              Annuler
+              {{ t('account.messages.cancel') }}
             </UButton>
             <UButton
               type="submit"
@@ -354,7 +354,7 @@ const getParticipantText = (participant: any) => {
               :loading="isCreating"
               :disabled="!selectedUser"
             >
-              Démarrer la conversation
+              {{ t('account.messages.startConversation') }}
             </UButton>
           </div>
         </form>
@@ -371,9 +371,9 @@ const getParticipantText = (participant: any) => {
 
     <div v-else-if="messagesStore.conversations.length === 0" class="text-center py-12">
       <UIcon name="i-heroicons-chat-bubble-left-right" class="mx-auto h-16 w-16 text-white/30" />
-      <p class="mt-4 text-white/60">Aucune conversation</p>
+      <p class="mt-4 text-white/60">{{ t('account.messages.emptyTitle') }}</p>
       <p class="mt-1 text-sm text-white/40">
-        Contacter un troqueur depuis une annonce pour démarrer une conversation.
+        {{ t('account.messages.emptyHint') }}
       </p>
     </div>
 
@@ -416,7 +416,7 @@ const getParticipantText = (participant: any) => {
             {{ conv.lastMessage.content }}
           </p>
           <p v-if="conv.listing?.title" class="mt-1 text-xs text-primary-400">
-            À propos de : {{ conv.listing.title }}
+            {{ t('account.messages.aboutListing', { title: conv.listing.title }) }}
           </p>
         </div>
         <UIcon name="i-heroicons-chevron-right" class="h-5 w-5 shrink-0 text-white/40" />

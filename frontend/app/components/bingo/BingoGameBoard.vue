@@ -5,6 +5,7 @@ import type { BingoRound, BingoGrid, BingoOnlineUser } from '~/composables/useBi
 import { useBingoBallSound } from '~/composables/useBingoBallSound'
 
 const { getImageUrl } = useApi()
+const { t } = useI18n()
 const { playBingoMusic, stopBingoMusic, setBingoMusicVolume } = useBingoBallSound()
 
 const HEADERS = ['B', 'I', 'N', 'G', 'O']
@@ -225,7 +226,7 @@ function toggleManualMark(num: number) {
         <JijiIcon size="md" />
       </div>
       <div class="flex items-center gap-2 text-white/80">
-        <span>Solde :</span>
+        <span>{{ t('gamesBingoUi.balance') }}</span>
         <span class="font-semibold text-amber-400 flex items-center gap-1">{{ balance }} <JijiIcon size="sm" /></span>
       </div>
     </div>
@@ -327,11 +328,11 @@ function toggleManualMark(num: number) {
               <USwitch v-model="soundEnabled" size="sm" />
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs text-white/80 whitespace-nowrap">Musique</span>
+              <span class="text-xs text-white/80 whitespace-nowrap">{{ t('gamesBingoUi.music') }}</span>
               <USwitch v-model="musicEnabled" size="sm" />
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs text-white/80 whitespace-nowrap">Remplissage auto</span>
+              <span class="text-xs text-white/80 whitespace-nowrap">{{ t('gamesBingoUi.autoFill') }}</span>
               <USwitch v-model="autoFillEnabled" size="sm" />
             </div>
             <UButton
@@ -378,11 +379,11 @@ function toggleManualMark(num: number) {
               <USwitch v-model="soundEnabled" size="sm" />
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs text-white/80 whitespace-nowrap">Musique</span>
+              <span class="text-xs text-white/80 whitespace-nowrap">{{ t('gamesBingoUi.music') }}</span>
               <USwitch v-model="musicEnabled" size="sm" />
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs text-white/80 whitespace-nowrap">Remplissage auto</span>
+              <span class="text-xs text-white/80 whitespace-nowrap">{{ t('gamesBingoUi.autoFill') }}</span>
               <USwitch v-model="autoFillEnabled" size="sm" />
             </div>
             <UButton
@@ -446,11 +447,11 @@ function toggleManualMark(num: number) {
               <USwitch v-model="soundEnabled" size="sm" />
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs text-white/80 whitespace-nowrap">Musique</span>
+              <span class="text-xs text-white/80 whitespace-nowrap">{{ t('gamesBingoUi.music') }}</span>
               <USwitch v-model="musicEnabled" size="sm" />
             </div>
             <div class="flex items-center gap-2">
-              <span class="text-xs text-white/80 whitespace-nowrap">Remplissage auto</span>
+              <span class="text-xs text-white/80 whitespace-nowrap">{{ t('gamesBingoUi.autoFill') }}</span>
               <USwitch v-model="autoFillEnabled" size="sm" />
             </div>
           </div>

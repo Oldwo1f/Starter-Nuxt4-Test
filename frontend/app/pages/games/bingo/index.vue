@@ -10,7 +10,7 @@ const unreadChatCount = ref(0)
 definePageMeta({
   layout: 'default',
   middleware: 'auth',
-  meta: { title: 'Bingo' },
+  titleKey: 'games.metaBingo',
 })
 
 const config = useRuntimeConfig()
@@ -18,6 +18,7 @@ const apiBaseUrl = config.public.apiBaseUrl || 'http://localhost:3001'
 const authStore = useAuthStore()
 const { getImageUrl } = useApi()
 const toast = useToast()
+const { t } = useI18n()
 const { playBall, playWinSong } = useBingoBallSound()
 
 interface BingoStatus {
@@ -41,14 +42,14 @@ const closedMessage = computed(() => {
   const s = bingoStatus.value
   if (!s) return null
   if (s.mode === 'manual') {
-    return 'Revenez plus tard, le jeu est désactivé.'
+    return t('games.closedDisabled')
   }
   if (s.nextOpenAt) {
     const hh = new Date(s.nextOpenAt).getHours().toString().padStart(2, '0')
     const mm = new Date(s.nextOpenAt).getMinutes().toString().padStart(2, '0')
-    return `La table de bingo ouvre à ${hh}:${mm}`
+    return t('games.bingoOpensAt', { time: `${hh}:${mm}` })
   }
-  return 'Revenez plus tard.'
+  return t('games.closedLater')
 })
 
 const countdownToOpenFormatted = computed(() => {
