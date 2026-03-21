@@ -6,6 +6,11 @@ import {
   BingoMode,
   BingoDrawSpeed,
 } from '../entities/bingo-config.entity';
+import {
+  getNextCruiseOpenUtc,
+  isAtOrAfterClosingWallTime,
+  isCruiseWindowOpen,
+} from '../common/games-schedule-timezone';
 
 const CONFIG_ID = 1;
 
@@ -53,22 +58,18 @@ export class BingoConfigService {
     if (config.mode === BingoMode.MANUAL) {
       return config.manualEnabled;
     }
-    const now = new Date();
-    const openMinutes = config.openHour * 60 + config.openMinute;
-    const closeMinutes = config.closeHour * 60 + config.closeMinute;
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    if (openMinutes <= closeMinutes) {
-      return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
-    }
-    return currentMinutes >= openMinutes || currentMinutes < closeMinutes;
+    return isCruiseWindowOpen(
+      config.openHour,
+      config.openMinute,
+      config.closeHour,
+      config.closeMinute,
+    );
   }
 
   async willBeClosedAt(date: Date): Promise<boolean> {
     const config = await this.getConfig();
     if (config.mode !== BingoMode.CRUISE) return false;
-    const closeDate = new Date(date);
-    closeDate.setHours(config.closeHour, config.closeMinute, 0, 0);
-    return date.getTime() >= closeDate.getTime();
+    return isAtOrAfterClosingWallTime(date, config.closeHour, config.closeMinute);
   }
 
   async getNextOpenTime(): Promise<Date | null> {
@@ -76,19 +77,12 @@ export class BingoConfigService {
     if (isOpen) return null;
     const config = await this.getConfig();
     if (config.mode !== BingoMode.CRUISE) return null;
-    const now = new Date();
-    const openDate = new Date(now);
-    openDate.setHours(config.openHour, config.openMinute, 0, 0);
-    const closeDate = new Date(now);
-    closeDate.setHours(config.closeHour, config.closeMinute, 0, 0);
-    if (now < openDate) return openDate;
-    if (now >= closeDate) {
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(config.openHour, config.openMinute, 0, 0);
-      return tomorrow;
-    }
-    return null;
+    return getNextCruiseOpenUtc(
+      config.openHour,
+      config.openMinute,
+      config.closeHour,
+      config.closeMinute,
+    );
   }
 
   getBallIntervalSeconds(speed: BingoDrawSpeed): number {

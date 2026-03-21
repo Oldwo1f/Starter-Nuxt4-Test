@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { KikiriConfig, KikiriMode } from '../entities/kikiri-config.entity';
+import {
+  getNextCruiseOpenUtc,
+  isAtOrAfterClosingWallTime,
+  isCruiseWindowOpen,
+} from '../common/games-schedule-timezone';
 
 const CONFIG_ID = 1;
 
@@ -43,25 +48,19 @@ export class KikiriConfigService {
     if (config.mode === KikiriMode.MANUAL) {
       return config.manualEnabled;
     }
-    // Mode croisière : vérifier l'heure
-    const now = new Date();
-    const openMinutes = config.openHour * 60 + config.openMinute;
-    const closeMinutes = config.closeHour * 60 + config.closeMinute;
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    if (openMinutes <= closeMinutes) {
-      return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
-    }
-    // Plage qui traverse minuit (ex: 22h-6h)
-    return currentMinutes >= openMinutes || currentMinutes < closeMinutes;
+    return isCruiseWindowOpen(
+      config.openHour,
+      config.openMinute,
+      config.closeHour,
+      config.closeMinute,
+    );
   }
 
   /** Vérifie si à la date donnée le jeu sera fermé (mode croisière, heure de fermeture dépassée) */
   async willBeClosedAt(date: Date): Promise<boolean> {
     const config = await this.getConfig();
     if (config.mode !== KikiriMode.CRUISE) return false;
-    const closeDate = new Date(date);
-    closeDate.setHours(config.closeHour, config.closeMinute, 0, 0);
-    return date.getTime() >= closeDate.getTime();
+    return isAtOrAfterClosingWallTime(date, config.closeHour, config.closeMinute);
   }
 
   /** Prochaine heure d'ouverture en mode croisière (pour afficher le message) */
@@ -70,18 +69,11 @@ export class KikiriConfigService {
     if (isOpen) return null;
     const config = await this.getConfig();
     if (config.mode !== KikiriMode.CRUISE) return null;
-    const now = new Date();
-    const openDate = new Date(now);
-    openDate.setHours(config.openHour, config.openMinute, 0, 0);
-    const closeDate = new Date(now);
-    closeDate.setHours(config.closeHour, config.closeMinute, 0, 0);
-    if (now < openDate) return openDate;
-    if (now >= closeDate) {
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(config.openHour, config.openMinute, 0, 0);
-      return tomorrow;
-    }
-    return null;
+    return getNextCruiseOpenUtc(
+      config.openHour,
+      config.openMinute,
+      config.closeHour,
+      config.closeMinute,
+    );
   }
 }
