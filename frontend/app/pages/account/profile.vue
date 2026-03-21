@@ -646,7 +646,7 @@ onMounted(() => {
       </UCard>
       <UCard class="bg-gradient-to-r from-amber-500/20 to-amber-600/20">
         <div class="text-center">
-          <div class="mb-2 text-sm text-white/60">Jetons Jiji</div>
+          <div class="mb-2 text-sm text-white/60">Jetons de jeu</div>
             <div class="mb-2 flex items-center justify-center gap-2 text-3xl font-bold text-amber-500">
               <JijiIcon size="md" />
               <span>{{ Math.round(walletStore.jijiBalance) }}</span>

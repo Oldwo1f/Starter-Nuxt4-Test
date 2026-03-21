@@ -64,7 +64,7 @@ onMounted(() => {
     <!-- Jiji Balance Card -->
     <UCard class="bg-gradient-to-r from-amber-500/20 to-amber-600/20">
       <div class="text-center">
-        <div class="mb-2 text-sm text-white/60">Jetons Jiji (jeux)</div>
+        <div class="mb-2 text-sm text-white/60">Jetons de jeu</div>
         <div class="mb-4 flex items-center justify-center gap-2 text-5xl font-bold text-amber-500">
           <JijiIcon size="lg" />
           <span>{{ Math.round(walletStore.jijiBalance) }}</span>
