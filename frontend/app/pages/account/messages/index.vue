@@ -290,13 +290,13 @@ const getParticipantText = (participant: any) => {
                 class="flex items-center gap-3 rounded-lg p-3 cursor-pointer transition-colors hover:bg-white/10"
                 @click="selectUser(user)"
               >
-                <UAvatar
-                  v-if="getAvatarUrl(user)"
+                <CertifiedAvatar
                   :src="getAvatarUrl(user)"
                   :alt="getUserDisplayName(user)"
+                  :text="getAvatarText(user)"
                   size="sm"
+                  :badge-level="user.badgeCount ?? 0"
                 />
-                <UAvatar v-else :alt="getUserDisplayName(user)" :text="getAvatarText(user)" size="sm" />
                 <div class="flex-1 min-w-0">
                   <div class="font-medium text-sm">{{ getUserDisplayName(user) }}</div>
                   <div class="text-xs text-white/60">{{ user.email }}</div>
@@ -391,6 +391,7 @@ const getParticipantText = (participant: any) => {
           :text="getParticipantText(messagesStore.getOtherParticipant(conv))"
           size="lg"
           :is-certified="messagesStore.getOtherParticipant(conv)?.isCertified === true"
+          :badge-level="messagesStore.getOtherParticipant(conv)?.badgeCount ?? 0"
         />
         <div class="min-w-0 flex-1">
           <div class="flex items-center justify-between gap-2">

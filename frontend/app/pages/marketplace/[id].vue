@@ -23,6 +23,15 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const currentImageIndex = ref(0)
 const isContactModalOpen = ref(false)
+const memberProfileOpen = ref(false)
+const memberProfileUserId = ref<number | null>(null)
+
+function handleSellerAvatarClick() {
+  const id = listing.value?.sellerId
+  if (id == null) return
+  memberProfileUserId.value = id
+  memberProfileOpen.value = true
+}
 
 // Fetch listing
 const fetchListing = async () => {
@@ -370,13 +379,22 @@ onMounted(() => {
             </template>
             <div class="space-y-4">
               <div class="flex items-center gap-4">
-                <CertifiedAvatar
-                  :src="getSellerAvatar(listing.seller)"
-                  :alt="listing.seller?.firstName || listing.seller?.lastName || listing.seller?.email"
-                  :text="getSellerAvatarText(listing.seller)"
-                  size="lg"
-                  :is-certified="listing.seller?.isCertified === true"
-                />
+                <div
+                  class="shrink-0 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                  role="button"
+                  tabindex="0"
+                  @click="handleSellerAvatarClick"
+                  @keydown.enter.prevent="handleSellerAvatarClick"
+                >
+                  <CertifiedAvatar
+                    :src="getSellerAvatar(listing.seller)"
+                    :alt="listing.seller?.firstName || listing.seller?.lastName || listing.seller?.email"
+                    :text="getSellerAvatarText(listing.seller)"
+                    size="lg"
+                    :is-certified="listing.seller?.isCertified === true"
+                    :badge-level="listing.seller?.badgeCount ?? 0"
+                  />
+                </div>
                 <div>
                   <div class="flex items-center gap-2">
                     <span class="font-semibold">
@@ -384,7 +402,7 @@ onMounted(() => {
                     </span>
                     <UBadge
                       v-if="listing.seller?.isCertified"
-                      color="amber"
+                      color="warning"
                       variant="soft"
                       size="sm"
                       class="flex items-center gap-1"
@@ -470,6 +488,12 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <MemberBadgeProfileModal
+      v-model:open="memberProfileOpen"
+      :user-id="memberProfileUserId"
+      :listing-id="listing?.id ?? null"
+    />
 
     <!-- Contact Modal -->
     <UModal v-model:open="isContactModalOpen" :ui="{ wrapper: 'max-w-md' }">

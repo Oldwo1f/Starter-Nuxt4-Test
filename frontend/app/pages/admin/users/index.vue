@@ -10,24 +10,9 @@ import type { User } from '~/stores/useUserStore'
 
 const userStore = useUserStore()
 const authStore = useAuthStore()
-const router = useRouter()
 const toast = useToast()
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
-
-// Vérifier l'accès - rediriger les modérateurs
-onMounted(() => {
-  const role = authStore.user?.role?.toLowerCase()
-  if (role === 'moderator') {
-    router.push('/admin/dashboard')
-    toast.add({
-      title: 'Accès refusé',
-      description: 'Vous n\'avez pas les permissions nécessaires pour accéder à cette page.',
-      color: 'red',
-      icon: 'i-heroicons-shield-exclamation',
-    })
-  }
-})
 
 // État pour les données de parrainage
 const referralData = ref<{
@@ -56,6 +41,11 @@ const creditJijiForm = ref({
   description: '',
 })
 const isCreditingJiji = ref(false)
+
+const pointsFormateurDelta = ref(1)
+const pointsSoutienDelta = ref(1)
+const isAddingFormateurPoints = ref(false)
+const isAddingSoutienPoints = ref(false)
 
 // Wrapper pour fetchUsers avec gestion des toasts
 const handleFetchUsers = async () => {
@@ -212,10 +202,102 @@ watch(() => userStore.selectedUser, (newUser) => {
       amount: 0,
       description: '',
     }
+    pointsFormateurDelta.value = 1
+    pointsSoutienDelta.value = 1
   } else {
     referralData.value = null
   }
 })
+
+const handleAddFormateurPoints = async () => {
+  if (!userStore.selectedUser || !authStore.accessToken) return
+  const d = Math.floor(Number(pointsFormateurDelta.value))
+  if (!Number.isFinite(d) || d < 1 || d > 500) {
+    toast.add({
+      title: 'Erreur',
+      description: 'Indiquez un nombre entier entre 1 et 500',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+    return
+  }
+  isAddingFormateurPoints.value = true
+  try {
+    const updated = await $fetch<User>(`${API_BASE_URL}/users/${userStore.selectedUser.id}/points/formateur`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${authStore.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: { delta: d },
+    })
+    if (userStore.selectedUser?.id === updated.id) {
+      userStore.selectedUser = { ...userStore.selectedUser, ...updated }
+    }
+    await handleFetchUsers()
+    toast.add({
+      title: 'Formations publiées mises à jour',
+      description: `Total : ${updated.formateurPoints ?? 0} formation(s) publiée(s)`,
+      color: 'success',
+      icon: 'i-heroicons-check-circle',
+    })
+    pointsFormateurDelta.value = 1
+  } catch (error: any) {
+    toast.add({
+      title: 'Erreur',
+      description: error.data?.message || error.message || 'Impossible de mettre à jour les formations publiées',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+  } finally {
+    isAddingFormateurPoints.value = false
+  }
+}
+
+const handleAddSoutienPoints = async () => {
+  if (!userStore.selectedUser || !authStore.accessToken) return
+  const d = Math.floor(Number(pointsSoutienDelta.value))
+  if (!Number.isFinite(d) || d < 1 || d > 500) {
+    toast.add({
+      title: 'Erreur',
+      description: 'Indiquez un nombre entier entre 1 et 500',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+    return
+  }
+  isAddingSoutienPoints.value = true
+  try {
+    const updated = await $fetch<User>(`${API_BASE_URL}/users/${userStore.selectedUser.id}/points/soutien`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${authStore.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: { delta: d },
+    })
+    if (userStore.selectedUser?.id === updated.id) {
+      userStore.selectedUser = { ...userStore.selectedUser, ...updated }
+    }
+    await handleFetchUsers()
+    toast.add({
+      title: 'Points soutien ajoutés',
+      description: `Total : ${updated.soutienPoints ?? 0} point(s)`,
+      color: 'success',
+      icon: 'i-heroicons-check-circle',
+    })
+    pointsSoutienDelta.value = 1
+  } catch (error: any) {
+    toast.add({
+      title: 'Erreur',
+      description: error.data?.message || error.message || 'Impossible d’ajouter les points',
+      color: 'red',
+      icon: 'i-heroicons-exclamation-circle',
+    })
+  } finally {
+    isAddingSoutienPoints.value = false
+  }
+}
 
 // Fonction pour créditer un utilisateur
 const handleCreditUser = async () => {
@@ -355,6 +437,18 @@ const handleCreditJijiUser = async () => {
 const canModifyRoles = computed(() => {
   const role = authStore.user?.role?.toLowerCase()
   return role === 'admin' || role === 'superadmin'
+})
+
+/** Compteur formations publiées (badges création Academy) : admin / superadmin uniquement */
+const canGiveFormateurPoints = computed(() => {
+  const role = authStore.user?.role?.toLowerCase()
+  return role === 'admin' || role === 'superadmin'
+})
+
+/** Points soutien : admin / superadmin / modérateur */
+const canGiveSoutienPoints = computed(() => {
+  const role = authStore.user?.role?.toLowerCase()
+  return role === 'admin' || role === 'superadmin' || role === 'moderator'
 })
 
 // État pour suivre les mises à jour en cours
@@ -607,6 +701,7 @@ onUnmounted(() => {
                 :text="userStore.getAvatarText(row.original)"
                 size="sm"
                 :is-certified="row.original.isCertified === true"
+                :badge-level="row.original.badgeCount ?? 0"
               />
               <div class="flex items-center gap-2 text-sm">
                 <div class="flex items-center gap-1 text-primary-500 font-semibold">
@@ -759,6 +854,7 @@ onUnmounted(() => {
               :text="userStore.getAvatarText(userStore.selectedUser)"
               size="xl"
               :is-certified="userStore.selectedUser.isCertified === true"
+              :badge-level="userStore.selectedUser.badgeCount ?? 0"
             />
             <div>
               <h3 class="text-lg font-semibold">{{ userStore.getDisplayName(userStore.selectedUser) }}</h3>
@@ -773,7 +869,7 @@ onUnmounted(() => {
               <div class="flex items-center justify-between">
                 <span class="font-medium">Informations personnelles</span>
                 <UButton
-                  v-if="!userStore.isEditingProfile"
+                  v-if="canModifyRoles && !userStore.isEditingProfile"
                   @click="userStore.startEditingProfile"
                   color="primary"
                   variant="outline"
@@ -841,6 +937,15 @@ onUnmounted(() => {
               </div>
 
               <div>
+                <label class="block text-sm font-medium text-white/70 mb-2">Badge « Respect des anciens »</label>
+                <UInput
+                  :value="userStore.selectedUser?.respectAnciensBadgeGranted ? 'Oui' : 'Non'"
+                  disabled
+                  icon="i-heroicons-sparkles"
+                />
+              </div>
+
+              <div>
                 <label class="block text-sm font-medium text-white/70 mb-2">Solde Pūpū</label>
                 <UInput
                   :value="`${Math.round(userStore.selectedUser?.walletBalance || 0)} 🐚`"
@@ -855,6 +960,24 @@ onUnmounted(() => {
                   <JijiIcon size="sm" />
                   <span class="font-medium">{{ Math.round(userStore.selectedUser?.jijiBalance || 0) }}</span>
                 </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-white/70 mb-2">Formations publiées</label>
+                <UInput
+                  :value="String(userStore.selectedUser?.formateurPoints ?? 0)"
+                  disabled
+                  icon="i-heroicons-academic-cap"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-white/70 mb-2">Points soutien</label>
+                <UInput
+                  :value="String(userStore.selectedUser?.soutienPoints ?? 0)"
+                  disabled
+                  icon="i-heroicons-heart"
+                />
               </div>
 
               <div class="sm:col-span-2">
@@ -931,6 +1054,17 @@ onUnmounted(() => {
                   />
                   <template #description>
                     Le badge certifié apparaîtra à côté de l'avatar dans le marketplace et les annonces
+                  </template>
+                </UFormGroup>
+
+                <UFormGroup label="Respect des anciens" name="respectAnciensBadgeGranted" class="sm:col-span-2">
+                  <UCheckbox
+                    v-model="userStore.profileFormData.respectAnciensBadgeGranted"
+                    label="Attribuer le badge spécial « Le respect des anciens » (75+ ans, discrétion admin)"
+                    icon="i-heroicons-sparkles"
+                  />
+                  <template #description>
+                    Crédite le badge sur la page Badges du membre. Décochez ne retire pas un badge déjà obtenu.
                   </template>
                 </UFormGroup>
               </div>
@@ -1058,6 +1192,82 @@ onUnmounted(() => {
 
             <div v-else class="text-center py-4 text-white/60 text-sm">
               Impossible de charger les données de parrainage
+            </div>
+          </UCard>
+
+          <!-- Formations publiées (badges Academy — création) : admin / superadmin -->
+          <UCard v-if="canGiveFormateurPoints" class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <UIcon name="i-heroicons-academic-cap" class="w-5 h-5" />
+                <span class="font-medium">Formations publiées (Academy — création)</span>
+              </div>
+            </template>
+            <div class="p-4 space-y-4">
+              <p class="text-sm text-white/60">
+                Augmente le compteur de formations publiées pour la série « Academy — Création de formations » (paliers 1, 3, 5, 10). Total actuel :
+                <strong class="text-white/90">{{ userStore.selectedUser?.formateurPoints ?? 0 }}</strong>
+              </p>
+              <UFormGroup label="Nombre à ajouter" name="formateurDelta">
+                <UInput
+                  v-model.number="pointsFormateurDelta"
+                  type="number"
+                  min="1"
+                  max="500"
+                  step="1"
+                  placeholder="1"
+                />
+                <template #description>Entier entre 1 et 500 (cumul sur le compteur)</template>
+              </UFormGroup>
+              <UButton
+                color="primary"
+                variant="soft"
+                block
+                icon="i-heroicons-plus-circle"
+                :loading="isAddingFormateurPoints"
+                :disabled="isAddingFormateurPoints"
+                @click="handleAddFormateurPoints"
+              >
+                Ajouter des formations publiées
+              </UButton>
+            </div>
+          </UCard>
+
+          <!-- Points soutien : admin / superadmin / modérateur -->
+          <UCard v-if="canGiveSoutienPoints" class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <UIcon name="i-heroicons-heart" class="w-5 h-5" />
+                <span class="font-medium">Points soutien</span>
+              </div>
+            </template>
+            <div class="p-4 space-y-4">
+              <p class="text-sm text-white/60">
+                Ajoute des points pour la série « Soutien » (palier 1, 5, 10, 20). Total actuel :
+                <strong class="text-white/90">{{ userStore.selectedUser?.soutienPoints ?? 0 }}</strong>
+              </p>
+              <UFormGroup label="Points à ajouter" name="soutienDelta">
+                <UInput
+                  v-model.number="pointsSoutienDelta"
+                  type="number"
+                  min="1"
+                  max="500"
+                  step="1"
+                  placeholder="1"
+                />
+                <template #description>Entier entre 1 et 500 (cumul sur le solde)</template>
+              </UFormGroup>
+              <UButton
+                color="emerald"
+                variant="soft"
+                block
+                icon="i-heroicons-plus-circle"
+                :loading="isAddingSoutienPoints"
+                :disabled="isAddingSoutienPoints"
+                @click="handleAddSoutienPoints"
+              >
+                Ajouter les points soutien
+              </UButton>
             </div>
           </UCard>
 

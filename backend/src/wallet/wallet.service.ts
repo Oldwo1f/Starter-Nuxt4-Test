@@ -13,6 +13,7 @@ import {
 } from '../entities/jiji-transaction.entity';
 import { User } from '../entities/user.entity';
 import { Listing, ListingStatus } from '../entities/listing.entity';
+import { BadgesService } from '../badges/badges.service';
 
 @Injectable()
 export class WalletService {
@@ -26,7 +27,18 @@ export class WalletService {
     @InjectRepository(JijiTransaction)
     private jijiTransactionRepository: Repository<JijiTransaction>,
     private dataSource: DataSource,
+    private badgesService: BadgesService,
   ) {}
+
+  private async attachUserBadgeCounts(users: User[]): Promise<void> {
+    if (users.length === 0) {
+      return;
+    }
+    const counts = await this.badgesService.countBadgesByUserIds(users.map((u) => u.id));
+    for (const u of users) {
+      (u as User & { badgeCount?: number }).badgeCount = counts.get(u.id) ?? 0;
+    }
+  }
 
   async getBalance(userId: number): Promise<number> {
     const user = await this.userRepository.findOne({
@@ -427,7 +439,9 @@ export class WalletService {
     // Order by email
     queryBuilder.orderBy('user.email', 'ASC');
 
-    return await queryBuilder.getMany();
+    const users = await queryBuilder.getMany();
+    await this.attachUserBadgeCounts(users);
+    return users;
   }
 
   /**

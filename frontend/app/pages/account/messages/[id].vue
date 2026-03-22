@@ -125,6 +125,7 @@ const handleSend = async () => {
         :text="getParticipantText(otherParticipant)"
         size="md"
         :is-certified="otherParticipant?.isCertified === true"
+        :badge-level="otherParticipant?.badgeCount ?? 0"
       />
       <div class="min-w-0 flex-1">
         <h2 class="font-semibold truncate">

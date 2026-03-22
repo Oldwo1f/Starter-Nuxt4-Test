@@ -55,6 +55,11 @@ export interface CourseProgress {
   updatedAt: string
 }
 
+export interface AcademyProgressUpdateResponse {
+  progress: CourseProgress
+  newBadges: string[]
+}
+
 export const useAcademyStore = defineStore('academy', () => {
   const config = useRuntimeConfig()
   const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
@@ -136,7 +141,7 @@ export const useAcademyStore = defineStore('academy', () => {
   // Update progress (mark video as completed)
   const updateProgress = async (courseId: number, videoId: number, lastVideoWatchedId?: number, markAsCompleted: boolean = false) => {
     try {
-      const response = await $fetch<CourseProgress>(`${API_BASE_URL}/academy/${courseId}/progress`, {
+      const response = await $fetch<AcademyProgressUpdateResponse>(`${API_BASE_URL}/academy/${courseId}/progress`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.accessToken}`,
@@ -150,13 +155,13 @@ export const useAcademyStore = defineStore('academy', () => {
       
       // Update progress in current course if it's the same course
       if (currentCourse.value && currentCourse.value.id === courseId) {
-        currentCourse.value.progress = response
+        currentCourse.value.progress = response.progress
       }
       
       // Update progress in courses list
       const courseIndex = courses.value.findIndex(c => c.id === courseId)
       if (courseIndex !== -1) {
-        courses.value[courseIndex].progress = response
+        courses.value[courseIndex].progress = response.progress
       }
       
       return response

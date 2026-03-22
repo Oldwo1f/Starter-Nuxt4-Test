@@ -32,6 +32,8 @@ const handlePageChange = async (page: number) => {
       </p>
     </div>
 
+    <ParticipationCallout context="polls" />
+
     <!-- Liste des sondages -->
     <div v-if="pollStore.isLoading" class="flex justify-center py-12">
       <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-primary-500" />

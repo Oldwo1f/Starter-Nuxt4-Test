@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BlogPost, BlogStatus } from '../entities/blog-post.entity';
 import { EmailService } from '../email/email.service';
+import { BadgesService } from '../badges/badges.service';
 
 @Injectable()
 export class BlogService {
@@ -12,6 +13,7 @@ export class BlogService {
     @InjectRepository(BlogPost)
     private blogPostRepository: Repository<BlogPost>,
     private emailService: EmailService,
+    private readonly badgesService: BadgesService,
   ) {}
 
   async create(
@@ -34,7 +36,11 @@ export class BlogService {
       publishedAt: publishedAt ?? null,
       isPinned,
     });
-    return this.blogPostRepository.save(blogPost);
+    const saved = await this.blogPostRepository.save(blogPost);
+    if (saved.status === BlogStatus.ACTIVE) {
+      await this.badgesService.syncBlogCollaborativeBadges(saved.authorId);
+    }
+    return saved;
   }
 
   async findAll(): Promise<BlogPost[]> {
@@ -187,19 +193,41 @@ export class BlogService {
     if (isPinned !== undefined) {
       blogPost.isPinned = isPinned;
     }
-    return this.blogPostRepository.save(blogPost);
+    const saved = await this.blogPostRepository.save(blogPost);
+    if (saved.status === BlogStatus.ACTIVE) {
+      await this.badgesService.syncBlogCollaborativeBadges(saved.authorId);
+    }
+    return saved;
   }
 
   async publishScheduledPosts(): Promise<number> {
-    const result = await this.blogPostRepository
+    const now = new Date();
+    const rows = await this.blogPostRepository
+      .createQueryBuilder('bp')
+      .select(['bp.id', 'bp.authorId'])
+      .where('bp.status = :draft', { draft: BlogStatus.DRAFT })
+      .andWhere('bp.publishedAt IS NOT NULL')
+      .andWhere('bp.publishedAt <= :now', { now })
+      .getMany();
+
+    if (rows.length === 0) {
+      return 0;
+    }
+
+    const ids = rows.map((r) => r.id);
+    await this.blogPostRepository
       .createQueryBuilder()
       .update(BlogPost)
       .set({ status: BlogStatus.ACTIVE })
-      .where('status = :draft', { draft: BlogStatus.DRAFT })
-      .andWhere('publishedAt IS NOT NULL')
-      .andWhere('publishedAt <= :now', { now: new Date() })
+      .where('id IN (:...ids)', { ids })
       .execute();
-    return result.affected ?? 0;
+
+    const authorIds = [...new Set(rows.map((r) => r.authorId))];
+    for (const authorId of authorIds) {
+      await this.badgesService.syncBlogCollaborativeBadges(authorId);
+    }
+
+    return rows.length;
   }
 
   async remove(id: number): Promise<void> {
@@ -217,6 +245,8 @@ export class BlogService {
       blogPost.publishedAt = new Date();
     }
     const saved = await this.blogPostRepository.save(blogPost);
+
+    await this.badgesService.syncBlogCollaborativeBadges(saved.authorId);
 
     if (blogPost.author?.email) {
       try {

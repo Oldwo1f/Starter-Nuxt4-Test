@@ -8,11 +8,13 @@ import { Category } from '../entities/category.entity';
 import { User } from '../entities/user.entity';
 import { UploadModule } from '../upload/upload.module';
 import { ListingOwnerGuard } from './guards/listing-owner.guard';
+import { BadgesModule } from '../badges/badges.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Listing, Location, Category, User]),
     UploadModule,
+    BadgesModule,
   ],
   controllers: [MarketplaceController],
   providers: [MarketplaceService, ListingOwnerGuard],

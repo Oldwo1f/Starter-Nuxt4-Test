@@ -9,6 +9,8 @@ interface UserSummary {
   lastName?: string | null
   avatarImage?: string | null
   isCertified?: boolean
+  /** Renseigné par l’API (comptage user_badge) pour la pastille sur l’avatar */
+  badgeCount?: number
 }
 
 interface Message {

@@ -2,10 +2,12 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useMessagesStore } from '~/stores/useMessagesStore'
+import { useMyBadgeCountStore } from '~/stores/useMyBadgeCountStore'
 import logoUrl from '~/assets/images/logo-nuna-heritage.png'
 
 const authStore = useAuthStore()
 const messagesStore = useMessagesStore()
+const myBadgeCountStore = useMyBadgeCountStore()
 const router = useRouter()
 const route = useRoute()
 
@@ -174,6 +176,11 @@ const accountMenuItems = computed(() => [
     label: t('account.menuBadges'),
     icon: 'i-heroicons-trophy',
     to: '/account/badges',
+  },
+  {
+    label: t('account.menuTestimonial'),
+    icon: 'i-heroicons-microphone',
+    to: '/account/testimonial',
   },
   {
     label: t('account.menuProfile'),
@@ -480,6 +487,7 @@ const isActive = (path: string) => {
                       :text="getAvatarText"
                       size="sm"
                       :is-certified="authStore.user?.isCertified === true"
+                      :badge-level="myBadgeCountStore.count"
                     />
                   </div>
                 </UButton>

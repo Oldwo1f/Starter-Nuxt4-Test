@@ -4,6 +4,7 @@ import logoUrl from '~/assets/images/logo-nuna-heritage.png'
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useBillingStore } from '~/stores/useBillingStore'
 import { useMessagesStore } from '~/stores/useMessagesStore'
+import { useMyBadgeCountStore } from '~/stores/useMyBadgeCountStore'
 import { useStripeStore } from '~/stores/useStripeStore'
 
 const { appName } = useAppInfo()
@@ -15,6 +16,7 @@ const authStore = useAuthStore()
 const stripeStore = useStripeStore()
 const billingStore = useBillingStore()
 const messagesStore = useMessagesStore()
+const myBadgeCountStore = useMyBadgeCountStore()
 
 // Même logique que account/cotisation : membre avec cotisation encore valide
 const hasActivePaidMembership = computed(() => {
@@ -608,6 +610,7 @@ const isActive = (item: MenuItem) => item.active
               :text="getAvatarText"
               size="md"
               :is-certified="authStore.user?.isCertified === true"
+              :badge-level="myBadgeCountStore.count"
               avatar-class="hover:ring-2 hover:ring-primary-500 transition-all"
             />
           </UButton>

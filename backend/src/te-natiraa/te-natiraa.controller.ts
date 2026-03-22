@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -15,6 +16,11 @@ import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
+import { ClaimTeNatiraaPresenceDto } from './dto/claim-presence.dto';
+import {
+  CreateTeNatiraaPresenceCodeDto,
+  UpdateTeNatiraaPresenceCodeDto,
+} from './dto/create-presence-code.dto';
 import { UserRole } from '../entities/user.entity';
 import { TeNatiraaService } from './te-natiraa.service';
 import { CreateTeNatiraaCheckoutSessionDto } from './dto/create-checkout-session.dto';
@@ -46,6 +52,56 @@ export class TeNatiraaController {
     @Param('sessionId') sessionId: string,
   ) {
     return this.teNatiraaService.processPendingBySessionId(sessionId);
+  }
+
+  @Post('presence/claim')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Réclamer un point présence Te Natira\'a (QR)',
+    description:
+      'Authentifié. Un point par code distinct ; même code = une seule fois par utilisateur. Déclenche les badges Connecter.',
+  })
+  @ApiResponse({ status: 200, description: 'Point attribué ou déjà possédé pour ce code' })
+  @ApiResponse({ status: 404, description: 'Code invalide ou désactivé' })
+  async claimPresence(
+    @CurrentUser() user: { id: number },
+    @Body() dto: ClaimTeNatiraaPresenceDto,
+  ) {
+    return this.teNatiraaService.claimPresence(user.id, dto.token);
+  }
+
+  @Get('presence-codes')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Lister les QR présence', description: 'Admin / modérateur.' })
+  @ApiResponse({ status: 200, description: 'Liste des codes' })
+  async listPresenceCodes() {
+    return this.teNatiraaService.listPresenceCodes();
+  }
+
+  @Post('presence-codes')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Créer un code QR présence', description: 'Admin / modérateur.' })
+  @ApiResponse({ status: 201, description: 'Code créé' })
+  async createPresenceCode(@Body() dto: CreateTeNatiraaPresenceCodeDto) {
+    return this.teNatiraaService.createPresenceCode(dto);
+  }
+
+  @Patch('presence-codes/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Mettre à jour un code présence (actif, libellé)', description: 'Admin / modérateur.' })
+  @ApiResponse({ status: 200, description: 'Mis à jour' })
+  async updatePresenceCode(
+    @Param('id') id: string,
+    @Body() dto: UpdateTeNatiraaPresenceCodeDto,
+  ) {
+    return this.teNatiraaService.updatePresenceCode(parseInt(id, 10), dto);
   }
 
   @Post('create-checkout-session')

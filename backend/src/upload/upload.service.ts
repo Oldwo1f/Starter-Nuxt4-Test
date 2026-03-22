@@ -48,6 +48,10 @@ export class UploadService {
     if (!existsSync(academyThumbnailsPath)) {
       mkdirSync(academyThumbnailsPath, { recursive: true });
     }
+    const testimonialsPath = join(this.uploadPath, 'testimonials');
+    if (!existsSync(testimonialsPath)) {
+      mkdirSync(testimonialsPath, { recursive: true });
+    }
   }
 
   validateFile(file: Express.Multer.File): void {

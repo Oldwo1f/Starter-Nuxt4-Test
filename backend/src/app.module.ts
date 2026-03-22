@@ -27,6 +27,8 @@ import { KikiriModule } from './kikiri/kikiri.module';
 import { BingoModule } from './bingo/bingo.module';
 import { JijiModule } from './jiji/jiji.module';
 import { GamesModule } from './games/games.module';
+import { BadgesModule } from './badges/badges.module';
+import { TestimonialsModule } from './testimonials/testimonials.module';
 
 @Module({
   imports: [
@@ -56,6 +58,8 @@ import { GamesModule } from './games/games.module';
     BingoModule,
     JijiModule,
     GamesModule,
+    BadgesModule,
+    TestimonialsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

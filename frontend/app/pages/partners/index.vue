@@ -37,6 +37,17 @@ const sortedPartners = computed(() => {
       </p>
     </div>
 
+    <ParticipationCallout context="partners" />
+
+    <UAlert
+      class="mx-auto mb-10 max-w-3xl"
+      color="primary"
+      variant="subtle"
+      icon="i-heroicons-qr-code"
+      :title="t('partnersPage.soutienQrTitle')"
+      :description="t('partnersPage.soutienQrDescription')"
+    />
+
     <div v-if="partnerStore.isLoading" class="py-12 text-center">
       <UIcon name="i-heroicons-arrow-path" class="mx-auto mb-4 h-12 w-12 animate-spin text-white/60" />
       <p class="text-white/60">{{ t('partnersPage.loading') }}</p>

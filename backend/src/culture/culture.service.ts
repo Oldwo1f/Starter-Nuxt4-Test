@@ -2,12 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Culture, CultureType } from '../entities/culture.entity';
+import { CultureConsultation } from '../entities/culture-consultation.entity';
+import { BadgesService } from '../badges/badges.service';
 
 @Injectable()
 export class CultureService {
   constructor(
     @InjectRepository(Culture)
     private cultureRepository: Repository<Culture>,
+    @InjectRepository(CultureConsultation)
+    private cultureConsultationRepository: Repository<CultureConsultation>,
+    private readonly badgesService: BadgesService,
   ) {}
 
   async create(
@@ -160,5 +165,32 @@ export class CultureService {
     const culture = await this.findOne(id, true); // Admin peut toujours voir
 
     await this.cultureRepository.remove(culture);
+  }
+
+  /**
+   * Enregistre une consultation (première ouverture) pour un utilisateur connecté.
+   * Vérifie l’accès au contenu comme findOne(..., true).
+   */
+  async recordConsultation(
+    userId: number,
+    cultureId: number,
+  ): Promise<{ distinctCount: number; newBadges: string[]; newlyRecorded: boolean }> {
+    await this.findOne(cultureId, true);
+
+    let newlyRecorded = false;
+    const existing = await this.cultureConsultationRepository.findOne({
+      where: { userId, cultureId },
+    });
+    if (!existing) {
+      await this.cultureConsultationRepository.save(
+        this.cultureConsultationRepository.create({ userId, cultureId }),
+      );
+      newlyRecorded = true;
+    }
+
+    const newBadges = await this.badgesService.syncCultureConsultationBadges(userId);
+    const distinctCount = await this.badgesService.countCultureConsultationsByUser(userId);
+
+    return { distinctCount, newBadges, newlyRecorded };
   }
 }

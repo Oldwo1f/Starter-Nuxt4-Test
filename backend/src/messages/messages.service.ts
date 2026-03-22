@@ -12,6 +12,7 @@ import { User } from '../entities/user.entity';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UsersService } from '../users/users.service';
+import { BadgesService } from '../badges/badges.service';
 
 @Injectable()
 export class MessagesService {
@@ -21,7 +22,30 @@ export class MessagesService {
     @InjectRepository(Message)
     private messageRepository: Repository<Message>,
     private usersService: UsersService,
+    private badgesService: BadgesService,
   ) {}
+
+  private async attachParticipantBadgeCounts(conversations: Conversation[]): Promise<void> {
+    if (conversations.length === 0) {
+      return;
+    }
+    const ids = new Set<number>();
+    for (const c of conversations) {
+      ids.add(c.participant1Id);
+      ids.add(c.participant2Id);
+    }
+    const counts = await this.badgesService.countBadgesByUserIds([...ids]);
+    for (const c of conversations) {
+      if (c.participant1) {
+        (c.participant1 as User & { badgeCount?: number }).badgeCount =
+          counts.get(c.participant1Id) ?? 0;
+      }
+      if (c.participant2) {
+        (c.participant2 as User & { badgeCount?: number }).badgeCount =
+          counts.get(c.participant2Id) ?? 0;
+      }
+    }
+  }
 
   /**
    * Get or create a conversation between two users.
@@ -64,6 +88,8 @@ export class MessagesService {
       await this.conversationRepository.save(conversation);
     }
 
+    await this.attachParticipantBadgeCounts([conversation]);
+
     return conversation;
   }
 
@@ -102,6 +128,8 @@ export class MessagesService {
       (conv as any).unreadCount = unreadCount;
     }
 
+    await this.attachParticipantBadgeCounts(conversations);
+
     return conversations;
   }
 
@@ -138,6 +166,8 @@ export class MessagesService {
       },
     });
     (conversation as any).unreadCount = unreadCount;
+
+    await this.attachParticipantBadgeCounts([conversation]);
 
     return conversation;
   }

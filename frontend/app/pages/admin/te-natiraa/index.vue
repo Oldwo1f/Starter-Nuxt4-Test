@@ -139,6 +139,11 @@ onMounted(() => fetchRegistrations())
             Gérer les événements
           </UButton>
         </NuxtLink>
+        <NuxtLink to="/admin/te-natiraa/presence-codes">
+          <UButton variant="outline" icon="i-heroicons-qr-code">
+            QR présence (badges)
+          </UButton>
+        </NuxtLink>
         <NuxtLink to="/admin/te-natiraa/scanner">
           <UButton color="primary" icon="i-heroicons-qr-code" size="lg">
             Ouvrir le scanner QR

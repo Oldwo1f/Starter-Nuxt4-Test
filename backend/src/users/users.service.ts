@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { User, UserRole } from '../entities/user.entity';
@@ -16,6 +16,12 @@ import { PollResponse } from '../entities/poll-response.entity';
 import { Conversation } from '../entities/conversation.entity';
 import { Goodie } from '../entities/goodie.entity';
 import { Culture } from '../entities/culture.entity';
+import { UserBadge } from '../entities/user-badge.entity';
+import { CultureConsultation } from '../entities/culture-consultation.entity';
+import { TeNatiraaPresenceClaim } from '../entities/te-natiraa-presence-claim.entity';
+import { PartnerSoutienQrClaim } from '../entities/partner-soutien-qr-claim.entity';
+import { BadgesService } from '../badges/badges.service';
+import { ReferralService } from '../referral/referral.service';
 
 @Injectable()
 export class UsersService {
@@ -23,6 +29,8 @@ export class UsersService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private dataSource: DataSource,
+    private badgesService: BadgesService,
+    private referralService: ReferralService,
   ) {}
 
   async create(
@@ -67,6 +75,7 @@ export class UsersService {
         'emailVerified',
         'isActive',
         'isCertified',
+        'respectAnciensBadgeGranted',
         'lastLogin',
         'walletBalance',
         'jijiBalance',
@@ -105,9 +114,12 @@ export class UsersService {
       'user.emailVerified',
       'user.isActive',
       'user.isCertified',
+      'user.respectAnciensBadgeGranted',
       'user.lastLogin',
       'user.walletBalance',
       'user.jijiBalance',
+      'user.formateurPoints',
+      'user.soutienPoints',
       'user.commune',
       'user.phoneNumber',
       'user.createdAt',
@@ -166,6 +178,11 @@ export class UsersService {
 
     // Execute query
     const data = await queryBuilder.getMany();
+
+    const badgeCounts = await this.badgesService.countBadgesByUserIds(data.map((u) => u.id));
+    for (const u of data) {
+      (u as User & { badgeCount?: number }).badgeCount = badgeCounts.get(u.id) ?? 0;
+    }
 
     // Calculate pagination metadata
     const totalPages = Math.ceil(total / pageSize);
@@ -234,12 +251,11 @@ export class UsersService {
       throw new Error('User not found');
     }
 
-    // Si l'utilisateur devient MEMBER et qu'il était USER avant, vérifier les parrainages
-    if (newRole === UserRole.MEMBER && oldUser.role === UserRole.USER) {
-      // Note: On utilise une injection optionnelle pour éviter la dépendance circulaire
-      // Le ReferralService sera injecté via le module si disponible
-      // Pour l'instant, on laisse cette logique dans le ReferralService.checkAndRewardReferrer
-      // qui sera appelé depuis le contrôleur ou un hook
+    const becamePaidMember =
+      oldUser.role === UserRole.USER &&
+      (newRole === UserRole.MEMBER || newRole === UserRole.PREMIUM);
+    if (becamePaidMember) {
+      await this.referralService.checkAndRewardReferrer(userId);
     }
 
     return user;
@@ -306,6 +322,7 @@ export class UsersService {
       phoneNumber?: string;
       commune?: string;
       isCertified?: boolean;
+      respectAnciensBadgeGranted?: boolean;
       contactPreferences?: {
         order: string[];
         accounts: {
@@ -324,6 +341,9 @@ export class UsersService {
     if (updates.phoneNumber !== undefined) updateData.phoneNumber = updates.phoneNumber;
     if (updates.commune !== undefined) updateData.commune = updates.commune;
     if (updates.isCertified !== undefined) updateData.isCertified = updates.isCertified;
+    if (updates.respectAnciensBadgeGranted !== undefined) {
+      updateData.respectAnciensBadgeGranted = updates.respectAnciensBadgeGranted;
+    }
     if (updates.contactPreferences !== undefined) updateData.contactPreferences = updates.contactPreferences;
     if (updates.tradingPreferences !== undefined) updateData.tradingPreferences = updates.tradingPreferences;
     if (updates.email !== undefined) {
@@ -333,6 +353,9 @@ export class UsersService {
     }
 
     await this.usersRepository.update(userId, updateData);
+    if (updates.respectAnciensBadgeGranted === true) {
+      await this.badgesService.syncRespectAnciensBadgeOnly(userId);
+    }
     const user = await this.findById(userId);
     if (!user) {
       throw new Error('User not found');
@@ -372,6 +395,10 @@ export class UsersService {
     const listingRepo = this.dataSource.getRepository(Listing);
     const blogPostRepo = this.dataSource.getRepository(BlogPost);
     const courseProgressRepo = this.dataSource.getRepository(CourseProgress);
+    const userBadgeRepo = this.dataSource.getRepository(UserBadge);
+    const cultureConsultationRepo = this.dataSource.getRepository(CultureConsultation);
+    const teNatiraaPresenceClaimRepo = this.dataSource.getRepository(TeNatiraaPresenceClaim);
+    const partnerSoutienQrClaimRepo = this.dataSource.getRepository(PartnerSoutienQrClaim);
     const referralRepo = this.dataSource.getRepository(Referral);
     const bankTransferRepo = this.dataSource.getRepository(BankTransferPayment);
     const stripeRepo = this.dataSource.getRepository(StripePayment);
@@ -412,6 +439,33 @@ export class UsersService {
 
     // 6. Course progress
     await courseProgressRepo
+      .createQueryBuilder()
+      .delete()
+      .where('userId = :userId', { userId })
+      .execute();
+
+    // 6b. User badges
+    await userBadgeRepo
+      .createQueryBuilder()
+      .delete()
+      .where('userId = :userId', { userId })
+      .execute();
+
+    // 6c. Culture consultations
+    await cultureConsultationRepo
+      .createQueryBuilder()
+      .delete()
+      .where('userId = :userId', { userId })
+      .execute();
+
+    // 6d. Te Natira'a présence (claims)
+    await teNatiraaPresenceClaimRepo
+      .createQueryBuilder()
+      .delete()
+      .where('userId = :userId', { userId })
+      .execute();
+
+    await partnerSoutienQrClaimRepo
       .createQueryBuilder()
       .delete()
       .where('userId = :userId', { userId })
@@ -537,6 +591,34 @@ export class UsersService {
     const savedUser = await this.usersRepository.save(newUser);
     await this.updateLastLogin(savedUser.id);
     return savedUser;
+  }
+
+  async addFormateurPointsDelta(userId: number, delta: number): Promise<User> {
+    if (!Number.isInteger(delta) || delta < 1 || delta > 500) {
+      throw new BadRequestException('La valeur à ajouter doit être un entier entre 1 et 500.');
+    }
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+    const next = Math.min(2_147_483_647, (user.formateurPoints ?? 0) + delta);
+    await this.usersRepository.update(userId, { formateurPoints: next });
+    await this.badgesService.syncAcademyFormateurPointsBadges(userId);
+    return (await this.findById(userId))!;
+  }
+
+  async addSoutienPointsDelta(userId: number, delta: number): Promise<User> {
+    if (!Number.isInteger(delta) || delta < 1 || delta > 500) {
+      throw new BadRequestException('La valeur à ajouter doit être un entier entre 1 et 500.');
+    }
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+    const next = Math.min(2_147_483_647, (user.soutienPoints ?? 0) + delta);
+    await this.usersRepository.update(userId, { soutienPoints: next });
+    await this.badgesService.syncSoutienPointsBadges(userId);
+    return (await this.findById(userId))!;
   }
 }
 

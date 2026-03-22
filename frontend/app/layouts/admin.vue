@@ -152,6 +152,12 @@ const allAdminMenuItems = [
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
+    label: 'Témoignages vidéo',
+    icon: 'i-heroicons-video-camera',
+    to: '/admin/testimonials',
+    roles: ['moderator', 'admin', 'superadmin'],
+  },
+  {
     label: 'Partenaires',
     icon: 'i-heroicons-building-office',
     to: '/admin/partners',

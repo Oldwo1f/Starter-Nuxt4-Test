@@ -19,6 +19,8 @@ import { AcademyModule } from '../../entities/module.entity';
 import { Video } from '../../entities/video.entity';
 import { Goodie } from '../../entities/goodie.entity';
 import { Culture } from '../../entities/culture.entity';
+import { UserBadge } from '../../entities/user-badge.entity';
+import { CultureConsultation } from '../../entities/culture-consultation.entity';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -45,6 +47,8 @@ const dataSource = new DataSource({
     LegacyPaymentVerification,
     Goodie,
     Culture,
+    UserBadge,
+    CultureConsultation,
   ],
   synchronize: false,
 });
@@ -90,6 +94,8 @@ async function resetUsers() {
     const blogPostRepository = dataSource.getRepository(BlogPost);
     const referralRepository = dataSource.getRepository(Referral);
     const courseProgressRepository = dataSource.getRepository(CourseProgress);
+    const userBadgeRepository = dataSource.getRepository(UserBadge);
+    const cultureConsultationRepository = dataSource.getRepository(CultureConsultation);
     const bankTransferPaymentRepository = dataSource.getRepository(BankTransferPayment);
     const stripePaymentRepository = dataSource.getRepository(StripePayment);
     const refreshTokenRepository = dataSource.getRepository(RefreshToken);
@@ -111,6 +117,8 @@ async function resetUsers() {
     const blogPostCount = await blogPostRepository.count();
     const referralCount = await referralRepository.count();
     const courseProgressCount = await courseProgressRepository.count();
+    const userBadgeCount = await userBadgeRepository.count();
+    const cultureConsultationCount = await cultureConsultationRepository.count();
     const bankTransferPaymentCount = await bankTransferPaymentRepository.count();
     const stripePaymentCount = await stripePaymentRepository.count();
     const legacyPaymentVerificationCount = await legacyPaymentVerificationRepository.count();
@@ -123,6 +131,8 @@ async function resetUsers() {
     console.log(`   Annonces (marketplace): ${listingCount}`);
     console.log(`   Articles de blog: ${blogPostCount}`);
     console.log(`   Progressions de cours: ${courseProgressCount}`);
+    console.log(`   Badges utilisateur: ${userBadgeCount}`);
+    console.log(`   Consultations culture: ${cultureConsultationCount}`);
     console.log(`   Parrainages: ${referralCount}`);
     console.log(`   Paiements virement: ${bankTransferPaymentCount}`);
     console.log(`   Paiements Stripe: ${stripePaymentCount}`);
@@ -211,6 +221,14 @@ async function resetUsers() {
     await courseProgressRepository.createQueryBuilder().delete().execute();
     console.log(`   ✅ ${courseProgressCount} progression(s) supprimée(s)\n`);
 
+    console.log('4️⃣b Suppression des badges utilisateur...');
+    await userBadgeRepository.createQueryBuilder().delete().execute();
+    console.log(`   ✅ ${userBadgeCount} badge(s) supprimé(s)\n`);
+
+    console.log('4️⃣c Suppression des consultations culture...');
+    await cultureConsultationRepository.createQueryBuilder().delete().execute();
+    console.log(`   ✅ ${cultureConsultationCount} consultation(s) supprimée(s)\n`);
+
     // 5. Supprimer les parrainages (référence User)
     console.log('5️⃣  Suppression des parrainages...');
     await referralRepository.createQueryBuilder().delete().execute();
@@ -252,6 +270,8 @@ async function resetUsers() {
     console.log(`   • ${listingCount} annonce(s) supprimée(s)`);
     console.log(`   • ${blogPostCount} article(s) supprimé(s)`);
     console.log(`   • ${courseProgressCount} progression(s) supprimée(s)`);
+    console.log(`   • ${userBadgeCount} badge(s) utilisateur supprimé(s)`);
+    console.log(`   • ${cultureConsultationCount} consultation(s) culture supprimée(s)`);
     console.log(`   • ${referralCount} parrainage(s) supprimé(s)`);
     console.log(`   • ${bankTransferPaymentCount} paiement(s) virement supprimé(s)`);
     console.log(`   • ${stripePaymentCount} paiement(s) Stripe supprimé(s)`);

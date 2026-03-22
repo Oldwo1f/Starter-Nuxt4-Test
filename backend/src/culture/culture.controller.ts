@@ -10,6 +10,7 @@ import {
   Request,
   ParseIntPipe,
   Query,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -77,6 +78,26 @@ export class CultureController {
       return this.cultureService.findByType(type, isAuthenticated);
     }
     return this.cultureService.findAll(isAuthenticated);
+  }
+
+  @Post(':id/view')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Record culture video consultation',
+    description:
+      'Authenticated users: records first-time consultation of this video (for badges). Idempotent per user and video.',
+  })
+  @ApiParam({ name: 'id', description: 'Culture video ID', type: 'number' })
+  @ApiResponse({ status: 200, description: 'Consultation recorded or already known' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Culture video not found or not accessible' })
+  async recordView(@Param('id', ParseIntPipe) id: number, @Request() req: { user: { id: number } }) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException();
+    }
+    return this.cultureService.recordConsultation(userId, id);
   }
 
   @Get(':id')

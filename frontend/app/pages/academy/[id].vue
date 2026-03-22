@@ -3,16 +3,18 @@ definePageMeta({
   layout: 'default',
 })
 
+import Player from '@vimeo/player'
 import { useAcademyStore } from '~/stores/useAcademyStore'
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useApi } from '~/composables/useApi'
+import type { AcademyProgressUpdateResponse } from '~/stores/useAcademyStore'
 
 const route = useRoute()
-const router = useRouter()
 const academyStore = useAcademyStore()
 const authStore = useAuthStore()
 const { apiBaseUrl, getImageUrl: getImageUrlHelper } = useApi()
 const { t } = useI18n()
+const toast = useToast()
 
 // Helper to get image URL
 const getImageUrl = (imagePath: string | null | undefined) => {
@@ -23,9 +25,19 @@ const getImageUrl = (imagePath: string | null | undefined) => {
 const courseId = computed(() => parseInt(route.params.id as string, 10))
 const currentVideo = ref<any>(null)
 const videoPlayer = ref<HTMLVideoElement | null>(null)
+const vimeoIframeRef = ref<HTMLIFrameElement | null>(null)
+const youtubeIframeRef = ref<HTMLIFrameElement | null>(null)
 const isVideoLoading = ref(false)
 let lastProgressUpdate = 0
 const PROGRESS_UPDATE_INTERVAL = 5000 // Update last watched every 5 seconds
+let vimeoPlayer: Player | null = null
+let ytPlayer: {
+  getCurrentTime?: () => number
+  getDuration?: () => number
+  destroy?: () => void
+} | null = null
+let ytProgressTimer: ReturnType<typeof setInterval> | null = null
+let ytIframeApiLoading: Promise<void> | null = null
 
 // Check if user can access the course
 const canAccessCourse = computed(() => {
@@ -209,6 +221,222 @@ const getVideoEmbedUrl = (url: string | null | undefined) => {
   return null
 }
 
+/** Vimeo Player.js — api=1 requis pour le tracking */
+const buildVimeoPlayerSrc = (pageUrl: string) => {
+  const embed = getVimeoEmbedUrl(pageUrl)
+  if (!embed) return ''
+  return embed.includes('?') ? `${embed}&api=1` : `${embed}?api=1`
+}
+
+/** YouTube IFrame API */
+const buildYouTubePlayerSrc = (pageUrl: string) => {
+  const embed = getYouTubeEmbedUrl(pageUrl)
+  if (!embed) return ''
+  const origin =
+    typeof window !== 'undefined' ? encodeURIComponent(window.location.origin) : ''
+  const sep = embed.includes('?') ? '&' : '?'
+  return `${embed}${sep}enablejsapi=1${origin ? `&origin=${origin}` : ''}`
+}
+
+function notifyNewBadges(res: Pick<AcademyProgressUpdateResponse, 'newBadges'>) {
+  if (!res?.newBadges?.length) return
+  for (const code of res.newBadges) {
+    const key = `account.badges.codes.${code}.name`
+    const title = t(key)
+    const label = title === key ? t('account.badges.earnedFallback') : title
+    toast.add({
+      title: label,
+      color: 'success',
+      icon: 'i-heroicons-trophy',
+    })
+  }
+}
+
+async function applyEmbedPlaybackProgress(percent: number) {
+  if (!authStore.isAuthenticated || !currentVideo.value) return
+  const videoId = currentVideo.value.id
+  const now = Date.now()
+  if (percent >= 80 && !isVideoCompleted(videoId)) {
+    const res = await academyStore.updateProgress(courseId.value, videoId, videoId, true)
+    lastProgressUpdate = now
+    notifyNewBadges(res)
+    return
+  }
+  if (percent > 10 && now - lastProgressUpdate >= PROGRESS_UPDATE_INTERVAL) {
+    const res = await academyStore.updateProgress(courseId.value, videoId, videoId, false)
+    lastProgressUpdate = now
+    notifyNewBadges(res)
+  }
+}
+
+async function markEmbedEndedAndAdvance() {
+  if (currentVideo.value && authStore.isAuthenticated) {
+    const v = currentVideo.value
+    if (!isVideoCompleted(v.id)) {
+      const res = await academyStore.updateProgress(courseId.value, v.id, v.id, true)
+      lastProgressUpdate = Date.now()
+      notifyNewBadges(res)
+    }
+    if (nextVideo.value) {
+      currentVideo.value = nextVideo.value.video
+    }
+  } else if (currentVideo.value && !authStore.isAuthenticated && nextVideo.value) {
+    currentVideo.value = nextVideo.value.video
+  }
+}
+
+function stopYoutubeProgressPolling() {
+  if (ytProgressTimer) {
+    clearInterval(ytProgressTimer)
+    ytProgressTimer = null
+  }
+}
+
+function ensureYoutubeIframeApi(): Promise<void> {
+  if (!import.meta.client) return Promise.resolve()
+  const w = window as Window & {
+    YT?: { Player: new (el: HTMLElement, opts: Record<string, unknown>) => typeof ytPlayer }
+    onYouTubeIframeAPIReady?: () => void
+  }
+  if (w.YT?.Player) return Promise.resolve()
+  if (ytIframeApiLoading) return ytIframeApiLoading
+
+  ytIframeApiLoading = new Promise<void>((resolve) => {
+    const finish = () => {
+      ytIframeApiLoading = null
+      resolve()
+    }
+    const previous = w.onYouTubeIframeAPIReady
+    w.onYouTubeIframeAPIReady = () => {
+      previous?.()
+      finish()
+    }
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const tag = document.createElement('script')
+      tag.src = 'https://www.youtube.com/iframe_api'
+      document.head.appendChild(tag)
+    }
+    const started = Date.now()
+    const poll = setInterval(() => {
+      if (w.YT?.Player) {
+        clearInterval(poll)
+        finish()
+      } else if (Date.now() - started > 12000) {
+        clearInterval(poll)
+        finish()
+      }
+    }, 100)
+  })
+  return ytIframeApiLoading
+}
+
+async function destroyEmbedPlayers() {
+  stopYoutubeProgressPolling()
+  if (vimeoPlayer) {
+    try {
+      await vimeoPlayer.destroy()
+    } catch {
+      /* iframe peut être déjà détruit */
+    }
+    vimeoPlayer = null
+  }
+  if (ytPlayer?.destroy) {
+    try {
+      ytPlayer.destroy()
+    } catch {
+      /* ignore */
+    }
+    ytPlayer = null
+  }
+}
+
+const handleVimeoIframeLoad = async () => {
+  isVideoLoading.value = false
+  if (!import.meta.client || !authStore.isAuthenticated || !currentVideo.value?.videoUrl) return
+  if (getVideoType(currentVideo.value.videoUrl) !== 'vimeo') return
+  const row = allVideos.value.find((v) => v.video.id === currentVideo.value!.id)
+  if (!row || !canAccessVideo(currentVideo.value!, row.module)) return
+
+  try {
+    if (vimeoPlayer) {
+      try {
+        await vimeoPlayer.destroy()
+      } catch {
+        /* ignore */
+      }
+      vimeoPlayer = null
+    }
+    const el = vimeoIframeRef.value
+    if (!el) return
+    vimeoPlayer = new Player(el)
+    vimeoPlayer.on('timeupdate', (data: { percent?: number }) => {
+      const pct = (data.percent ?? 0) * 100
+      void applyEmbedPlaybackProgress(pct)
+    })
+    vimeoPlayer.on('ended', () => {
+      void markEmbedEndedAndAdvance()
+    })
+  } catch (e) {
+    console.warn('Vimeo player API failed', e)
+  }
+}
+
+const handleYoutubeIframeLoad = async () => {
+  isVideoLoading.value = false
+  if (!import.meta.client || !authStore.isAuthenticated || !currentVideo.value?.videoUrl) return
+  if (getVideoType(currentVideo.value.videoUrl) !== 'youtube') return
+  const row = allVideos.value.find((v) => v.video.id === currentVideo.value!.id)
+  if (!row || !canAccessVideo(currentVideo.value!, row.module)) return
+
+  try {
+    stopYoutubeProgressPolling()
+    if (ytPlayer?.destroy) {
+      try {
+        ytPlayer.destroy()
+      } catch {
+        /* ignore */
+      }
+      ytPlayer = null
+    }
+
+    await ensureYoutubeIframeApi()
+    const w = window as Window & {
+      YT: { Player: new (el: HTMLElement, opts: Record<string, unknown>) => typeof ytPlayer }
+    }
+    if (!youtubeIframeRef.value || !w.YT?.Player) return
+
+    ytPlayer = new w.YT.Player(youtubeIframeRef.value, {
+      events: {
+        onStateChange: (ev: { data: number }) => {
+          if (ev.data === 0) {
+            stopYoutubeProgressPolling()
+            void markEmbedEndedAndAdvance()
+            return
+          }
+          if (ev.data === 1) {
+            stopYoutubeProgressPolling()
+            ytProgressTimer = setInterval(() => {
+              try {
+                if (!ytPlayer?.getCurrentTime || !ytPlayer.getDuration || !currentVideo.value) return
+                const cur = ytPlayer.getCurrentTime()
+                const dur = ytPlayer.getDuration()
+                if (!dur || dur <= 0) return
+                void applyEmbedPlaybackProgress((cur / dur) * 100)
+              } catch {
+                /* ignore */
+              }
+            }, 2000)
+            return
+          }
+          stopYoutubeProgressPolling()
+        },
+      },
+    })
+  } catch (e) {
+    console.warn('YouTube player API failed', e)
+  }
+}
+
 // Load course
 onMounted(async () => {
   try {
@@ -247,67 +475,73 @@ onMounted(async () => {
 })
 
 // Watch for video changes
-watch(currentVideo, () => {
-  if (videoPlayer.value && currentVideo.value) {
+watch(currentVideo, async () => {
+  await destroyEmbedPlayers()
+  if (!currentVideo.value) return
+  const vt = currentVideo.value.videoUrl ? getVideoType(currentVideo.value.videoUrl) : 'file'
+  if (vt === 'youtube' || vt === 'vimeo') {
+    isVideoLoading.value = true
+  } else if (videoPlayer.value) {
     isVideoLoading.value = true
     videoPlayer.value.load()
   }
 })
 
-// Handle video ended
+onBeforeUnmount(() => {
+  void destroyEmbedPlayers()
+})
+
+// Handle video ended (fichier uploadé uniquement — YouTube/Vimeo via Player API)
 const handleVideoEnded = async () => {
   if (currentVideo.value && authStore.isAuthenticated) {
-    // Ne pas tracker la fin pour les vidéos YouTube/Vimeo (nécessite l'API respective)
-    const videoType = getVideoType(currentVideo.value.videoUrl)
-    if (!currentVideo.value.videoUrl || (videoType !== 'youtube' && videoType !== 'vimeo')) {
-      // Mark as completed
-      await academyStore.updateProgress(courseId.value, currentVideo.value.id, currentVideo.value.id, true)
+    const videoType = currentVideo.value.videoUrl ? getVideoType(currentVideo.value.videoUrl) : 'file'
+    if (videoType === 'file') {
+      const res = await academyStore.updateProgress(
+        courseId.value,
+        currentVideo.value.id,
+        currentVideo.value.id,
+        true,
+      )
+      lastProgressUpdate = Date.now()
+      notifyNewBadges(res)
     }
-    
-    // Auto-play next video if available
+
     if (nextVideo.value) {
       currentVideo.value = nextVideo.value.video
     }
   } else if (currentVideo.value && !authStore.isAuthenticated) {
-    // Auto-play next video if available (even if not authenticated)
     if (nextVideo.value) {
       currentVideo.value = nextVideo.value.video
     }
   }
 }
 
-// Handle video time update (mark as completed at 80%)
+// Handle video time update (mark as completed at 80%) — lecteur fichier uniquement
 const handleTimeUpdate = async () => {
-  // Ne pas tracker si l'utilisateur n'est pas connecté
   if (!authStore.isAuthenticated) {
     return
   }
-  
-  // Ne pas tracker la progression pour les vidéos YouTube/Vimeo (nécessite l'API respective)
-  if (currentVideo.value?.videoUrl) {
-    const videoType = getVideoType(currentVideo.value.videoUrl)
-    if (videoType === 'youtube' || videoType === 'vimeo') {
-      return
-    }
-  }
-  
+
   if (!videoPlayer.value || !currentVideo.value) return
-  
+  if (currentVideo.value.videoUrl && getVideoType(currentVideo.value.videoUrl) !== 'file') {
+    return
+  }
+
   const video = videoPlayer.value
   const progress = (video.currentTime / video.duration) * 100
   const currentTime = Date.now()
-  
-  // Mark as completed if watched 80% and not already completed
+
   if (progress >= 80 && !isVideoCompleted(currentVideo.value.id)) {
-    await academyStore.updateProgress(courseId.value, currentVideo.value.id, currentVideo.value.id, true)
+    const res = await academyStore.updateProgress(courseId.value, currentVideo.value.id, currentVideo.value.id, true)
     lastProgressUpdate = currentTime
+    notifyNewBadges(res)
     return
   }
-  
-  // Update last watched (but don't mark as completed) - only update every 5 seconds to avoid too many requests
-  if (progress > 10 && (currentTime - lastProgressUpdate) >= PROGRESS_UPDATE_INTERVAL) {
-    await academyStore.updateProgress(courseId.value, currentVideo.value.id, currentVideo.value.id, false)
+
+  if (progress > 10 && currentTime - lastProgressUpdate >= PROGRESS_UPDATE_INTERVAL) {
+    const res = await academyStore.updateProgress(courseId.value, currentVideo.value.id, currentVideo.value.id, false)
     lastProgressUpdate = currentTime
+    notifyNewBadges(res)
   }
 }
 
@@ -325,10 +559,10 @@ const selectVideo = async (video: any) => {
   }
 
   currentVideo.value = video
-  // Update last watched when selecting a video (only if authenticated)
   if (video && authStore.isAuthenticated) {
-    await academyStore.updateProgress(courseId.value, video.id, video.id, false)
+    const res = await academyStore.updateProgress(courseId.value, video.id, video.id, false)
     lastProgressUpdate = Date.now()
+    notifyNewBadges(res)
   }
   // Scroll to top
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -469,22 +703,26 @@ const overallProgress = computed(() => {
                   <!-- YouTube video -->
                   <iframe
                     v-if="canAccessVideo(currentVideo, allVideos.find(v => v.video.id === currentVideo.id)!.module) && currentVideo.videoUrl && getVideoType(currentVideo.videoUrl) === 'youtube'"
-                    :src="getVideoEmbedUrl(currentVideo.videoUrl)"
+                    ref="youtubeIframeRef"
+                    :key="`yt-${currentVideo.id}`"
+                    :src="buildYouTubePlayerSrc(currentVideo.videoUrl)"
                     class="h-full w-full"
                     frameborder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowfullscreen
-                    @load="isVideoLoading = false"
+                    @load="handleYoutubeIframeLoad"
                   />
                   <!-- Vimeo video -->
                   <iframe
                     v-else-if="canAccessVideo(currentVideo, allVideos.find(v => v.video.id === currentVideo.id)!.module) && currentVideo.videoUrl && getVideoType(currentVideo.videoUrl) === 'vimeo'"
-                    :src="getVideoEmbedUrl(currentVideo.videoUrl)"
+                    ref="vimeoIframeRef"
+                    :key="`vm-${currentVideo.id}`"
+                    :src="buildVimeoPlayerSrc(currentVideo.videoUrl)"
                     class="h-full w-full"
                     frameborder="0"
                     allow="autoplay; fullscreen; picture-in-picture"
                     allowfullscreen
-                    @load="isVideoLoading = false"
+                    @load="handleVimeoIframeLoad"
                   />
                   <!-- Uploaded video file -->
                   <video

@@ -1,16 +1,16 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  BadRequestException,
   UseGuards,
   UseInterceptors,
   UploadedFiles,
-  ParseIntPipe,
-  BadRequestException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import {
@@ -22,9 +22,16 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { PartnersService } from './partners.service';
+import { PartnerSoutienQrService } from './partner-soutien-qr.service';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
+import { ClaimPartnerSoutienDto } from './dto/claim-partner-soutien.dto';
+import {
+  CreatePartnerSoutienQrCodeDto,
+  UpdatePartnerSoutienQrCodeDto,
+} from './dto/partner-soutien-qr-code.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { UserRole } from '../entities/user.entity';
@@ -35,6 +42,7 @@ import { UploadService } from '../upload/upload.service';
 export class PartnersController {
   constructor(
     private readonly partnersService: PartnersService,
+    private readonly partnerSoutienQrService: PartnerSoutienQrService,
     private readonly uploadService: UploadService,
   ) {}
 
@@ -112,6 +120,56 @@ export class PartnersController {
   @ApiResponse({ status: 200, description: 'List of partners retrieved successfully' })
   async findAll() {
     return this.partnersService.findAll();
+  }
+
+  @Post('soutien/claim')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Réclamer 1 point soutien (QR partenaire)',
+    description:
+      'Authentifié. Un point par code distinct. Met à jour les badges Soutien. Code optionnellement lié à un partenaire.',
+  })
+  @ApiResponse({ status: 200, description: 'Point attribué ou déjà enregistré pour ce code' })
+  @ApiResponse({ status: 404, description: 'Code invalide ou désactivé' })
+  async claimSoutien(
+    @CurrentUser() user: { id: number },
+    @Body() dto: ClaimPartnerSoutienDto,
+  ) {
+    return this.partnerSoutienQrService.claim(user.id, dto.token);
+  }
+
+  @Get('soutien-codes')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Lister les QR points soutien', description: 'Admin / modérateur.' })
+  @ApiResponse({ status: 200, description: 'Liste des codes' })
+  async listSoutienQrCodes() {
+    return this.partnerSoutienQrService.listCodes();
+  }
+
+  @Post('soutien-codes')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Créer un QR point soutien', description: 'Admin / modérateur.' })
+  @ApiResponse({ status: 201, description: 'Code créé' })
+  async createSoutienQrCode(@Body() dto: CreatePartnerSoutienQrCodeDto) {
+    return this.partnerSoutienQrService.createCode(dto);
+  }
+
+  @Patch('soutien-codes/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Mettre à jour un QR soutien', description: 'Admin / modérateur.' })
+  @ApiResponse({ status: 200, description: 'Mis à jour' })
+  async updateSoutienQrCode(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePartnerSoutienQrCodeDto,
+  ) {
+    return this.partnerSoutienQrService.updateCode(id, dto);
   }
 
   @Get(':id')

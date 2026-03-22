@@ -64,6 +64,10 @@ export class User {
   @Column({ type: 'boolean', default: false })
   isCertified: boolean;
 
+  /** Admin : badge spécial « Respect des anciens » (75+ ans, attribution manuelle) */
+  @Column({ type: 'boolean', default: false })
+  respectAnciensBadgeGranted: boolean;
+
   @Column({ type: 'timestamp', nullable: true })
   lastLogin: Date | null;
 
@@ -90,6 +94,22 @@ export class User {
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   jijiBalance: number; // Solde en Jiji (jetons de jeux)
+
+  /** Compteur formations publiées (crédité par admin / superadmin) — badges « Academy création de formations » */
+  @Column({ type: 'int', default: 0 })
+  formateurPoints: number;
+
+  /** Points soutien (admin / superadmin / modérateur) — badges série Soutien */
+  @Column({ type: 'int', default: 0 })
+  soutienPoints: number;
+
+  /** Points présence Te Natira'a (scan QR, 1 point par code distinct) — badges Connecter */
+  @Column({ type: 'int', default: 0 })
+  tenatiraaPresencePoints: number;
+
+  /** Dernier crédit Pūpū pour un témoignage vidéo validé (limite 1 récompense / mois calendaire) */
+  @Column({ type: 'timestamp', nullable: true })
+  lastTestimonialPupuAt: Date | null;
 
   @Column({ type: 'varchar', nullable: true, unique: true })
   referralCode: string | null; // Code de parrainage unique

@@ -57,6 +57,7 @@
     "menuTransactions": "Transactions",
     "menuReferral": "Parrainage",
     "menuBadges": "Mes badges",
+    "menuTestimonial": "Témoignage vidéo",
     "menuProfile": "Mon profil",
     "bottomListings": "Annonces",
     "bottomTroc": "TROC",
@@ -70,7 +71,8 @@
       "articles": "Mes articles",
       "conversation": "Conversation",
       "transferTitle": "Transférer des Pūpū",
-      "editListing": "Modifier l'annonce"
+      "editListing": "Modifier l'annonce",
+      "testimonial": "Témoignage vidéo"
     },
     "dashboard": {
       "title": "Dashboard",
@@ -346,6 +348,48 @@
       "countdownMinutes": "Minutes",
       "countdownSeconds": "Secondes"
     },
+    "testimonial": {
+      "title": "Témoignage vidéo",
+      "subtitle": "Enregistrez un court témoignage pour partager votre expérience. Après validation par l’équipe, vous pouvez recevoir des Pūpū.",
+      "rulesTitle": "Comment ça marche ?",
+      "ruleDuration": "Durée de la vidéo : entre {min} et {max} secondes.",
+      "ruleSubjects": "Sujets possibles : témoignage sur l’association Nuna'a Heritage, sur un troc, ou sur un partenaire.",
+      "ruleAppHint": "Si vous ne savez pas quoi dire, commencez par donner votre avis sur la nouvelle application.",
+      "ruleValidationDelay": "La validation par un administrateur peut prendre plusieurs jours.",
+      "rulePupu": "Vous recevrez 5 Pūpū si votre vidéo est validée (dans la limite d’une récompense par mois calendaire — voir ci-dessous).",
+      "ruleOnePending": "Vous ne pouvez soumettre qu’une vidéo à la fois : tant qu’un envoi est en cours de modération, vous ne pouvez pas en envoyer un autre.",
+      "ruleMonthlyPupu": "Les 5 Pūpū ne peuvent être crédités qu’une fois par mois calendaire par personne : une deuxième vidéo validée le même mois sera acceptée sans nouveau crédit Pūpū.",
+      "pendingTitle": "Vidéo en cours de modération",
+      "pendingDesc": "Merci ! Votre témoignage a bien été reçu. Nous le regardons dès que possible.",
+      "rejectedTitle": "Dernier envoi non retenu",
+      "rejectedHint": "Vous pouvez enregistrer et envoyer une nouvelle vidéo ci-dessous.",
+      "approvedTitle": "Dernier témoignage accepté",
+      "approvedPupu": "Vous avez reçu {n} Pūpū pour cette validation.",
+      "approvedNoPupu": "Ce témoignage a été accepté sans crédit Pūpū (limite mensuelle déjà atteinte ce mois-ci).",
+      "recordTitle": "Nouvel enregistrement",
+      "startRecord": "Démarrer l’enregistrement",
+      "stopRecord": "Arrêter",
+      "durationLabel": "Durée enregistrée : {sec} s (requis : {min}–{max} s)",
+      "rerecord": "Recommencer",
+      "fieldSubject": "Sujet du témoignage",
+      "subjectAssociation": "L’association Nuna'a Heritage",
+      "subjectTroc": "Un troc",
+      "subjectPartner": "Un partenaire",
+      "fieldPartner": "Partenaire",
+      "partnerPlaceholder": "Choisir un partenaire",
+      "fieldListing": "Votre annonce (troc)",
+      "listingPlaceholder": "Choisir une annonce",
+      "noListings": "Vous n’avez aucune annonce : créez-en une ou choisissez un autre sujet.",
+      "submit": "Envoyer la vidéo",
+      "toastLoadErrorTitle": "Impossible de charger votre statut",
+      "cameraDeniedTitle": "Caméra ou micro refusé",
+      "cameraDeniedDesc": "Autorisez l’accès à la caméra et au micro dans votre navigateur pour enregistrer.",
+      "noRecorderTitle": "Enregistrement vidéo non supporté",
+      "toastSentTitle": "Envoyé",
+      "toastSentDesc": "Votre témoignage est en attente de validation.",
+      "toastSendErrorTitle": "Envoi impossible",
+      "toastSendErrorDesc": "Une erreur est survenue."
+    },
     "cotisation": {
       "title": "Cotisation",
       "subtitle": "Choisissez votre pack et votre méthode de paiement pour activer votre cotisation annuelle.",
@@ -398,8 +442,226 @@
     "badgesPage": {
       "title": "Mes badges",
       "subtitle": "Collectez des badges en participant à la vie de Nuna Heritage. Transmettez, connectez-vous et inspirez la communauté.",
-      "devTitle": "En cours de développement",
-      "devDesc": "Tous les badges sont affichés ci-dessous. L'attribution automatique sera implémentée prochainement."
+      "devTitle": "Déjà actif : Academy, Blog, Culture, Troc, parrainage, Te Natira'a, témoignages, formations, soutien, Découverte & badges spéciaux",
+      "devDesc": "Les badges Academy, Blog et Culture (consultation) sont attribués automatiquement. Les autres séries suivront ; vous pouvez encore simuler leur possession en cliquant sur les cartes.",
+      "devDescExtended": "Les badges Academy (cours), Blog, Culture, Troc (échanges marketplace), parrainage (filleuls validés), Te Natira'a (points présence via QR), témoignages vidéo (validations admin), « Création de formations » (formations publiées), « Soutien » (points soutien), la série « Découverte » (Transmettre / Connecter / Inspirer, sondages inclus) et les badges spéciaux (fondateur, pionnier troc, Pūpū, VIP, Toa) reflètent votre activité ou des attributions par l’équipe. Vous pouvez encore simuler la possession des cartes sans code (hors badges déjà câblés à l’API).",
+      "academyHint": "{count} cours terminé(s)",
+      "blogHint": "{count} article(s) de blog validé(s)",
+      "cultureHint": "{count} vidéo(s) Culture",
+      "formateurHint": "{count} formation(s) publiée(s)",
+      "soutienHint": "{count} point(s) soutien",
+      "trocHint": "{count} échange(s) ou transfert(s) Pūpū (Troc)",
+      "referralHint": "{count} filleul(s) validé(s)",
+      "tenatiraaPresenceHint": "{count} point(s) présence Te Natira'a",
+      "testimonialHint": "{count} témoignage(s) vidéo validé(s)",
+      "discoveryHint": "T {transmettre}/3 · C {connecter}/3 · I {inspirer}/3 · {total}/9",
+      "walletPupuHint": "{balance} Pūpū en portefeuille (500 pour le badge)",
+      "loadError": "Impossible de charger vos badges."
+    },
+    "badges": {
+      "earnedFallback": "Nouveau badge obtenu !",
+      "codes": {
+        "blog_articles_validated_1": {
+          "name": "Pigiste",
+          "condition": "1 article de blog"
+        },
+        "blog_articles_validated_3": {
+          "name": "Rédacteur / Rédactrice",
+          "condition": "3 articles de blog"
+        },
+        "blog_articles_validated_10": {
+          "name": "Journaliste",
+          "condition": "10 articles de blog"
+        },
+        "blog_articles_validated_25": {
+          "name": "Rédacteur en Chef",
+          "condition": "25 articles de blog"
+        },
+        "culture_contents_viewed_1": {
+          "name": "Premier regard",
+          "condition": "1 vidéo Culture"
+        },
+        "culture_contents_viewed_5": {
+          "name": "Archiviste",
+          "condition": "5 vidéos Culture"
+        },
+        "culture_contents_viewed_20": {
+          "name": "Curateur du Patrimoine",
+          "condition": "20 vidéos Culture"
+        },
+        "culture_contents_viewed_50": {
+          "name": "Gardien des Mémoires",
+          "condition": "50 vidéos Culture"
+        },
+        "academy_courses_completed_1": {
+          "name": "Gardien du Savoir",
+          "condition": "Termine 1 cours Academy"
+        },
+        "academy_courses_completed_5": {
+          "name": "Passeur(se) de Mémoire",
+          "condition": "Termine 5 cours Academy"
+        },
+        "academy_courses_completed_15": {
+          "name": "Tāvana du Savoir",
+          "condition": "Termine 15 cours Academy"
+        },
+        "academy_courses_completed_25": {
+          "name": "Maître Transmetteur",
+          "condition": "Termine 25 cours Academy"
+        },
+        "academy_formateur_points_1": {
+          "name": "Formateur émergent",
+          "condition": "1 formation publiée"
+        },
+        "academy_formateur_points_3": {
+          "name": "Enseignant de la Communauté",
+          "condition": "3 formations publiées"
+        },
+        "academy_formateur_points_5": {
+          "name": "Maître Formateur",
+          "condition": "5 formations publiées"
+        },
+        "academy_formateur_points_10": {
+          "name": "Architecte du savoir",
+          "condition": "10 formations publiées"
+        },
+        "soutien_points_1": {
+          "name": "Soutien local",
+          "condition": "1 point soutien"
+        },
+        "soutien_points_5": {
+          "name": "Mécène",
+          "condition": "5 points soutien"
+        },
+        "soutien_points_10": {
+          "name": "Bienfaiteur",
+          "condition": "10 points soutien"
+        },
+        "soutien_points_20": {
+          "name": "Pilier du soutien",
+          "condition": "20 points soutien"
+        },
+        "troc_exchanges_completed_1": {
+          "name": "Premier Troc",
+          "condition": "1 troc réussi"
+        },
+        "troc_exchanges_completed_10": {
+          "name": "Tāvana du Troc",
+          "condition": "10 trocs réussis"
+        },
+        "troc_exchanges_completed_50": {
+          "name": "Ra'atira du Troc",
+          "condition": "50 trocs réussis"
+        },
+        "troc_exchanges_completed_100": {
+          "name": "Maître Troqueur",
+          "condition": "100 trocs réussis"
+        },
+        "referral_filleuls_valides_1": {
+          "name": "Ambassadeur / Ambassadrice",
+          "condition": "1 filleul validé"
+        },
+        "referral_filleuls_valides_5": {
+          "name": "Rameur de la Communauté",
+          "condition": "5 filleuls validés"
+        },
+        "referral_filleuls_valides_15": {
+          "name": "Navigateur du Réseau",
+          "condition": "15 filleuls validés"
+        },
+        "referral_filleuls_valides_50": {
+          "name": "Pilier du parrainage",
+          "condition": "50 filleuls validés"
+        },
+        "tenatiraa_presence_1": {
+          "name": "Première présence",
+          "condition": "1 point présence"
+        },
+        "tenatiraa_presence_2": {
+          "name": "Retour au rassemblement",
+          "condition": "2 points présence"
+        },
+        "tenatiraa_presence_3": {
+          "name": "Habitué du Natira'a",
+          "condition": "3 points présence"
+        },
+        "tenatiraa_presence_5": {
+          "name": "Gardien du rassemblement",
+          "condition": "5 points présence"
+        },
+        "testimonial_video_validated_1": {
+          "name": "Voix de la Communauté",
+          "condition": "1 témoignage vidéo"
+        },
+        "testimonial_video_validated_3": {
+          "name": "Porte-parole",
+          "condition": "3 témoignages vidéo"
+        },
+        "testimonial_video_validated_5": {
+          "name": "Conteur public",
+          "condition": "5 témoignages vidéo"
+        },
+        "testimonial_video_validated_10": {
+          "name": "Ambassadeur des témoignages",
+          "condition": "10 témoignages vidéo"
+        },
+        "discovery_first_step": {
+          "name": "Éclaireur",
+          "condition": "1 action sur le site"
+        },
+        "discovery_three_universes_one_each": {
+          "name": "Explorateur",
+          "condition": "1 action par univers"
+        },
+        "discovery_five_action_types": {
+          "name": "Passeur d’horizons",
+          "condition": "2 actions par univers"
+        },
+        "discovery_two_each_universe": {
+          "name": "Architecte des trois mondes",
+          "condition": "3 actions par univers"
+        },
+        "special_founder_2026": {
+          "name": "Membre Fondateur 2026",
+          "condition": "Inscrit avant le 11 avril 2026"
+        },
+        "special_troc_pioneer_may_2026": {
+          "name": "Pionnier du Troc",
+          "condition": "1 troc réussis avant le 1er mai 2026"
+        },
+        "special_pupu_collector_500": {
+          "name": "Collectionneur de Pūpū",
+          "condition": "500 Pūpū en portefeuille"
+        },
+        "special_vip_heritage": {
+          "name": "VIP Heritage",
+          "condition": "Rôle VIP"
+        },
+        "special_toa_community": {
+          "name": "Toa de la Communauté",
+          "condition": "40 badges obtenus"
+        },
+        "special_badges_total_10": {
+          "name": "Collectionneur débutant",
+          "condition": "10 badges obtenus"
+        },
+        "special_badges_total_20": {
+          "name": "Grand collectionneur",
+          "condition": "20 badges obtenus"
+        },
+        "special_respect_anciens": {
+          "name": "Le respect des anciens",
+          "condition": "Réservé aux plus de 75 ans"
+        },
+        "tenatiraa_presence_10": {
+          "name": "Cœur du Natira'a",
+          "condition": "10 points présence "
+        },
+        "tenatiraa_presence_20": {
+          "name": "Collectionneur du rassemblement",
+          "condition": "20 points présence "
+        }
+      }
     },
     "profileExtra": {
       "phoneLabel": "Téléphone",
@@ -528,7 +790,16 @@
     "pageOf": "Page {page} sur {total}",
     "noListings": "Aucune annonce trouvée",
     "createFirst": "Créer la première annonce",
-    "memberToPostListing": "Devenir membre pour poster une annonce"
+    "memberToPostListing": "Devenir membre pour poster une annonce",
+    "memberProfile": {
+      "title": "Profil membre",
+      "level": "Niveau : {n} badges obtenus",
+      "badgesTitle": "Badges",
+      "contact": "Contacter",
+      "loginToSee": "Connectez-vous pour voir le profil et les badges de ce membre.",
+      "loadError": "Impossible de charger le profil.",
+      "noBadges": "Aucun badge pour l’instant."
+    }
   },
   "marketplaceFilters": {
     "search": "Recherche",
@@ -950,7 +1221,49 @@
     "subtitle": "Découvrez nos partenaires qui nous accompagnent dans notre mission",
     "loading": "Chargement des partenaires...",
     "discover": "Découvrir {name}",
-    "empty": "Aucun partenaire pour le moment"
+    "empty": "Aucun partenaire pour le moment",
+    "soutienQrTitle": "Points soutien (QR)",
+    "soutienQrDescription": "Lors d’événements ou chez nos partenaires, un QR peut vous faire gagner 1 point « soutien » (série Connecter / badges) une fois par code. Scannez-le avec votre téléphone : si vous n’êtes pas connecté, la page vous demandera de vous identifier pour valider le point."
+  },
+  "partnersSoutienQr": {
+    "title": "Point soutien partenaire",
+    "missingToken": "Ce lien ne contient pas de code valide.",
+    "needLogin": "Connectez-vous pour enregistrer votre point soutien et mettre à jour vos badges.",
+    "loginCta": "Se connecter",
+    "claiming": "Enregistrement en cours…",
+    "success": "Merci ! Votre point soutien a bien été enregistré.",
+    "already": "Vous aviez déjà utilisé ce code. Chaque QR ne compte qu’une fois par personne.",
+    "errorGeneric": "Impossible d’enregistrer le point.",
+    "retry": "Réessayer",
+    "seeBadges": "Voir mes badges",
+    "backPartners": "Retour aux partenaires"
+  },
+  "adminTestimonials": {
+    "title": "Témoignages vidéo",
+    "subtitle": "Valider ou refuser les vidéos envoyées par les membres.",
+    "loading": "Chargement…",
+    "empty": "Aucun témoignage en attente.",
+    "user": "Membre :",
+    "subject": "Sujet :",
+    "partner": "Partenaire :",
+    "listing": "Annonce :",
+    "duration": "Durée :",
+    "subjectAssociation": "Association",
+    "subjectTroc": "Troc",
+    "subjectPartner": "Partenaire",
+    "approve": "Approuver",
+    "reject": "Refuser",
+    "prev": "Précédent",
+    "next": "Suivant",
+    "rejectModalTitle": "Motif du refus (optionnel)",
+    "rejectModalHint": "Ce texte pourra être lu par le membre.",
+    "cancel": "Annuler",
+    "confirmReject": "Confirmer le refus",
+    "toastErrorTitle": "Erreur",
+    "toastApprovedTitle": "Témoignage approuvé",
+    "toastApprovedPupu": "{n} Pūpū crédités au membre.",
+    "toastApprovedNoPupu": "Validé sans crédit Pūpū (déjà récompensé ce mois-ci).",
+    "toastRejectedTitle": "Témoignage refusé"
   },
   "goodiesPage": {
     "title": "Goodies",
@@ -1082,10 +1395,42 @@
     "toastErrTitle": "Erreur",
     "processErrorFallback": "Erreur lors du traitement"
   },
+  "teNatiraaPresence": {
+    "title": "Point présence Te Natira'a",
+    "missingToken": "Ce lien ne contient pas de code de présence valide.",
+    "needLogin": "Connectez-vous pour enregistrer votre point de présence et mettre à jour vos badges.",
+    "loginCta": "Se connecter",
+    "claiming": "Enregistrement de votre présence…",
+    "success": "Merci ! Votre point de présence a bien été enregistré.",
+    "already": "Vous aviez déjà enregistré ce code. Chaque QR ne compte qu'une fois par personne.",
+    "errorGeneric": "Impossible d'enregistrer la présence.",
+    "retry": "Réessayer",
+    "seeBadges": "Voir mes badges",
+    "backTeNatiraa": "Retour Te Natira'a"
+  },
   "pollsPage": {
     "title": "Sondages",
     "subtitle": "Découvrez tous les sondages et partagez votre avis",
     "empty": "Aucun sondage trouvé"
+  },
+  "participationCallout": {
+    "contactCta": "Nous contacter",
+    "goodies": {
+      "message": "Vous avez un goodie à offrir à la communauté ? Contactez-nous.",
+      "mailSubject": "Goodies — proposition pour la communauté"
+    },
+    "partners": {
+      "message": "Vous souhaitez devenir partenaire ou soutenir Nuna'a Heritage ? Contactez-nous.",
+      "mailSubject": "Partenariat — Nuna'a Heritage"
+    },
+    "academy": {
+      "message": "Vous avez une idée de cours ou de contenu pour l'Academy ? Contactez-nous.",
+      "mailSubject": "Academy — proposition de contenu"
+    },
+    "polls": {
+      "message": "Une idée pour un prochain sondage ? Contactez-nous.",
+      "mailSubject": "Sondage — suggestion"
+    }
   },
   "pollDetail": {
     "back": "Retour aux sondages",

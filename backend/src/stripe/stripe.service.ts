@@ -15,6 +15,7 @@ import { Transaction, TransactionType, TransactionStatus } from '../entities/tra
 import { TeNatiraaRegistration, TeNatiraaRegistrationStatus } from '../entities/te-natiraa-registration.entity';
 import { EmailService } from '../email/email.service';
 import { WalletService } from '../wallet/wallet.service';
+import { ReferralService } from '../referral/referral.service';
 
 type PackCode = 'teOhi' | 'umete';
 
@@ -55,6 +56,7 @@ export class StripeService {
     private dataSource: DataSource,
     private emailService: EmailService,
     private walletService: WalletService,
+    private referralService: ReferralService,
   ) {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) {
@@ -309,6 +311,7 @@ export class StripeService {
     // Idempotency: if already processed, skip to avoid double-crediting Pūpū/role
     if (payment.status === StripePaymentStatus.PAID) {
       console.log(`[Stripe Webhook] Payment already processed for session ${session.id}, skipping`);
+      await this.referralService.checkAndRewardReferrer(userId);
       return payment;
     }
 
@@ -403,6 +406,8 @@ export class StripeService {
         manager,
       );
     });
+
+    await this.referralService.checkAndRewardReferrer(userId);
 
     return payment;
   }

@@ -5,6 +5,7 @@ import { Listing, ListingStatus, ListingType } from '../entities/listing.entity'
 import { Location } from '../entities/location.entity';
 import { Category } from '../entities/category.entity';
 import { User } from '../entities/user.entity';
+import { BadgesService } from '../badges/badges.service';
 
 export interface ListingFilters {
   locationId?: number;
@@ -29,7 +30,21 @@ export class MarketplaceService {
     private categoryRepository: Repository<Category>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private badgesService: BadgesService,
   ) {}
+
+  private async attachSellerBadgeCounts(listings: Listing[]): Promise<void> {
+    if (listings.length === 0) {
+      return;
+    }
+    const ids = [...new Set(listings.map((l) => l.sellerId))];
+    const counts = await this.badgesService.countBadgesByUserIds(ids);
+    for (const l of listings) {
+      if (l.seller) {
+        (l.seller as User & { badgeCount?: number }).badgeCount = counts.get(l.sellerId) ?? 0;
+      }
+    }
+  }
 
   async create(
     title: string,
@@ -192,6 +207,7 @@ export class MarketplaceService {
 
     // Execute query
     const data = await queryBuilder.getMany();
+    await this.attachSellerBadgeCounts(data);
 
     // Calculate pagination metadata
     const totalPages = Math.ceil(total / pageSize);
@@ -236,6 +252,8 @@ export class MarketplaceService {
       listing.viewCount += 1;
       await this.listingRepository.save(listing);
     }
+
+    await this.attachSellerBadgeCounts([listing]);
 
     return listing;
   }

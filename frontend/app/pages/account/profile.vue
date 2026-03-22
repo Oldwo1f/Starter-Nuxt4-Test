@@ -8,8 +8,10 @@ definePageMeta({
 import { useAuthStore } from '~/stores/useAuthStore'
 import { useWalletStore } from '~/stores/useWalletStore'
 import { useMarketplaceStore } from '~/stores/useMarketplaceStore'
+import { useMyBadgeCountStore } from '~/stores/useMyBadgeCountStore'
 
 const authStore = useAuthStore()
+const myBadgeCountStore = useMyBadgeCountStore()
 const walletStore = useWalletStore()
 const marketplaceStore = useMarketplaceStore()
 const toast = useToast()
@@ -725,6 +727,7 @@ onMounted(() => {
             :text="getAvatarText"
             size="xl"
             :is-certified="user.isCertified === true"
+            :badge-level="myBadgeCountStore.count"
             avatar-class="ring-2 ring-primary-500/20"
           />
           <div>

@@ -249,7 +249,10 @@ onMounted(() => {
               />
               <span class="font-medium">Liste des partenaires</span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <NuxtLink to="/admin/partners/soutien-qr">
+                <UButton variant="outline" icon="i-heroicons-qr-code">QR point soutien</UButton>
+              </NuxtLink>
               <UButton
                 color="primary"
                 icon="i-heroicons-plus"

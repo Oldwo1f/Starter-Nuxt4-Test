@@ -6,6 +6,12 @@ import { AcademyModule } from '../entities/module.entity';
 import { Video } from '../entities/video.entity';
 import { CourseProgress } from '../entities/course-progress.entity';
 import { UserRole } from '../entities/user.entity';
+import { BadgesService } from '../badges/badges.service';
+
+export type AcademyProgressUpdateResult = {
+  progress: CourseProgress;
+  newBadges: string[];
+};
 
 @Injectable()
 export class AcademyService {
@@ -18,6 +24,7 @@ export class AcademyService {
     private videoRepository: Repository<Video>,
     @InjectRepository(CourseProgress)
     private progressRepository: Repository<CourseProgress>,
+    private readonly badgesService: BadgesService,
   ) {}
 
   /**
@@ -370,7 +377,7 @@ export class AcademyService {
     videoId: number,
     lastVideoWatchedId?: number,
     markAsCompleted: boolean = false,
-  ): Promise<CourseProgress> {
+  ): Promise<AcademyProgressUpdateResult> {
     let progress = await this.progressRepository.findOne({
       where: { userId, courseId },
     });
@@ -412,7 +419,9 @@ export class AcademyService {
       }
     }
 
-    return this.progressRepository.save(progress);
+    const saved = await this.progressRepository.save(progress);
+    const newBadges = await this.badgesService.syncAcademyCourseCompletionBadges(userId);
+    return { progress: saved, newBadges };
   }
 
   async getTotalVideosInCourse(courseId: number): Promise<number> {

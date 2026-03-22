@@ -326,8 +326,176 @@
     "badgesPage": {
       "title": "Mes badges",
       "subtitle": "Collectez des badges en participant à la vie de Nuna Heritage. Transmettez, connectez-vous et inspirez la communauté.",
-      "devTitle": "En cours de développement",
-      "devDesc": "Tous les badges sont affichés ci-dessous. L'attribution automatique sera implémentée prochainement."
+      "devTitle": "Déjà actif : Academy, Blog, Culture, Troc, parrainage, Te Natira'a présence, témoignages vidéo, formations publiées & soutien",
+      "devDesc": "Les badges Academy, Blog et Culture (consultation) sont attribués automatiquement. Les autres séries suivront ; vous pouvez encore simuler leur possession en cliquant sur les cartes.",
+      "devDescExtended": "Les badges Academy (cours), Blog, Culture, Troc (échanges marketplace), parrainage (filleuls validés), Te Natira'a (présence), témoignages vidéo (validations admin), « Création de formations » (formations publiées) et « Soutien » (points soutien) reflètent votre activité ou des attributions par l’équipe. Les autres séries suivront ; vous pouvez encore simuler leur possession en cliquant sur les cartes sans code.",
+      "academyHint": "{count} cours terminé(s)",
+      "blogHint": "{count} article(s) de blog validé(s)",
+      "cultureHint": "{count} vidéo(s) Culture",
+      "formateurHint": "{count} formation(s) publiée(s)",
+      "soutienHint": "{count} point(s) soutien",
+      "trocHint": "{count} échange(s) ou transfert(s) Pūpū (Troc)",
+      "referralHint": "{count} filleul(s) validé(s)",
+      "tenatiraaPresenceHint": "{count} point(s) présence Te Natira'a",
+      "testimonialHint": "{count} témoignage(s) vidéo validé(s)",
+      "loadError": "Impossible de charger vos badges."
+    },
+    "badges": {
+      "earnedFallback": "Nouveau badge obtenu !",
+      "codes": {
+        "blog_articles_validated_1": {
+          "name": "Pigiste",
+          "condition": "1 article de blog validé"
+        },
+        "blog_articles_validated_3": {
+          "name": "Rédacteur / Rédactrice",
+          "condition": "3 articles de blog validés"
+        },
+        "blog_articles_validated_10": {
+          "name": "Journaliste",
+          "condition": "10 articles de blog validés"
+        },
+        "blog_articles_validated_25": {
+          "name": "Rédacteur en Chef",
+          "condition": "25 articles de blog validés"
+        },
+        "culture_contents_viewed_1": {
+          "name": "Premier regard",
+          "condition": "1 vidéo Culture"
+        },
+        "culture_contents_viewed_5": {
+          "name": "Archiviste",
+          "condition": "5 vidéos Culture"
+        },
+        "culture_contents_viewed_20": {
+          "name": "Curateur du Patrimoine",
+          "condition": "20 vidéos Culture"
+        },
+        "culture_contents_viewed_50": {
+          "name": "Gardien des Mémoires",
+          "condition": "50 vidéos Culture"
+        },
+        "academy_courses_completed_1": {
+          "name": "Gardien du Savoir",
+          "condition": "Termine 1 cours Academy"
+        },
+        "academy_courses_completed_5": {
+          "name": "Passeur(se) de Mémoire",
+          "condition": "Termine 5 cours Academy"
+        },
+        "academy_courses_completed_15": {
+          "name": "Tāvana du Savoir",
+          "condition": "Termine 15 cours Academy"
+        },
+        "academy_courses_completed_25": {
+          "name": "Maître Transmetteur",
+          "condition": "Termine 25 cours Academy"
+        },
+        "academy_formateur_points_1": {
+          "name": "Formateur émergent",
+          "condition": "1 formation publiée"
+        },
+        "academy_formateur_points_3": {
+          "name": "Enseignant de la Communauté",
+          "condition": "3 formations publiées"
+        },
+        "academy_formateur_points_5": {
+          "name": "Maître Formateur",
+          "condition": "5 formations publiées"
+        },
+        "academy_formateur_points_10": {
+          "name": "Architecte du savoir",
+          "condition": "10 formations publiées"
+        },
+        "soutien_points_1": {
+          "name": "Soutien local",
+          "condition": "1 point soutien"
+        },
+        "soutien_points_5": {
+          "name": "Mécène",
+          "condition": "5 points soutien"
+        },
+        "soutien_points_10": {
+          "name": "Bienfaiteur",
+          "condition": "10 points soutien"
+        },
+        "soutien_points_20": {
+          "name": "Pilier du soutien",
+          "condition": "20 points soutien"
+        },
+        "troc_exchanges_completed_1": {
+          "name": "Premier Troc",
+          "condition": "1 transfert ou échange Pūpū avec un autre membre"
+        },
+        "troc_exchanges_completed_10": {
+          "name": "Tāvana du Troc",
+          "condition": "10 transferts ou échanges Pūpū"
+        },
+        "troc_exchanges_completed_50": {
+          "name": "Ra'atira du Troc",
+          "condition": "50 transferts ou échanges Pūpū"
+        },
+        "troc_exchanges_completed_100": {
+          "name": "Maître Troqueur",
+          "condition": "100 transferts ou échanges Pūpū"
+        },
+        "referral_filleuls_valides_1": {
+          "name": "Ambassadeur / Ambassadrice",
+          "condition": "1 filleul validé"
+        },
+        "referral_filleuls_valides_5": {
+          "name": "Rameur de la Communauté",
+          "condition": "5 filleuls validés"
+        },
+        "referral_filleuls_valides_15": {
+          "name": "Navigateur du Réseau",
+          "condition": "15 filleuls validés"
+        },
+        "referral_filleuls_valides_50": {
+          "name": "Pilier du parrainage",
+          "condition": "50 filleuls validés"
+        },
+        "tenatiraa_presence_1": {
+          "name": "Première présence",
+          "condition": "1 point présence (scan QR)"
+        },
+        "tenatiraa_presence_2": {
+          "name": "Retour au rassemblement",
+          "condition": "2 points présence"
+        },
+        "tenatiraa_presence_3": {
+          "name": "Habitué du Natira'a",
+          "condition": "3 points présence"
+        },
+        "tenatiraa_presence_5": {
+          "name": "Gardien du rassemblement",
+          "condition": "5 points présence"
+        },
+        "testimonial_video_validated_1": {
+          "name": "Voix de la Communauté",
+          "condition": "1 témoignage vidéo validé par l’équipe"
+        },
+        "testimonial_video_validated_3": {
+          "name": "Porte-parole",
+          "condition": "3 témoignages vidéo validés"
+        },
+        "testimonial_video_validated_5": {
+          "name": "Conteur public",
+          "condition": "5 témoignages vidéo validés"
+        },
+        "testimonial_video_validated_10": {
+          "name": "Ambassadeur des témoignages",
+          "condition": "10 témoignages vidéo validés"
+        },
+        "tenatiraa_presence_10": {
+          "name": "Cœur du Natira'a",
+          "condition": "10 points présence (ancien palier)"
+        },
+        "tenatiraa_presence_20": {
+          "name": "Collectionneur du rassemblement",
+          "condition": "20 points présence (ancien palier)"
+        }
+      }
     },
     "profileExtra": {
       "missingPhone": "un numéro de téléphone",

@@ -12,9 +12,12 @@ export interface User {
   emailVerified?: boolean
   isActive?: boolean
   isCertified?: boolean
+  respectAnciensBadgeGranted?: boolean
   lastLogin?: string | null
   walletBalance?: number
   jijiBalance?: number
+  formateurPoints?: number
+  soutienPoints?: number
   createdAt: string
   updatedAt: string
 }
@@ -40,6 +43,7 @@ export interface ProfileFormData {
   avatarImage: string
   phoneNumber: string
   isCertified: boolean
+  respectAnciensBadgeGranted: boolean
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -69,6 +73,7 @@ export const useUserStore = defineStore('user', () => {
     avatarImage: '',
     phoneNumber: '',
     isCertified: false,
+    respectAnciensBadgeGranted: false,
   })
 
   // États pour les filtres
@@ -191,6 +196,7 @@ export const useUserStore = defineStore('user', () => {
       avatarImage: user.avatarImage || '',
       phoneNumber: user.phoneNumber || '',
       isCertified: user.isCertified || false,
+      respectAnciensBadgeGranted: user.respectAnciensBadgeGranted === true,
     }
     isEditingProfile.value = false
     isUserModalOpen.value = true
@@ -210,6 +216,7 @@ export const useUserStore = defineStore('user', () => {
         avatarImage: selectedUser.value.avatarImage || '',
         phoneNumber: selectedUser.value.phoneNumber || '',
         isCertified: selectedUser.value.isCertified || false,
+        respectAnciensBadgeGranted: selectedUser.value.respectAnciensBadgeGranted === true,
       }
       isEditingProfile.value = true
     }
@@ -223,6 +230,7 @@ export const useUserStore = defineStore('user', () => {
         avatarImage: selectedUser.value.avatarImage || '',
         phoneNumber: selectedUser.value.phoneNumber || '',
         isCertified: selectedUser.value.isCertified || false,
+        respectAnciensBadgeGranted: selectedUser.value.respectAnciensBadgeGranted === true,
       }
     }
     isEditingProfile.value = false
@@ -250,6 +258,7 @@ export const useUserStore = defineStore('user', () => {
           avatarImage: profileFormData.value.avatarImage || undefined,
           phoneNumber: profileFormData.value.phoneNumber || undefined,
           isCertified: profileFormData.value.isCertified,
+          respectAnciensBadgeGranted: profileFormData.value.respectAnciensBadgeGranted,
         },
       })
 

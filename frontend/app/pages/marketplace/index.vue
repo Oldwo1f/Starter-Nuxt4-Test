@@ -11,6 +11,7 @@ definePageMeta({
 const { fromNow } = useDate()
 const { apiBaseUrl } = useApi()
 const authStore = useAuthStore()
+const toast = useToast()
 const { t } = useI18n()
 const { isProfileComplete } = useProfileValidation()
 const { canCreateListing } = useMemberCheck()
@@ -28,6 +29,25 @@ const effectiveViewMode = computed<'list' | 'grid'>(() => {
 
 // Filters slideover state
 const isFiltersOpen = ref(false)
+
+const memberProfileOpen = ref(false)
+const memberProfileUserId = ref<number | null>(null)
+const memberProfileListingId = ref<number | null>(null)
+
+function handleMemberAvatarClick(listing: any) {
+  const uid = listing.sellerId ?? listing.seller?.id
+  if (uid == null) return
+  if (!authStore.isAuthenticated) {
+    toast.add({
+      title: t('marketplace.memberProfile.loginToSee'),
+      color: 'warning',
+    })
+    return
+  }
+  memberProfileUserId.value = uid
+  memberProfileListingId.value = listing.id ?? null
+  memberProfileOpen.value = true
+}
 
 // Filters
 const filters = ref({
@@ -450,13 +470,22 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
               <div class="flex-[1] flex flex-col justify-between items-end">
                 <!-- Seller info at top -->
                 <div class="flex items-center gap-2">
-                  <CertifiedAvatar
-                    :src="getSellerAvatar(listing)"
-                    :alt="getSellerName(listing)"
-                    :text="getSellerName(listing)?.charAt(0).toUpperCase()"
-                    size="sm"
-                    :is-certified="listing.seller?.isCertified === true"
-                  />
+                  <div
+                    class="shrink-0 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                    role="button"
+                    tabindex="0"
+                    @click.stop="handleMemberAvatarClick(listing)"
+                    @keydown.enter.prevent="handleMemberAvatarClick(listing)"
+                  >
+                    <CertifiedAvatar
+                      :src="getSellerAvatar(listing)"
+                      :alt="getSellerName(listing)"
+                      :text="getSellerName(listing)?.charAt(0).toUpperCase()"
+                      size="sm"
+                      :is-certified="listing.seller?.isCertified === true"
+                      :badge-level="listing.seller?.badgeCount ?? 0"
+                    />
+                  </div>
                   <span class="text-sm text-white/80">{{ getSellerName(listing) }}</span>
                 </div>
                 <!-- Price at bottom -->
@@ -514,13 +543,22 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
             <div class="flex items-center justify-between gap-4">
               <!-- Seller info -->
               <div class="flex items-center gap-2">
-                <CertifiedAvatar
-                  :src="getSellerAvatar(listing)"
-                  :alt="getSellerName(listing)"
-                  :text="getSellerName(listing)?.charAt(0).toUpperCase()"
-                  size="sm"
-                  :is-certified="listing.seller?.isCertified === true"
-                />
+                <div
+                  class="shrink-0 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                  role="button"
+                  tabindex="0"
+                  @click.stop="handleMemberAvatarClick(listing)"
+                  @keydown.enter.prevent="handleMemberAvatarClick(listing)"
+                >
+                  <CertifiedAvatar
+                    :src="getSellerAvatar(listing)"
+                    :alt="getSellerName(listing)"
+                    :text="getSellerName(listing)?.charAt(0).toUpperCase()"
+                    size="sm"
+                    :is-certified="listing.seller?.isCertified === true"
+                    :badge-level="listing.seller?.badgeCount ?? 0"
+                  />
+                </div>
                 <span class="text-sm text-white/80">{{ getSellerName(listing) }}</span>
               </div>
               <div class="flex flex-col items-end gap-1">
@@ -592,6 +630,11 @@ const getCategoryColorStyle = (color: string | null | undefined) => {
       </UButton>
     </div>
 
+    <MemberBadgeProfileModal
+      v-model:open="memberProfileOpen"
+      :user-id="memberProfileUserId"
+      :listing-id="memberProfileListingId"
+    />
   </div>
 </template>
 

@@ -20,6 +20,7 @@ import {
 import { User, UserRole } from '../entities/user.entity';
 import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
 import { WalletService } from '../wallet/wallet.service';
+import { ReferralService } from '../referral/referral.service';
 
 type PackCode = 'teOhi' | 'umete';
 
@@ -39,6 +40,7 @@ export class BillingService {
     private transactionsRepository: Repository<Transaction>,
     private dataSource: DataSource,
     private walletService: WalletService,
+    private referralService: ReferralService,
   ) {}
 
   private getAmountForPack(pack: PackCode): number {
@@ -179,8 +181,9 @@ export class BillingService {
       throw new NotFoundException('Reference not found');
     }
 
-    // Idempotence: already processed
+    // Idempotence: already processed (still try parrainage in case it was missed earlier)
     if (payment.status === BankTransferPaymentStatus.PAID) {
+      await this.referralService.checkAndRewardReferrer(payment.userId);
       return { ok: true, alreadyProcessed: true };
     }
 
@@ -348,6 +351,7 @@ export class BillingService {
         payment.pupuInscriptionReceived = true;
         await this.paymentsRepository.save(payment);
       }
+      await this.referralService.checkAndRewardReferrer(payment.userId);
       return { ok: true, alreadyConfirmed: true };
     }
 
@@ -431,6 +435,8 @@ export class BillingService {
       freshPayment.pupuInscriptionReceived = true;
       await paymentsRepo.save(freshPayment);
     });
+
+    await this.referralService.checkAndRewardReferrer(payment.userId);
 
     return { ok: true, alreadyConfirmed: false };
   }
@@ -696,6 +702,8 @@ export class BillingService {
         await usersRepo.save(user);
       }
     });
+
+    await this.referralService.checkAndRewardReferrer(verification.userId);
 
     return { ok: true };
   }

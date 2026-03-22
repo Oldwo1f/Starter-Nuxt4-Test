@@ -2,13 +2,13 @@ import { Controller, Get, Post, Body, Patch, Delete, Param, UseGuards, ParseIntP
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody, ApiProperty, ApiQuery } from '@nestjs/swagger';
 import { IsEnum, IsString, IsOptional, IsBoolean } from 'class-validator';
 import { UsersService } from './users.service';
-import { ReferralService } from '../referral/referral.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../entities/user.entity';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { PaginatedUsersResponseDto } from './dto/paginated-response.dto';
+import { AddPointsDeltaDto } from './dto/add-points-delta.dto';
 
 export class UpdateUserRoleDto {
   @ApiProperty({
@@ -65,6 +65,14 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   phoneNumber?: string;
+
+  @ApiProperty({
+    description: 'Badge spécial « Respect des anciens » (75+ ans, attribution admin)',
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  respectAnciensBadgeGranted?: boolean;
 }
 
 @ApiTags('users')
@@ -72,13 +80,10 @@ export class UpdateUserDto {
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
-  constructor(
-    private readonly usersService: UsersService,
-    private readonly referralService: ReferralService,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR)
   @ApiOperation({ 
     summary: 'Get all users with pagination', 
     description: 'Retrieve a paginated list of users with filtering and sorting (Admin only)' 
@@ -104,13 +109,40 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR)
   @ApiOperation({ summary: 'Get user by ID', description: 'Retrieve a specific user by ID (Admin only)' })
   @ApiParam({ name: 'id', type: 'number', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User retrieved successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findById(id);
+  }
+
+  @Patch(':id/points/formateur')
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiOperation({
+    summary: 'Ajouter au compteur de formations publiées',
+    description:
+      'Incrémente le compteur utilisé pour les badges « Academy — création de formations » (paliers 1, 3, 5, 10). Réservé aux administrateurs.',
+  })
+  @ApiParam({ name: 'id', type: 'number', description: 'User ID' })
+  @ApiBody({ type: AddPointsDeltaDto })
+  @ApiResponse({ status: 200, description: 'User mis à jour' })
+  addFormateurPoints(@Param('id', ParseIntPipe) id: number, @Body() dto: AddPointsDeltaDto) {
+    return this.usersService.addFormateurPointsDelta(id, dto.delta);
+  }
+
+  @Patch(':id/points/soutien')
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN, UserRole.MODERATOR)
+  @ApiOperation({
+    summary: 'Ajouter des points soutien',
+    description: 'Ajoute des points « soutien » (badges Connecter). Administrateurs et modérateurs.',
+  })
+  @ApiParam({ name: 'id', type: 'number', description: 'User ID' })
+  @ApiBody({ type: AddPointsDeltaDto })
+  @ApiResponse({ status: 200, description: 'User mis à jour' })
+  addSoutienPoints(@Param('id', ParseIntPipe) id: number, @Body() dto: AddPointsDeltaDto) {
+    return this.usersService.addSoutienPointsDelta(id, dto.delta);
   }
 
   @Patch(':id/role')
@@ -121,16 +153,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User role updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async updateRole(@Param('id', ParseIntPipe) id: number, @Body() updateUserRoleDto: UpdateUserRoleDto) {
-    const oldUser = await this.usersService.findById(id);
-    const updatedUser = await this.usersService.updateRole(id, updateUserRoleDto.role);
-    
-    // Si l'utilisateur devient MEMBER et qu'il était USER avant, vérifier les parrainages
-    if (updateUserRoleDto.role === UserRole.MEMBER && oldUser && oldUser.role === UserRole.USER) {
-      // Vérifier et créditer les parrains si nécessaire
-      await this.referralService.checkAndRewardReferrer(id);
-    }
-    
-    return updatedUser;
+    return this.usersService.updateRole(id, updateUserRoleDto.role);
   }
 
   @Patch(':id')
@@ -147,6 +170,7 @@ export class UsersController {
       avatarImage: updateUserDto.avatarImage,
       isCertified: updateUserDto.isCertified,
       phoneNumber: updateUserDto.phoneNumber,
+      respectAnciensBadgeGranted: updateUserDto.respectAnciensBadgeGranted,
     });
   }
 

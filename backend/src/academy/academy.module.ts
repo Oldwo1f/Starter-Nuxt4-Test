@@ -7,11 +7,13 @@ import { AcademyModule as AcademyModuleEntity } from '../entities/module.entity'
 import { Video } from '../entities/video.entity';
 import { CourseProgress } from '../entities/course-progress.entity';
 import { UploadModule } from '../upload/upload.module';
+import { BadgesModule } from '../badges/badges.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Course, AcademyModuleEntity, Video, CourseProgress]),
     UploadModule,
+    BadgesModule,
   ],
   controllers: [AcademyController],
   providers: [AcademyService],

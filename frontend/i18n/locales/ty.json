@@ -57,6 +57,7 @@
     "menuTransactions": "Nā tauiha'ara'a",
     "menuReferral": "Parrainage",
     "menuBadges": "Tā'u mau tapa'o",
+    "menuTestimonial": "Tā'ā'iraa video",
     "menuProfile": "Tō'u porōfāira",
     "bottomListings": "Pānui",
     "bottomTroc": "TROC",
@@ -70,7 +71,8 @@
       "articles": "Tā'u mau pāpa'ira'a",
       "conversation": "Māfatu'ara'a",
       "transferTitle": "Fa'atere i te Pūpū",
-      "editListing": "Fa'atika i te pānui"
+      "editListing": "Fa'atika i te pānui",
+      "testimonial": "Tā'ā'iraa video"
     },
     "dashboard": {
       "title": "Dashboard",
@@ -346,6 +348,48 @@
       "countdownMinutes": "Mau minuti",
       "countdownSeconds": "Mau secondi"
     },
+    "testimonial": {
+      "title": "Tā'ā'iraa video",
+      "subtitle": "Tā'ā'iraa i te tā'ā'iraa poto no te fa'ahiti i tō 'oe ha'api'iraa. I muri i te hi'opo'ara'a, e nehenehe te riro i te mau Pūpū.",
+      "rulesTitle": "E aha te ohipa ?",
+      "ruleDuration": "Te roa o te video : i roto i te {min} e te {max} secondi.",
+      "ruleSubjects": "Nā tumu : tā'ā'iraa no te 'apitoraga Nuna'a Heritage, no te troc, aore rā no te hoa.",
+      "ruleAppHint": "Aita 'oe i te 'ite i te aha e parau ai, ha'amata ma tō 'oe mana'o no te 'api 'āpī.",
+      "ruleValidationDelay": "Te hi'opo'ara'a a te ta'ata fa'anahora'a e nehenehe e roa atu i te mau mahana.",
+      "rulePupu": "E riro 'oe i te 5 Pūpū a te hi'opo'ohia maitai te video (i raro i te tahi riro / marama — hi'o i raro).",
+      "ruleOnePending": "E taea noa te tuku i te tahi video i te tahi taime : aita e nehenehe te tahi atu i te tūmau'era'a o te hi'opo'ara'a.",
+      "ruleMonthlyPupu": "Te 5 Pūpū e taea noa te riro i te tahi taime / marama : te tahi atu video hi'opo'ohia i te marama ta'ata e ta'ahia aore e tahi Pūpū 'āpī.",
+      "pendingTitle": "Video i te tūmau'era'a o te hi'opo'ara'a",
+      "pendingDesc": "Māuruuru ! Ua riro maitai tā'u tā'ā'iraa. Te hi'o atu nei mātou ia outou.",
+      "rejectedTitle": "Aita i ta'ahia te ta'api'ira'a hope'a",
+      "rejectedHint": "E nehenehe 'oe e tā'ā'iraa fa'ahou ma te tuku i te video 'āpī i raro nei.",
+      "approvedTitle": "Ua ta'ahia te tā'ā'iraa hope'a",
+      "approvedPupu": "Ua riro 'oe i te {n} Pūpū no teie hi'opo'ara'a.",
+      "approvedNoPupu": "Ua ta'ahia aore e tahi Pūpū (ua tae i te tahi riro i teie marama).",
+      "recordTitle": "Tā'ā'iraa 'āpī",
+      "startRecord": "Ha'amata i te tā'ā'iraa",
+      "stopRecord": "Ta'ahia",
+      "durationLabel": "Te roa i tā'ā'irahia : {sec} s (e hiahi'a : {min}–{max} s)",
+      "rerecord": "Ha'amata fa'ahou",
+      "fieldSubject": "Te tumu o te tā'ā'iraa",
+      "subjectAssociation": "Te 'apitoraga Nuna'a Heritage",
+      "subjectTroc": "Te troc",
+      "subjectPartner": "Te hoa",
+      "fieldPartner": "Hoa",
+      "partnerPlaceholder": "Maiti i te hoa",
+      "fieldListing": "Tā'u pānui (troc)",
+      "listingPlaceholder": "Maiti i te pānui",
+      "noListings": "Aita 'oe i te pānui : hanga i te tahi aore rā maiti i te tahi tumu 'āpī.",
+      "submit": "Tuku i te video",
+      "toastLoadErrorTitle": "Aita e fa'atere i te ta'ahiraa",
+      "cameraDeniedTitle": "Aita e taea te kaméra / te reo",
+      "cameraDeniedDesc": "Ha'uti i te kaméra e te reo i tō niuniu no te tā'ā'iraa.",
+      "noRecorderTitle": "Aita e tauturu te niuniu i te tā'ā'iraa video",
+      "toastSentTitle": "Ua tukuhia",
+      "toastSentDesc": "Tō tā'ā'iraa e tūmau'era'a i te hi'opo'ara'a.",
+      "toastSendErrorTitle": "Aita e taea te tuku",
+      "toastSendErrorDesc": "Ua tupu te hapa."
+    },
     "cotisation": {
       "title": "Tura",
       "subtitle": "Ma'iti i tā 'oe pack e tā 'oe rave'a aufau nō te fa'ahohe i tō 'oe tura ā matahiti.",
@@ -398,8 +442,226 @@
     "badgesPage": {
       "title": "Tā'u mau tapa'o",
       "subtitle": "Tāpe'a mai i te mau tapa'o nā roto i tā 'oe tuha'a i roto i te orara'a o Nuna Heritage. Fa'ata'a, tā'amuhia e fa'auru i te huira'atira.",
-      "devTitle": "Te hamanira'a te haere nei",
-      "devDesc": "Te fa'a'itehia nei te mau tapa'o ato'a i raro nei. E fa'aohipahia te tu'u aunoa i muri a'e."
+      "devTitle": "Ua fa'aohipahia : Academy, Blog, Culture, Troc, parrainage, Te Natira'a (prezenta), tā'ā'iraa video, mau ha'apararera'a i fa'ahia e soutien",
+      "devDesc": "Te mau tapa'o Academy, Blog e Culture (hi'opo'ara'a) e tu'uhia aunoa. E haere muri a'e te tahi atu mau hō'ē ; e nehenehe 'a ia 'oe e tamata i te tahi atu mau tapa'o i te pa'i i te kāti.",
+      "devDescExtended": "Te mau tapa'o Academy, Blog, Culture, Troc, parrainage, Te Natira'a, tā'ā'iraa video, ha'apararera'a fa'ahia, Tauturu, te hō'ē hi'opo'ara'a e te mau tapa'o 'āpi'i (fa'ahoroa, troc, Pūpū, VIP, Toa) e fa'ahitia i tā 'oe 'ā'au'au. E nehenehe 'a ia 'oe e tamata i te mau tapa'o 'a'ore kō i te API i te pa'i i te kāti.",
+      "academyHint": "{count} ha'apararera'a i oti",
+      "blogHint": "{count} 'ārite blog i ha'apūhia",
+      "cultureHint": "{count} vitiō Culture",
+      "formateurHint": "{count} ha'apararera'a i fa'ahia",
+      "soutienHint": "{count} pūpū tauturu (soutien)",
+      "trocHint": "{count} 'ā'au'au a te ho'i pūpū (Troc)",
+      "referralHint": "{count} filleul(s) i ha'apūhia (parrainage)",
+      "tenatiraaPresenceHint": "{count} pūpū prezenta Te Natira'a",
+      "testimonialHint": "{count} tā'ā'iraa video i hi'opo'ohia",
+      "discoveryHint": "Fa'ata'a {transmettre}/3 · Tā'amuhia {connecter}/3 · Fa'auru {inspirer}/3 · Te 'au {total}/9",
+      "walletPupuHint": "{balance} Pūpū i te 'ō'ā (500 mo te tapa'o)",
+      "loadError": "Aita e nehenehe e uta i tā 'oe mau tapa'o."
+    },
+    "badges": {
+      "earnedFallback": "Ua ta'u 'i te hō'ē tapa'o!",
+      "codes": {
+        "blog_articles_validated_1": {
+          "name": "Pigiste",
+          "condition": "E hō'ē 'ārite blog i ha'apūhia"
+        },
+        "blog_articles_validated_3": {
+          "name": "Rédacteur / Rédactrice",
+          "condition": "E 3 'ārite blog i ha'apūhia"
+        },
+        "blog_articles_validated_10": {
+          "name": "Journaliste",
+          "condition": "E 10 'ārite blog i ha'apūhia"
+        },
+        "blog_articles_validated_25": {
+          "name": "Rédacteur en Chef",
+          "condition": "E 25 'ārite blog i ha'apūhia"
+        },
+        "culture_contents_viewed_1": {
+          "name": "Premier regard",
+          "condition": "E hō'ē vitiō Culture"
+        },
+        "culture_contents_viewed_5": {
+          "name": "Archiviste",
+          "condition": "E 5 vitiō Culture"
+        },
+        "culture_contents_viewed_20": {
+          "name": "Curateur du Patrimoine",
+          "condition": "E 20 vitiō Culture"
+        },
+        "culture_contents_viewed_50": {
+          "name": "Gardien des Mémoires",
+          "condition": "E 50 vitiō Culture"
+        },
+        "academy_courses_completed_1": {
+          "name": "Gardien du Savoir",
+          "condition": "Fa'ahou i te hō'ē ha'apararera'a Academy"
+        },
+        "academy_courses_completed_5": {
+          "name": "Passeur(se) de Mémoire",
+          "condition": "Fa'ahou i te 5 ha'apararera'a Academy"
+        },
+        "academy_courses_completed_15": {
+          "name": "Tāvana du Savoir",
+          "condition": "Fa'ahou i te 15 ha'apararera'a Academy"
+        },
+        "academy_courses_completed_25": {
+          "name": "Maître Transmetteur",
+          "condition": "Fa'ahou i te 25 ha'apararera'a Academy"
+        },
+        "academy_formateur_points_1": {
+          "name": "Formateur émergent",
+          "condition": "E hō'ē ha'apararera'a i fa'ahia"
+        },
+        "academy_formateur_points_3": {
+          "name": "Enseignant de la Communauté",
+          "condition": "E 3 ha'apararera'a i fa'ahia"
+        },
+        "academy_formateur_points_5": {
+          "name": "Maître Formateur",
+          "condition": "E 5 ha'apararera'a i fa'ahia"
+        },
+        "academy_formateur_points_10": {
+          "name": "Architecte du savoir",
+          "condition": "E 10 ha'apararera'a i fa'ahia"
+        },
+        "soutien_points_1": {
+          "name": "Soutien local",
+          "condition": "E hō'ē pūpū tauturu"
+        },
+        "soutien_points_5": {
+          "name": "Mécène",
+          "condition": "E 5 pūpū tauturu"
+        },
+        "soutien_points_10": {
+          "name": "Bienfaiteur",
+          "condition": "E 10 pūpū tauturu"
+        },
+        "soutien_points_20": {
+          "name": "Pilier du soutien",
+          "condition": "E 20 pūpū tauturu"
+        },
+        "troc_exchanges_completed_1": {
+          "name": "Premier Troc",
+          "condition": "E hō'ē ho'i pūpū a te tahi atu membre"
+        },
+        "troc_exchanges_completed_10": {
+          "name": "Tāvana du Troc",
+          "condition": "E 10 ho'i pūpū a te tahi atu"
+        },
+        "troc_exchanges_completed_50": {
+          "name": "Ra'atira du Troc",
+          "condition": "E 50 ho'i pūpū a te tahi atu"
+        },
+        "troc_exchanges_completed_100": {
+          "name": "Maître Troqueur",
+          "condition": "E 100 ho'i pūpū a te tahi atu"
+        },
+        "referral_filleuls_valides_1": {
+          "name": "Ambassadeur / Ambassadrice",
+          "condition": "E hō'ē filleul i ha'apūhia"
+        },
+        "referral_filleuls_valides_5": {
+          "name": "Rameur de la Communauté",
+          "condition": "E 5 filleul i ha'apūhia"
+        },
+        "referral_filleuls_valides_15": {
+          "name": "Navigateur du Réseau",
+          "condition": "E 15 filleul i ha'apūhia"
+        },
+        "referral_filleuls_valides_50": {
+          "name": "Pilier du parrainage",
+          "condition": "E 50 filleul i ha'apūhia"
+        },
+        "tenatiraa_presence_1": {
+          "name": "Prezenta hō'ē",
+          "condition": "E hō'ē pūpū prezenta (QR)"
+        },
+        "tenatiraa_presence_2": {
+          "name": "Haere fa'ahou i te fa'anahora'a",
+          "condition": "E 2 pūpū prezenta"
+        },
+        "tenatiraa_presence_3": {
+          "name": "Habitué du Natira'a",
+          "condition": "E 3 pūpū prezenta"
+        },
+        "tenatiraa_presence_5": {
+          "name": "Gardien du rassemblement",
+          "condition": "E 5 pūpū prezenta"
+        },
+        "testimonial_video_validated_1": {
+          "name": "Leo o te huira'atira",
+          "condition": "E hō'ē tā'ā'iraa video i hi'opo'ohia e te 'au"
+        },
+        "testimonial_video_validated_3": {
+          "name": "Ta'ata parau i te aui",
+          "condition": "E 3 tā'ā'iraa video i hi'opo'ohia"
+        },
+        "testimonial_video_validated_5": {
+          "name": "Pā'ō'iraa i te aui",
+          "condition": "E 5 tā'ā'iraa video i hi'opo'ohia"
+        },
+        "testimonial_video_validated_10": {
+          "name": "Ta'ata fa'ahopū i te mau tā'ā'iraa",
+          "condition": "E 10 tā'ā'iraa video i hi'opo'ohia"
+        },
+        "discovery_first_step": {
+          "name": "Te mau 'ā'au i te hi'opo'ara'a",
+          "condition": "E hō'ē 'ā'au'au i te tahi atu"
+        },
+        "discovery_three_universes_one_each": {
+          "name": "Te hi'opo'ara'a i te mau ao",
+          "condition": "E 1 i te tahi ao"
+        },
+        "discovery_five_action_types": {
+          "name": "Te fa'atau i te mau ao",
+          "condition": "E 2 i te tahi ao"
+        },
+        "discovery_two_each_universe": {
+          "name": "Te fa'ahoroa i te toru ao",
+          "condition": "E 3 i te tahi ao"
+        },
+        "special_founder_2026": {
+          "name": "Membre fondateur 2026",
+          "condition": "I ta'u i mua i te 11 'āpera 2026"
+        },
+        "special_troc_pioneer_may_2026": {
+          "name": "Pionnier du Troc",
+          "condition": "E hō'ē troc i oti i mua i te 1 mē 2026"
+        },
+        "special_pupu_collector_500": {
+          "name": "Collectionneur de Pūpū",
+          "condition": "E 500 Pūpū i te 'ō'ā"
+        },
+        "special_vip_heritage": {
+          "name": "VIP Heritage",
+          "condition": "Te 'ā'au VIP"
+        },
+        "special_toa_community": {
+          "name": "Toa de la Communauté",
+          "condition": "E 40 tapa'o i ta'u"
+        },
+        "special_badges_total_10": {
+          "name": "Te 'āpī i te mau tapa'o",
+          "condition": "E 10 tapa'o i ta'u ('a'ore te mau tapa'o titauhia no te 'au)"
+        },
+        "special_badges_total_20": {
+          "name": "Te rahi i te mau tapa'o",
+          "condition": "E 20 tapa'o i ta'u ('a'ore te mau tapa'o titauhia no te 'au)"
+        },
+        "special_respect_anciens": {
+          "name": "Te fa'a'ahuru i te mau tūpuna",
+          "condition": "No te mau mā'ohi 75 e pae a'e — fa'ahia e te 'au 'ātihau"
+        },
+        "tenatiraa_presence_10": {
+          "name": "Cœur du Natira'a",
+          "condition": "E 10 pūpū prezenta (pae tahito)"
+        },
+        "tenatiraa_presence_20": {
+          "name": "Collectionneur du rassemblement",
+          "condition": "E 20 pūpū prezenta (pae tahito)"
+        }
+      }
     },
     "profileExtra": {
       "phoneLabel": "Niuniu",
@@ -529,7 +791,16 @@
       "pageOf": "Api {page} i ni'a i te {total}",
       "noListings": "Aita e pānui i itehia",
       "createFirst": "Hanga i te pānui matamua",
-      "memberToPostListing": "Riro mai ei mero nō te pānui i te hō'ē pānui"
+      "memberToPostListing": "Riro mai ei mero nō te pānui i te hō'ē pānui",
+      "memberProfile": {
+        "title": "Pūfa'i o te mero",
+        "level": "Ta'ata taui : {n} mau tohu i roa",
+        "badgesTitle": "Mau tohu",
+        "contact": "Fa'atere",
+        "loginToSee": "Ha'uti'i i roto i te 'ā'au nō te hi'o i te pūfa'i e te mau tohu o teie mero.",
+        "loadError": "Aita i te fa'aea te pūfa'i.",
+        "noBadges": "Aita 'ē 'ē tohu i teie mahana."
+      }
     },
     "marketplaceFilters": {
       "search": "Timi",
@@ -951,10 +1222,51 @@
       "subtitle": "A hi'o mai i ā mātou hoa e tauturu nei ia mātou i roto i tā mātou misioni",
       "loading": "Te fa'atere mai nei i te mau hoa...",
       "discover": "A hi'o ia {name}",
-      "empty": "Aita ā e hoa i teie nei"
-    }
-  ,
+      "empty": "Aita ā e hoa i teie nei",
+      "soutienQrTitle": "Pūpū tauturu (QR)",
+      "soutienQrDescription": "I te mau fa'anahora'a a i te mau hoa, e nehenehe te QR ia 'oe ia ta'u i te hō'ē pūpū « tauturu » (tapa'o Connecter) hō'ē ana'e no te kō. A fa'ahere i tō niuniu : aita e ha'uti, e 'ite te 'api ia 'oe ia ha'uti."
+    },
+    "partnersSoutienQr": {
+      "title": "Pūpū tauturu (hoa)",
+      "missingToken": "Aita e kō tano i roto i te fa'ahere.",
+      "needLogin": "Ha'uti i roto no te tapa'ohia i tō pūpū tauturu e te mau tapa'o.",
+      "loginCta": "Ha'uti i roto",
+      "claiming": "Te tapa'ohia nei...",
+      "success": "Māuruuru ! Ua tapa'ohia maitai tō pūpū tauturu.",
+      "already": "Ua ta outou i fa'ahou i teie kō. Hō'ē QR = hō'ē ta'ata.",
+      "errorGeneric": "Aita e nehenehe e tapa'ohia.",
+      "retry": "Tamata fa'ahou",
+      "seeBadges": "A hi'o i tā'u mau tapa'o",
+      "backPartners": "Ho'i i te mau hoa"
+    },
   
+  "adminTestimonials": {
+    "title": "Nā tā'ā'iraa video",
+    "subtitle": "Hi'opo'o aore rā fa'aore i te mau video a te mau mero.",
+    "loading": "Te fa'atere nei...",
+    "empty": "Aita e tā'ā'iraa i te tūmau'era'a.",
+    "user": "Mero :",
+    "subject": "Tumu :",
+    "partner": "Hoa :",
+    "listing": "Pānui :",
+    "duration": "Roa :",
+    "subjectAssociation": "'Apitoraga",
+    "subjectTroc": "Troc",
+    "subjectPartner": "Hoa",
+    "approve": "Hi'opo'o",
+    "reject": "Fa'aore",
+    "prev": "Mua",
+    "next": "Muri",
+    "rejectModalTitle": "Te parau o te fa'aore (fa'ahopē'a)",
+    "rejectModalHint": "E nehenehe te hi'o'ia e te mero teie parau.",
+    "cancel": "Fa'aore",
+    "confirmReject": "Ha'apū i te fa'aore",
+    "toastErrorTitle": "Hapa",
+    "toastApprovedTitle": "Ua hi'opo'ohia te tā'ā'iraa",
+    "toastApprovedPupu": "{n} Pūpū i riro ai te mero.",
+    "toastApprovedNoPupu": "Ua hi'opo'ohia aore e tahi Pūpū (ua riro 'ia i teie marama).",
+    "toastRejectedTitle": "Ua fa'aorehia te tā'ā'iraa"
+  },
   "goodiesPage": {
     "title": "Goodies",
     "subtitle": "A fa'auta mai i te mau rauemi horo'a-noa-hia : logo, hoho'a, rārangi crypto, video e te tahi atu ā",
@@ -1085,10 +1397,42 @@
     "toastErrTitle": "Hapa",
     "processErrorFallback": "Hapa i te ravera'a"
   },
+  "teNatiraaPresence": {
+    "title": "Pūpū prezenta Te Natira'a",
+    "missingToken": "Aita e kō i roto i te fa'ahere i te kō prezenta tano.",
+    "needLogin": "Ha'uti i roto ia 'oe no te tapa'ohia i tō 'oe pūpū prezenta e te mau tapa'o.",
+    "loginCta": "Ha'uti i roto",
+    "claiming": "Te tapa'ohia nei i tō 'oe prezenta...",
+    "success": "Māuruuru ! Ua tapa'ohia maitai tō 'oe pūpū prezenta.",
+    "already": "Ua ta outou i tapa'o i teie kō ra. Hō'ē QR = hō'ē ana'e no te ta'ata.",
+    "errorGeneric": "Aita e nehenehe e tapa'ohia te prezenta.",
+    "retry": "Tamata fa'ahou",
+    "seeBadges": "A hi'o i tā'u mau tapa'o",
+    "backTeNatiraa": "Ho'i i te Te Natira'a"
+  },
   "pollsPage": {
     "title": "Sondages",
     "subtitle": "A hi'o mai i te mau sondages ato'a e a tufa i tō 'oe mana'o",
     "empty": "Aita e sondage i itehia"
+  },
+  "participationCallout": {
+    "contactCta": "Farerei mai ia mātou",
+    "goodies": {
+      "message": "E hina'aro ana 'oe ia tufa i te huira'atira i te hō'ē goodie ? A farerei mai ia mātou.",
+      "mailSubject": "Goodies — hō'ē mana'o nō te huira'atira"
+    },
+    "partners": {
+      "message": "E hina'aro ana 'oe ia riro ei hoa aore rā ia tauturu i Nuna'a Heritage ? A farerei mai ia mātou.",
+      "mailSubject": "Hoa — Nuna'a Heritage"
+    },
+    "academy": {
+      "message": "E hina'aro ana 'oe ia hō'ē ha'api'ira'a aore rā rauemi nō te Academy ? A farerei mai ia mātou.",
+      "mailSubject": "Academy — hō'ē mana'o nō te rauemi"
+    },
+    "polls": {
+      "message": "E hina'aro ana 'oe ia hō'ē sondage muri a'e ? A farerei mai ia mātou.",
+      "mailSubject": "Sondage — hō'ē mana'o"
+    }
   },
   "pollDetail": {
     "back": "Ho'i i te mau sondages",

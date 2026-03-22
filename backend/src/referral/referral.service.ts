@@ -142,8 +142,9 @@ export class ReferralService {
   }
 
   /**
-   * Vérifie et met à jour le statut des filleuls quand un utilisateur devient membre
-   * Cette méthode doit être appelée quand le rôle d'un utilisateur change vers MEMBER
+   * Crédite le parrain (50 Pūpū) et passe le filleul en `validee` lorsque le filleul a une cotisation effective.
+   * À appeler après tout passage payant (Stripe, virement confirmé, legacy admin, ou rôle USER → MEMBER/PREMIUM côté admin).
+   * Idempotent si déjà `validee`.
    */
   async checkAndRewardReferrer(referredUserId: number): Promise<void> {
     // Récupérer l'email du filleul une seule fois avant les transactions

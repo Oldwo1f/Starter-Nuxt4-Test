@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useCultureStore } from '~/stores/useCultureStore'
+import { useAuthStore } from '~/stores/useAuthStore'
 import type { Culture } from '~/stores/useCultureStore'
 import tahitiVodVerticale from '~/assets/images/tahiti-vod-verticale.jpg'
 import tahitiVodHorizontale from '~/assets/images/tahiti-vod-horizontale.jpg'
@@ -9,6 +10,9 @@ definePageMeta({
 })
 
 const cultureStore = useCultureStore()
+const authStore = useAuthStore()
+const config = useRuntimeConfig()
+const toast = useToast()
 const { t } = useI18n()
 const { formatDate } = useLocaleDate()
 
@@ -79,8 +83,35 @@ const isModalOpen = computed({
   },
 })
 
-const openVideo = (video: Culture) => {
+const openVideo = async (video: Culture) => {
   selectedVideo.value = video
+
+  if (!authStore.isAuthenticated || !authStore.accessToken) {
+    return
+  }
+
+  try {
+    const apiBase = config.public.apiBaseUrl || 'http://localhost:3001'
+    const res = await $fetch<{
+      distinctCount: number
+      newBadges: string[]
+      newlyRecorded: boolean
+    }>(`${apiBase}/culture/${video.id}/view`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${authStore.accessToken}` },
+    })
+    for (const code of res.newBadges || []) {
+      const key = `account.badges.codes.${code}.name`
+      const title = t(key)
+      toast.add({
+        title: title === key ? t('account.badges.earnedFallback') : title,
+        color: 'success',
+        icon: 'i-heroicons-trophy',
+      })
+    }
+  } catch {
+    /* La modal s’ouvre quand même ; pas bloquant si l’API échoue */
+  }
 }
 
 const closeVideo = () => {

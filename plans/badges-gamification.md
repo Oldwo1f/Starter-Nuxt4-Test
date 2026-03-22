@@ -138,25 +138,40 @@ flowchart TB
 | **Porte-parole**          | 3 témoignages validés      | Idem                                            |
 | **Conteur Public**        | 5 témoignages validés      | Idem                                            |
 
-### Série Découverte
+### Série Découverte (implémentée)
 
-| Badge                  | Condition                                                    | Données à créer                               |
-| ---------------------- | ------------------------------------------------------------ | --------------------------------------------- |
-| **Éclaireur**          | Visite 3 univers (Academy, Troc, Blog, Culture, Te Natira'a) | Entité `UserActivity` ou tracking par section |
-| **Explorateur**        | Visite tous les univers 5 fois chacun                        | Idem                                          |
-| **Passeur d'Horizons** | Complète 1 action dans chaque univers                        | Idem                                          |
+Trois **univers métier** (pas des URLs) : **Transmettre**, **Connecter**, **Inspirer**. Pour chaque univers, on compte combien de **types** d’actions distincts sont remplis (0 à 3), puis on applique les paliers.
+
+**Transmettre** : cours Academy terminé (≥99,99 %) **ou** ≥1 article blog validé (`ACTIVE`) **ou** `formateurPoints` ≥ 1.
+
+**Connecter** : ≥1 troc / transfert Pūpū compté (comme série Troc) **ou** ≥1 ligne `Referral` en tant que parrain (tout statut) **ou** `tenatiraaPresencePoints` ≥ 1.
+
+**Inspirer** : ≥1 consultation Culture **ou** ≥1 témoignage vidéo approuvé **ou** ≥1 réponse sondage (`poll_responses.userId`).
+
+| Code badge                         | Nom affichage (FR)           | Condition                                                                 |
+| ---------------------------------- | ---------------------------- | ------------------------------------------------------------------------- |
+| `discovery_first_step`             | Éclaireur                    | t + c + i ≥ 1 (1 action sur le site)                                      |
+| `discovery_three_universes_one_each` | Explorateur               | min(t, c, i) ≥ 1 (1 type d’action / univers)                               |
+| `discovery_five_action_types`      | Passeur d’horizons           | min(t, c, i) ≥ 2 (2 types / univers ; max 3 par univers)                    |
+| `discovery_two_each_universe`        | Architecte des trois mondes  | min(t, c, i) ≥ 3 (tous les types dans chaque univers)                      |
+
+Logique : [`badges.service.ts`](../backend/src/badges/badges.service.ts) (`getDiscoveryUniverseCounts`, `syncDiscoveryBadges`). Pas de table dédiée « visites par zone » pour cette série.
 
 ---
 
 ## 4. BADGES SPÉCIAUX (hors catégories)
 
+Critères **indépendants** (pas une série à paliers). Codes : `special_*` dans [`badges.service.ts`](../backend/src/badges/badges.service.ts) (`syncSpecialBadges`).
+
 | Badge                      | Condition                                                 | Implémentation                                               |
 | -------------------------- | --------------------------------------------------------- | ------------------------------------------------------------ |
-| **Membre Fondateur 2026**  | Inscription avant Te Natira'a (11 avril 2026)             | `User.createdAt < '2026-04-11'`                              |
-| **Pionnier du Troc**       | 1 troc complété avant avril 2026                          | `Transaction` type=EXCHANGE, status=COMPLETED, createdAt < '2026-04-01' |
-| **Collectionneur de Pūpū** | Atteint 500 Pūpū en solde                                 | `User.walletBalance >= 500`                                   |
+| **Membre Fondateur 2026**  | Inscription avant le 11 avril 2026                        | `User.createdAt < 2026-04-11T00:00:00.000Z`                  |
+| **Pionnier du Troc**       | 1 troc complété avant le 1er mai 2026                     | `Transaction` EXCHANGE ou DEBIT complété, `createdAt` avant cutoff mai 2026 |
+| **Collectionneur de Pūpū** | 500 Pūpū en portefeuille                                  | `User.walletBalance >= 500`                                  |
 | **VIP Heritage**           | Rôle VIP                                                  | `User.role = 'vip'`                                          |
-| **Toa de la Communauté**   | Badge ultime : combine Transmettre + Connecter + Inspirer | Logique composite                                            |
+| **Toa de la Communauté**   | Plus de 40 autres badges (hors ce badge)                  | `COUNT(user_badges WHERE badgeCode != 'special_toa_community') > 40` |
+| **10 / 20 badges**        | 10 puis 20 badges obtenus (hors paliers « total »)        | `special_badges_total_10`, `special_badges_total_20`                       |
+| **Respect des anciens**   | 75+ ans, attribution admin                                | `users.respectAnciensBadgeGranted` → `special_respect_anciens`             |
 
 ---
 
@@ -211,7 +226,7 @@ erDiagram
 | EventParticipation              | Non    | À créer                                                                     |
 | Testimonial                     | Non    | À créer                                                                     |
 | PartnerPurchase                 | Non    | À créer (achats chez partenaires)                                          |
-| UserActivity (univers)          | Non    | À créer ou déduire des autres entités                                       |
+| UserActivity (univers)          | N/A    | Série Découverte : dérivée des entités existantes + `PollResponse`          |
 
 ---
 

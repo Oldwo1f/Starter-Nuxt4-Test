@@ -23,6 +23,8 @@ onMounted(() => {
       </p>
     </div>
 
+    <ParticipationCallout context="goodies" />
+
     <!-- Loading state -->
     <div v-if="goodiesStore.isLoading" class="flex justify-center py-12">
       <UIcon name="i-heroicons-arrow-path" class="h-8 w-8 animate-spin text-primary-500" />
