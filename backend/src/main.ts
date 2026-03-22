@@ -13,6 +13,8 @@ import * as express from 'express';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  app.set('trust proxy', 1);
+
   // WebSocket adapter for Socket.IO
   app.useWebSocketAdapter(new IoAdapter(app));
   

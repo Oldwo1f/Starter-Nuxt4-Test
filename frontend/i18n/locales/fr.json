@@ -1772,5 +1772,38 @@
     "unitSeance": "la séance",
     "imageAlt": "Image",
     "previewAlt": "Aperçu"
+  },
+  "launch": {
+    "pageTitle": "Lancement",
+    "heading": "Bientôt disponible",
+    "subheading": "{appName} ouvre ses portes très prochainement.",
+    "tahitiNote": "Ouverture prévue (heure de Tahiti · Pacific/Tahiti).",
+    "loadError": "Impossible de charger les informations. Réessayez plus tard.",
+    "loading": "Chargement du compte à rebours…",
+    "unit": {
+      "d": "Jours",
+      "h": "Heures",
+      "m": "Minutes",
+      "s": "Secondes"
+    },
+    "admin": {
+      "title": "Mode lancement",
+      "subtitle": "Activez un écran d’attente public avec compte à rebours. Les IP listées et le staff connecté peuvent tester le site.",
+      "enabledLabel": "Mode lancement actif",
+      "ipsLabel": "Adresses IP autorisées",
+      "ipsHelp": "Une adresse IPv4 par ligne. Les visiteurs dont l’IP figure ici accèdent au site normalement.",
+      "ipsPlaceholder": "203.0.113.10\n198.51.100.0",
+      "targetLabel": "Date et heure d’ouverture",
+      "targetHelp": "Saisie en heure de Tahiti. Après cette date, le site est accessible à tous sans désactiver le mode.",
+      "save": "Enregistrer",
+      "loadErrorTitle": "Erreur",
+      "loadErrorDesc": "Impossible de charger la configuration.",
+      "saveOkTitle": "Enregistré",
+      "saveOkDesc": "La configuration du mode lancement a été mise à jour.",
+      "saveErrTitle": "Erreur",
+      "saveErrDesc": "Impossible d’enregistrer.",
+      "accessDeniedTitle": "Accès refusé",
+      "accessDeniedDesc": "Seuls les administrateurs peuvent modifier le mode lancement."
+    }
   }
 }

@@ -29,6 +29,7 @@ import { JijiModule } from './jiji/jiji.module';
 import { GamesModule } from './games/games.module';
 import { BadgesModule } from './badges/badges.module';
 import { TestimonialsModule } from './testimonials/testimonials.module';
+import { LaunchModeModule } from './launch-mode/launch-mode.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { TestimonialsModule } from './testimonials/testimonials.module';
     GamesModule,
     BadgesModule,
     TestimonialsModule,
+    LaunchModeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

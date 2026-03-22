@@ -1774,5 +1774,38 @@
     "unitSeance": "te séance",
     "imageAlt": "Hoho'a",
     "previewAlt": "Hi'ora'a"
+  },
+  "launch": {
+    "pageTitle": "Fa'aterehia",
+    "heading": "E tū mai nei vave",
+    "subheading": "E tū mai vave a'e {appName}.",
+    "tahitiNote": "Te hora fa'aterehia (hora Tahiti · Pacific/Tahiti).",
+    "loadError": "Aita e fa'aea i te ha'ama'ara'ara. A ta'iri i muri a'e.",
+    "loading": "Te fa'aea i te tatau i muri nei…",
+    "unit": {
+      "d": "Mau mahana",
+      "h": "Mau hora",
+      "m": "Mau minuti",
+      "s": "Mau sekondi"
+    },
+    "admin": {
+      "title": "Te auahi i te fa'aterehia",
+      "subtitle": "Fa'ahou i te matahiti no te iti po'i. Te mau IP tā'iratia e te auahi e fānauhia nei e haere i te tahua.",
+      "enabledLabel": "Te auahi i te fa'aterehia e haere ana",
+      "ipsLabel": "Te mau IP tā'iratia",
+      "ipsHelp": "Hō'ē IPv4 i te tahi rând. Te po'i ta'ata e tā'iri i te IP e haere i te tahua.",
+      "ipsPlaceholder": "203.0.113.10\n198.51.100.0",
+      "targetLabel": "Te hora e te mahana o te fa'aterehia",
+      "targetHelp": "I roto i te hora Tahiti. I muri i teie hora, te tahua e tā'iri noa i te ta'ata atoa.",
+      "save": "Tāpe'a",
+      "loadErrorTitle": "Hapa",
+      "loadErrorDesc": "Aita e fa'aea i te ha'ama'ara'ara.",
+      "saveOkTitle": "Ua tāpe'ahia",
+      "saveOkDesc": "Ua fa'ahoutia te ha'ama'ara'ara o te auahi.",
+      "saveErrTitle": "Hapa",
+      "saveErrDesc": "Aita e tāpe'a.",
+      "accessDeniedTitle": "Aita e tā'iri",
+      "accessDeniedDesc": "Te mau fa'ahou'ā'iga anae noa e fa'ahou i te auahi."
+    }
   }
 }

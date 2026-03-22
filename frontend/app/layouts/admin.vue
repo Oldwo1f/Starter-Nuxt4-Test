@@ -188,6 +188,12 @@ const allAdminMenuItems = [
     roles: ['admin', 'superadmin'], // Admin uniquement
   },
   {
+    label: 'Mode lancement',
+    icon: 'i-heroicons-rocket-launch',
+    to: '/admin/launch',
+    roles: ['admin', 'superadmin'], // Admin uniquement
+  },
+  {
     label: 'Todo',
     icon: 'i-heroicons-clipboard-document-list',
     to: '/admin/todo',
