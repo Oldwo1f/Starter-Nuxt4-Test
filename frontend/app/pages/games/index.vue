@@ -44,17 +44,17 @@ onMounted(() => {
               {{ t('games.jijiSignup') }}
             </span>
             <span class="inline-flex flex-wrap items-center justify-center gap-1 sm:justify-start">
-              + 1 000
+              + 50
               <JijiIcon size="sm" />
               {{ t('games.jijiWeekly') }}
             </span>
             <span class="inline-flex flex-wrap items-center justify-center gap-1 sm:justify-start">
-              + 2 000
+              + 200
               <JijiIcon size="sm" />
               {{ t('games.jijiMember') }}
             </span>
             <span class="inline-flex flex-wrap items-center justify-center gap-1 sm:justify-start">
-              + 4 000
+              + 400
               <JijiIcon size="sm" />
               {{ t('games.jijiPremium') }}
             </span>

@@ -26,7 +26,7 @@ const dotGrid = computed(() => {
 
 const sizeClasses = computed(() => {
   const s = props.size ?? 'md'
-  return s === 'sm' ? 'w-6 h-6' : 'w-8 h-8'
+  return s === 'sm' ? 'w-[1.35rem] h-[1.35rem]' : 'w-[1.8rem] h-[1.8rem]'
 })
 
 const dotSizeClasses = computed(() => {

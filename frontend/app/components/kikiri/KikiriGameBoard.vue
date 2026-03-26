@@ -948,7 +948,7 @@ function drawBoard(ctx: CanvasRenderingContext2D, cw: number, ch: number, highli
   const domeCenterX = cw / 2
   const isMobile = cw < 640
   const domeCenterY = isMobile ? ch * 0.10 + 25 : ch * 0.15 + 45
-  const diceSize = Math.min(cw, ch) * 0.18
+  const diceSize = Math.min(cw, ch) * 0.162
   const diceGap = diceSize * -0.12
 
   const totalDiceWidth = diceSize * 3 + diceGap * 2

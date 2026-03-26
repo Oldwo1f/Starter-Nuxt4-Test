@@ -186,7 +186,7 @@ export class KikiriService {
     if (draw.status !== KikiriDrawStatus.BETTING) {
       throw new BadRequestException('Betting is closed for this draw');
     }
-    const graceEnd = new Date(draw.bettingEndsAt.getTime() + 5000);
+    const graceEnd = new Date(draw.bettingEndsAt.getTime() + 15000);
     if (new Date() >= graceEnd) {
       throw new BadRequestException('Betting period has ended');
     }
@@ -218,7 +218,7 @@ export class KikiriService {
     if (draw.status !== KikiriDrawStatus.BETTING) {
       throw new BadRequestException('Betting is closed for this draw');
     }
-    const graceEnd = new Date(draw.bettingEndsAt.getTime() + 5000);
+    const graceEnd = new Date(draw.bettingEndsAt.getTime() + 15000);
     if (new Date() >= graceEnd) {
       throw new BadRequestException('Betting period has ended');
     }
@@ -245,7 +245,7 @@ export class KikiriService {
     if (draw.status !== KikiriDrawStatus.BETTING) {
       throw new BadRequestException('Betting is closed for this draw');
     }
-    const graceEnd = new Date(draw.bettingEndsAt.getTime() + 5000);
+    const graceEnd = new Date(draw.bettingEndsAt.getTime() + 15000);
     if (new Date() >= graceEnd) {
       throw new BadRequestException('Betting period has ended');
     }

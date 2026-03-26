@@ -123,6 +123,7 @@ const isFinishLoading = ref(false)
 const isTriggerLoading = ref(false)
 const isPlacing = ref(false)
 const lastKnownUserBets = ref<Record<number, number>>({})
+const pendingUserBets = ref<Record<number, number>>({})
 
 const betAmounts = ref<Record<number, number>>({})
 const provisionalBetsByUser = ref<Record<number, Record<number, number>>>({})
@@ -251,7 +252,10 @@ const placeBets = (forceAll = false) => {
   isPlacing.value = true
   for (const { num, amount } of toSend) {
     placeBet(draw.id, num, amount)
-    lastKnownUserBets.value = { ...lastKnownUserBets.value, [num]: (lastKnownUserBets.value[num] ?? 0) + amount }
+    pendingUserBets.value = {
+      ...pendingUserBets.value,
+      [num]: (pendingUserBets.value[num] ?? 0) + amount,
+    }
   }
   if (forceAll) hasSubmittedForCurrentDraw.value = true
   isPlacing.value = false
@@ -389,6 +393,7 @@ function setupGame() {
     currentDraw.value = draw
     hasSubmittedForCurrentDraw.value = false
     lastKnownUserBets.value = {}
+    pendingUserBets.value = {}
     betAmounts.value = {}
     provisionalBetsByUser.value = {}
     balanceFrozenAtResult.value = null
@@ -454,8 +459,21 @@ function setupGame() {
       tryShowResultNotification()
     }
   })
-  onBetPlaced(({ balance: b }) => {
+  onBetPlaced(({ bet, balance: b }) => {
     balance.value = b
+    const num = Number(bet?.number)
+    const amount = Number(bet?.amount ?? 0)
+    if (num >= 1 && num <= 6 && amount > 0) {
+      const pending = pendingUserBets.value[num] ?? 0
+      pendingUserBets.value = {
+        ...pendingUserBets.value,
+        [num]: Math.max(0, pending - amount),
+      }
+      lastKnownUserBets.value = {
+        ...lastKnownUserBets.value,
+        [num]: (lastKnownUserBets.value[num] ?? 0) + amount,
+      }
+    }
   })
   onBetError(({ error }) => {
     const err = typeof error === 'string' ? error : String(error ?? '')
