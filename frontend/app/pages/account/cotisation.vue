@@ -35,16 +35,18 @@ const packs = [
     name: 'Te Ohi',
     price: 5000,
     image: teohiImage,
+    billing: 'year' as const,
   },
   {
     id: 'umete' as BankTransferPack,
     name: 'Umete',
     price: 20000,
     image: umeteImage,
+    billing: 'once' as const,
   },
 ]
 
-const expectedAmount = computed(() => (pack.value === 'umete' ? 20000 : 5000))
+// const expectedAmount = computed(() => (pack.value === 'umete' ? 20000 : 5000))
 
 // Helper pour obtenir l'URL d'embed YouTube
 const getYouTubeEmbedUrl = (url: string) => {
@@ -117,24 +119,25 @@ const memberRoleLabel = computed(() => {
   return t('account.cotisation.roleMember')
 })
 
-const copyBankReference = async () => {
-  const refId = billingStore.payment?.referenceId
-  if (!refId) return
-  try {
-    await navigator.clipboard.writeText(refId)
-    toast.add({
-      title: t('account.cotisation.toastCopiedTitle'),
-      description: t('account.cotisation.toastCopiedDesc'),
-      color: 'success',
-    })
-  } catch {
-    toast.add({
-      title: t('pollUi.errorTitle'),
-      description: t('account.cotisation.toastCopyFail'),
-      color: 'red',
-    })
-  }
-}
+// Paiements par virement: mis en pause pour l'instant
+// const copyBankReference = async () => {
+//   const refId = billingStore.payment?.referenceId
+//   if (!refId) return
+//   try {
+//     await navigator.clipboard.writeText(refId)
+//     toast.add({
+//       title: t('account.cotisation.toastCopiedTitle'),
+//       description: t('account.cotisation.toastCopiedDesc'),
+//       color: 'success',
+//     })
+//   } catch {
+//     toast.add({
+//       title: t('pollUi.errorTitle'),
+//       description: t('account.cotisation.toastCopyFail'),
+//       color: 'red',
+//     })
+//   }
+// }
 
 // Gérer le paiement par carte
 const handleCardPayment = async () => {
@@ -143,29 +146,29 @@ const handleCardPayment = async () => {
     toast.add({
       title: t('pollUi.errorTitle'),
       description: res.error || t('account.cotisation.toastSessionError'),
-      color: 'red',
+      color: 'error',
     })
   }
   // La redirection vers Stripe se fait automatiquement dans le store
 }
 
-// Gérer le paiement par virement
-const handleBankTransfer = async () => {
-  const res = await billingStore.createOrReuseIntent(pack.value)
-  if (!res.success) {
-    toast.add({
-      title: t('pollUi.errorTitle'),
-      description: res.error || t('account.cotisation.toastBankError'),
-      color: 'red',
-    })
-    return
-  }
-  toast.add({
-    title: t('account.cotisation.toastRefOkTitle'),
-    description: t('account.cotisation.toastRefOkDesc'),
-    color: 'success',
-  })
-}
+// Paiements par virement: mis en pause pour l'instant
+// const handleBankTransfer = async () => {
+//   const res = await billingStore.createOrReuseIntent(pack.value)
+//   if (!res.success) {
+//     toast.add({
+//       title: t('pollUi.errorTitle'),
+//       description: res.error || t('account.cotisation.toastBankError'),
+//       color: 'red',
+//     })
+//     return
+//   }
+//   toast.add({
+//     title: t('account.cotisation.toastRefOkTitle'),
+//     description: t('account.cotisation.toastRefOkDesc'),
+//     color: 'success',
+//   })
+// }
 
 // Upgrade vers Premium
 const handleUpgradeToPremium = async () => {
@@ -180,7 +183,7 @@ const handleLegacyVerification = async () => {
     toast.add({
       title: t('pollUi.errorTitle'),
       description: t('account.cotisation.toastSelectPaidWith'),
-      color: 'red',
+      color: 'error',
     })
     return
   }
@@ -196,7 +199,7 @@ const handleLegacyVerification = async () => {
     toast.add({
       title: t('pollUi.errorTitle'),
       description: res.error || t('account.cotisation.toastVerificationError'),
-      color: 'red',
+      color: 'error',
     })
   }
 }
@@ -206,7 +209,7 @@ const route = useRoute()
 const router = useRouter()
 
 onMounted(async () => {
-  await billingStore.fetchMyBankTransfer()
+  // await billingStore.fetchMyBankTransfer()
   await billingStore.fetchMyLegacyVerification()
   await stripeStore.fetchMyStripePayment()
 
@@ -222,7 +225,7 @@ onMounted(async () => {
         toast.add({
           title: t('pollUi.errorTitle'),
           description: stripeStore.error || t('account.cotisation.toastStripeFail'),
-          color: 'red',
+          color: 'error',
         })
       }
     }
@@ -242,7 +245,7 @@ onMounted(async () => {
     toast.add({
       title: t('account.cotisation.toastCanceledTitle'),
       description: t('account.cotisation.toastCanceledDesc'),
-      color: 'amber',
+      color: 'warning',
     })
     // Nettoyer l'URL
     router.replace({ query: {} })
@@ -399,7 +402,12 @@ onMounted(async () => {
                     >
                       {{ packOption.price.toLocaleString('fr-FR') }} XPF
                     </div>
-                    <div class="text-xs text-white/60 mt-1">{{ t('account.cotisation.perYear') }}</div>
+                    <div v-if="packOption.billing === 'year'" class="text-xs text-white/60 mt-1">
+                      {{ t('account.cotisation.perYear') }}
+                    </div>
+                    <div v-else class="text-xs text-white/60 mt-1 leading-snug">
+                      {{ t('account.cotisation.umeteOneTimeLine') }}
+                    </div>
                   </div>
                   
                   <!-- Indicateur de sélection -->
@@ -578,7 +586,7 @@ onMounted(async () => {
 
                   <!-- Bouton lancer la vérification -->
                   <UButton
-                    color="purple"
+                    color="primary"
                     variant="solid"
                     size="lg"
                     block
@@ -648,71 +656,42 @@ onMounted(async () => {
                 }"
               >
                 <div class="border-t border-white/10 p-6 space-y-6">
-                  <!-- Vidéo YouTube -->
-                  <div v-if="youtubeVideoUrl && getYouTubeEmbedUrl(youtubeVideoUrl)" class="space-y-2">
-                    <h4 class="text-lg font-semibold text-white">{{ t('account.cotisation.videoTitle') }}</h4>
-                    <div class="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
-                      <iframe
-                        :src="getYouTubeEmbedUrl(youtubeVideoUrl)!"
-                        class="h-full w-full"
-                        frameborder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Bouton virement bancaire -->
                   <div class="space-y-4">
                     <p class="text-white/80">
-                      {{ t('account.cotisation.bankIntro') }}
+                      Voici les options disponibles si tu ne peux pas payer par carte.
                     </p>
-                    <UButton
-                      color="orange"
-                      size="lg"
-                      block
-                      :loading="billingStore.isLoading"
-                      @click="handleBankTransfer"
-                    >
-                      {{ t('account.cotisation.payBank') }}
-                    </UButton>
 
-                    <!-- Affichage de la référence si disponible -->
-                    <div
-                      v-if="billingStore.payment && billingStore.payment.referenceId"
-                      class="rounded-lg border border-white/10 bg-black/20 p-4 space-y-3"
-                    >
-                      <div class="text-sm text-white/60">
-                        {{ t('account.cotisation.refForTransfer') }}
-                      </div>
-                      <div class="flex items-center gap-3">
-                        <div class="flex-1 font-mono text-sm break-all text-white">
-                          {{ billingStore.payment.referenceId }}
+                    <ul class="space-y-3">
+                      <li class="rounded-lg border border-white/10 bg-black/20 p-4">
+                        <div class="font-semibold text-white">Paiement en liquide à PK 18</div>
+                        <div class="text-sm text-white/70 mt-1">
+                          Contact : Tamiga —
+                          <a class="text-orange-300 hover:text-orange-200 underline underline-offset-2" href="tel:+68989780115">
+                            +689 89 78 01 15
+                          </a>
                         </div>
-                        <UButton
-                          size="xs"
-                          color="primary"
-                          variant="outline"
-                          @click="copyBankReference"
-                        >
-                          {{ t('account.paiement.copy') }}
-                        </UButton>
-                      </div>
-                      <UBadge
-                        v-if="billingStore.payment.status === 'paid'"
-                        color="green"
-                        variant="subtle"
-                      >
-                        {{ t('account.cotisation.badgePaid') }}
-                      </UBadge>
-                      <UBadge
-                        v-else-if="billingStore.payment.status === 'pending'"
-                        color="amber"
-                        variant="subtle"
-                      >
-                        {{ t('account.cotisation.badgePendingTransfer') }}
-                      </UBadge>
-                    </div>
+                      </li>
+
+                      <li class="rounded-lg border border-white/10 bg-black/20 p-4">
+                        <div class="font-semibold text-white">Paiement en liquide à Taravao</div>
+                        <div class="text-sm text-white/70 mt-1">
+                          Contact : Naho —
+                          <a class="text-orange-300 hover:text-orange-200 underline underline-offset-2" href="tel:+68987384716">
+                            +689 87 38 47 16
+                          </a>
+                        </div>
+                      </li>
+
+                      <li class="rounded-lg border border-white/10 bg-black/20 p-4">
+                        <div class="font-semibold text-white">Paiement par virement “deblock” sur le compte @nahorai</div>
+                        <div class="text-sm text-white/70 mt-1">
+                          Contact : Naho —
+                          <a class="text-orange-300 hover:text-orange-200 underline underline-offset-2" href="tel:+68987384716">
+                            +689 87 38 47 16
+                          </a>
+                        </div>
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>

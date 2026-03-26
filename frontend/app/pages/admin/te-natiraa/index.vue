@@ -31,6 +31,7 @@ interface GroupedData {
 
 const groupedData = ref<GroupedData[]>([])
 const isLoading = ref(false)
+const { formatEventDate } = useTeNatiraaEventDate()
 
 const formatDate = (iso: string) => {
   const d = new Date(iso)
@@ -42,11 +43,6 @@ const formatDate = (iso: string) => {
     hour: '2-digit',
     minute: '2-digit',
   })
-}
-
-const formatEventDate = (iso: string) => {
-  const d = new Date(iso)
-  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 const getStatusLabel = (status: string) => {

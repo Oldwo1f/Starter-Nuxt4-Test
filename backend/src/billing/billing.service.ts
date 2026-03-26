@@ -19,13 +19,10 @@ import {
 } from '../entities/legacy-payment-verification.entity';
 import { User, UserRole } from '../entities/user.entity';
 import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
-import { WalletService } from '../wallet/wallet.service';
 import { ReferralService } from '../referral/referral.service';
+import { inscriptionPupuAmount } from '../common/pupu-inscription';
 
 type PackCode = 'teOhi' | 'umete';
-
-const JIJI_TEOHI = 2000;
-const JIJI_UMETE = 5000;
 
 @Injectable()
 export class BillingService {
@@ -39,7 +36,6 @@ export class BillingService {
     @InjectRepository(Transaction)
     private transactionsRepository: Repository<Transaction>,
     private dataSource: DataSource,
-    private walletService: WalletService,
     private referralService: ReferralService,
   ) {}
 
@@ -138,7 +134,7 @@ export class BillingService {
 
     const user = await this.usersRepository.findOne({
       where: { id: userId },
-      select: ['id', 'role', 'paidAccessExpiresAt'],
+      select: ['id', 'role', 'paidAccessExpiresAt', 'premiumLifetimeGrantedAt'],
     });
 
     return {
@@ -162,6 +158,7 @@ export class BillingService {
         ? {
             role: user.role,
             paidAccessExpiresAt: user.paidAccessExpiresAt,
+            premiumLifetimeGrantedAt: user.premiumLifetimeGrantedAt,
           }
         : null,
     };
@@ -202,6 +199,7 @@ export class BillingService {
     await this.dataSource.transaction(async (manager) => {
       const paymentsRepo = manager.getRepository(BankTransferPayment);
       const usersRepo = manager.getRepository(User);
+      const transactionsRepo = manager.getRepository(Transaction);
 
       const freshPayment = await paymentsRepo.findOne({
         where: { id: payment.id },
@@ -237,13 +235,41 @@ export class BillingService {
         user.role = desiredRole;
       }
 
+      const packCode: PackCode = freshPayment.pack === BankTransferPack.TE_OHI ? 'teOhi' : 'umete';
+      if (packCode === 'umete' && !user.premiumLifetimeGrantedAt) {
+        user.premiumLifetimeGrantedAt = paidAt;
+      }
+
       const base = user.paidAccessExpiresAt && user.paidAccessExpiresAt > now ? user.paidAccessExpiresAt : now;
       const next = new Date(base);
       next.setFullYear(next.getFullYear() + 1);
       user.paidAccessExpiresAt = next;
 
+      if (!freshPayment.pupuInscriptionReceived) {
+        const pupuAmount = inscriptionPupuAmount(packCode, paidAt);
+        const balanceBefore = parseFloat(user.walletBalance.toString());
+        const balanceAfter = balanceBefore + pupuAmount;
+        user.walletBalance = balanceAfter;
+        await transactionsRepo.save(
+          transactionsRepo.create({
+            type: TransactionType.CREDIT,
+            amount: pupuAmount,
+            balanceBefore,
+            balanceAfter,
+            status: TransactionStatus.COMPLETED,
+            fromUserId: user.id,
+            toUserId: user.id,
+            description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation ${packCode === 'teOhi' ? 'Te Ohi' : 'Umete'} (virement auto)`,
+          }),
+        );
+        freshPayment.pupuInscriptionReceived = true;
+        await paymentsRepo.save(freshPayment);
+      }
+
       await usersRepo.save(user);
     });
+
+    await this.referralService.checkAndRewardReferrer(payment.userId);
 
     return { ok: true, alreadyProcessed: false };
   }
@@ -400,37 +426,28 @@ export class BillingService {
       next.setFullYear(next.getFullYear() + 1);
       user.paidAccessExpiresAt = next;
 
-      await usersRepo.save(user);
+      const packCode: PackCode = payment.pack === BankTransferPack.TE_OHI ? 'teOhi' : 'umete';
+      if (packCode === 'umete' && !user.premiumLifetimeGrantedAt) {
+        user.premiumLifetimeGrantedAt = now;
+      }
 
-      // Grant Pūpū d'inscription
-      const pupuAmount = payment.pack === BankTransferPack.TE_OHI ? 50 : 100;
+      const pupuAmount = inscriptionPupuAmount(packCode, now);
       const balanceBefore = parseFloat(user.walletBalance.toString());
       const balanceAfter = balanceBefore + pupuAmount;
       user.walletBalance = balanceAfter;
       await usersRepo.save(user);
 
-      // Create transaction record
       const transaction = transactionsRepo.create({
         type: TransactionType.CREDIT,
         amount: pupuAmount,
         balanceBefore,
         balanceAfter,
         status: TransactionStatus.COMPLETED,
-        fromUserId: adminUserId, // System/admin grants
+        fromUserId: adminUserId,
         toUserId: user.id,
-        description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation ${payment.pack === BankTransferPack.TE_OHI ? 'Te Ohi' : 'Umete'}`,
+        description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation ${packCode === 'teOhi' ? 'Te Ohi' : 'Umete'} (virement)`,
       });
       await transactionsRepo.save(transaction);
-
-      // Grant Jiji d'inscription (2000 Te Ohi, 5000 Umete)
-      const packCode = payment.pack === BankTransferPack.TE_OHI ? 'teOhi' : 'umete';
-      const jijiAmount = packCode === 'teOhi' ? JIJI_TEOHI : JIJI_UMETE;
-      await this.walletService.creditJijiSystem(
-        user.id,
-        jijiAmount,
-        `Jiji inscription - Cotisation ${packCode === 'teOhi' ? 'Te Ohi' : 'Umete'}`,
-        manager,
-      );
 
       freshPayment.pupuInscriptionReceived = true;
       await paymentsRepo.save(freshPayment);
@@ -442,10 +459,15 @@ export class BillingService {
   }
 
   private async grantInscriptionPupu(userId: number, pack: PackCode) {
-    const pupuAmount = pack === 'teOhi' ? 50 : 100;
+    const creditedAt = new Date();
+    const pupuAmount = inscriptionPupuAmount(pack, creditedAt);
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    if (pack === 'umete' && !user.premiumLifetimeGrantedAt) {
+      user.premiumLifetimeGrantedAt = creditedAt;
     }
 
     const balanceBefore = parseFloat(user.walletBalance.toString());
@@ -453,26 +475,17 @@ export class BillingService {
     user.walletBalance = balanceAfter;
     await this.usersRepository.save(user);
 
-    // Create transaction record (system credit)
     const transaction = this.transactionsRepository.create({
       type: TransactionType.CREDIT,
       amount: pupuAmount,
       balanceBefore,
       balanceAfter,
       status: TransactionStatus.COMPLETED,
-      fromUserId: userId, // System grants (could be a system user ID)
+      fromUserId: userId,
       toUserId: userId,
       description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation ${pack === 'teOhi' ? 'Te Ohi' : 'Umete'}`,
     });
     await this.transactionsRepository.save(transaction);
-
-    // Grant Jiji d'inscription (2000 Te Ohi, 5000 Umete)
-    const jijiAmount = pack === 'teOhi' ? JIJI_TEOHI : JIJI_UMETE;
-    await this.walletService.creditJijiSystem(
-      userId,
-      jijiAmount,
-      `Jiji inscription - Cotisation ${pack === 'teOhi' ? 'Te Ohi' : 'Umete'}`,
-    );
   }
 
   // Legacy payment verification methods
@@ -539,7 +552,7 @@ export class BillingService {
 
     const user = await this.usersRepository.findOne({
       where: { id: userId },
-      select: ['id', 'role', 'paidAccessExpiresAt'],
+      select: ['id', 'role', 'paidAccessExpiresAt', 'premiumLifetimeGrantedAt'],
     });
 
     return {
@@ -549,10 +562,13 @@ export class BillingService {
         status: verification.status,
         createdAt: verification.createdAt,
       },
-      user: user ? {
-        role: user.role,
-        paidAccessExpiresAt: user.paidAccessExpiresAt,
-      } : null,
+      user: user
+        ? {
+            role: user.role,
+            paidAccessExpiresAt: user.paidAccessExpiresAt,
+            premiumLifetimeGrantedAt: user.premiumLifetimeGrantedAt,
+          }
+        : null,
     };
   }
 
@@ -666,15 +682,18 @@ export class BillingService {
       }
       user.paidAccessExpiresAt = next;
 
-      // Grant Pūpū d'inscription (50 for Te Ohi) and Jiji (2000 Te Ohi, 5000 Umete)
       if (!freshVerification.pupuInscriptionReceived) {
-        const pupuAmount = 50; // Always Te Ohi for legacy Pūpū
+        const creditedAt = new Date();
+        const pupuPack: PackCode = finalRole === UserRole.PREMIUM ? 'umete' : 'teOhi';
+        const pupuAmount = inscriptionPupuAmount(pupuPack, creditedAt);
+        if (pupuPack === 'umete' && !user.premiumLifetimeGrantedAt) {
+          user.premiumLifetimeGrantedAt = creditedAt;
+        }
         const balanceBefore = parseFloat(user.walletBalance.toString());
         const balanceAfter = balanceBefore + pupuAmount;
         user.walletBalance = balanceAfter;
         await usersRepo.save(user);
 
-        // Create transaction record
         const transaction = transactionsRepo.create({
           type: TransactionType.CREDIT,
           amount: pupuAmount,
@@ -683,18 +702,9 @@ export class BillingService {
           status: TransactionStatus.COMPLETED,
           fromUserId: adminUserId,
           toUserId: user.id,
-          description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation Te Ohi (Legacy)`,
+          description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation (Legacy)`,
         });
         await transactionsRepo.save(transaction);
-
-        // Grant Jiji: 2000 for Te Ohi (MEMBER), 5000 for Umete (PREMIUM)
-        const jijiAmount = finalRole === UserRole.PREMIUM ? JIJI_UMETE : JIJI_TEOHI;
-        await this.walletService.creditJijiSystem(
-          user.id,
-          jijiAmount,
-          `Jiji inscription - Cotisation ${finalRole === UserRole.PREMIUM ? 'Umete' : 'Te Ohi'} (Legacy)`,
-          manager,
-        );
 
         freshVerification.pupuInscriptionReceived = true;
         await legacyRepo.save(freshVerification);
@@ -745,9 +755,9 @@ export class BillingService {
         throw new UnauthorizedException('User not found');
       }
 
-      // Remove rights: role → user, paidAccessExpiresAt → null
       user.role = UserRole.USER;
       user.paidAccessExpiresAt = null;
+      user.premiumLifetimeGrantedAt = null;
       await usersRepo.save(user);
     });
 

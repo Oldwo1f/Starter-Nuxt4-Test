@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/stores/useAuthStore'
+import { isTeNatiraaEventDatePast } from '~/utils/teNatiraaDate'
 
 definePageMeta({
   layout: 'admin',
@@ -10,6 +11,7 @@ const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
 const authStore = useAuthStore()
 const toast = useToast()
+const { formatEventDate } = useTeNatiraaEventDate()
 
 interface TeNatiraaEvent {
   id: number
@@ -50,11 +52,6 @@ const fetchEvents = async () => {
   } finally {
     isLoading.value = false
   }
-}
-
-const formatDate = (iso: string) => {
-  const d = new Date(iso)
-  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 const openCreate = () => {
@@ -135,8 +132,6 @@ const deleteEvent = async (e: TeNatiraaEvent) => {
   }
 }
 
-const isPast = (eventDate: string) => new Date(eventDate) < new Date()
-
 onMounted(() => fetchEvents())
 </script>
 
@@ -181,9 +176,9 @@ onMounted(() => fetchEvents())
           <div>
             <h3 class="font-semibold text-white">{{ e.name }}</h3>
             <p class="text-sm text-white/70">
-              {{ formatDate(e.eventDate) }} à {{ e.eventTime }} - {{ e.location }}
+              {{ formatEventDate(e.eventDate) }} à {{ e.eventTime }} - {{ e.location }}
             </p>
-            <UBadge v-if="isPast(e.eventDate)" color="neutral" variant="subtle" size="xs" class="mt-2">
+            <UBadge v-if="isTeNatiraaEventDatePast(e.eventDate)" color="neutral" variant="subtle" size="xs" class="mt-2">
               Passé
             </UBadge>
             <UBadge v-else color="green" variant="subtle" size="xs" class="mt-2">
@@ -199,7 +194,7 @@ onMounted(() => fetchEvents())
               size="sm"
               color="red"
               icon="i-heroicons-trash"
-              :disabled="!isPast(e.eventDate)"
+              :disabled="!isTeNatiraaEventDatePast(e.eventDate)"
               @click="deleteEvent(e)"
             >
               Supprimer

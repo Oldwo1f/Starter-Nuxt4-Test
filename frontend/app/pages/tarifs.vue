@@ -15,42 +15,21 @@ const authStore = useAuthStore()
 const toast = useToast()
 const { t } = useI18n()
 
-// Compte à rebours pour la promo de lancement - 31 mars à minuit
-const countdown = ref({
-  days: 0,
-  hours: 0,
-  minutes: 0,
-  seconds: 0,
-})
+// Compte à rebours promo : fin le 1er mai 2026 00:00 (Pacific/Tahiti = 10:00 UTC)
+const promoEndMs = Date.UTC(2026, 4, 1, 10, 0, 0)
+const promoDaysRemaining = ref(0)
 
-const targetDate = new Date('2026-03-31T23:59:59').getTime()
-
-const updateCountdown = () => {
-  const now = new Date().getTime()
-  const distance = targetDate - now
-
-  if (distance > 0) {
-    countdown.value = {
-      days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-      minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-      seconds: Math.floor((distance % (1000 * 60)) / 1000),
-    }
-  } else {
-    countdown.value = {
-      days: 0,
-      hours: 0,
-      minutes: 0,
-      seconds: 0,
-    }
-  }
+const updatePromoCountdown = () => {
+  const distance = promoEndMs - Date.now()
+  promoDaysRemaining.value =
+    distance > 0 ? Math.max(0, Math.ceil(distance / (1000 * 60 * 60 * 24))) : 0
 }
 
 let countdownInterval: ReturnType<typeof setInterval> | null = null
 
 const startCountdown = () => {
-  updateCountdown()
-  countdownInterval = setInterval(updateCountdown, 1000)
+  updatePromoCountdown()
+  countdownInterval = setInterval(updatePromoCountdown, 60_000)
 }
 
 onMounted(() => {
@@ -111,11 +90,11 @@ const teOhiPack = computed(() => ({
   },
 }))
 
-// Pack UMETE - 20000 XPF/an
+// Pack UMETE — 20 000 XPF paiement unique
 const umetePack = computed(() => ({
   name: 'Umete',
   price: 20000,
-  period: t('tarifs.periodYear'),
+  period: t('tarifs.umete.billingOnce'),
   badge: t('tarifs.umete.badge'),
   description: t('tarifs.umete.description'),
   features: [
@@ -211,57 +190,19 @@ const vipInvestPacks = computed(() => [
             <h2 class="mb-2 text-2xl font-bold text-white sm:text-3xl">
               {{ t('tarifs.promoTitle') }}
             </h2>
-            <p class="text-lg text-primary-300">
+            <p class="mx-auto max-w-2xl text-lg text-primary-200/90">
               {{ t('tarifs.promoSubtitle') }}
             </p>
           </div>
-          <div class="mb-6 grid grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-            <div class="text-center">
-              <div class="mb-2 text-2xl font-bold text-white sm:text-3xl md:text-4xl lg:text-5xl">
-                {{ countdown.days.toString().padStart(2, '0') }}
-              </div>
-              <div class="text-xs font-medium text-white/70 sm:text-sm md:text-base">
-                {{ t('timeUnits.days') }}
-              </div>
+          <div class="flex flex-col items-center justify-center py-2">
+            <div
+              class="text-5xl font-bold tabular-nums text-white sm:text-6xl md:text-7xl"
+              aria-live="polite"
+            >
+              {{ promoDaysRemaining }}
             </div>
-            <div class="text-center">
-              <div class="mb-2 text-2xl font-bold text-white sm:text-3xl md:text-4xl lg:text-5xl">
-                {{ countdown.hours.toString().padStart(2, '0') }}
-              </div>
-              <div class="text-xs font-medium text-white/70 sm:text-sm md:text-base">
-                {{ t('timeUnits.hours') }}
-              </div>
-            </div>
-            <div class="text-center">
-              <div class="mb-2 text-2xl font-bold text-white sm:text-3xl md:text-4xl lg:text-5xl">
-                {{ countdown.minutes.toString().padStart(2, '0') }}
-              </div>
-              <div class="text-xs font-medium text-white/70 sm:text-sm md:text-base">
-                {{ t('timeUnits.minutes') }}
-              </div>
-            </div>
-            <div class="text-center">
-              <div class="mb-2 text-2xl font-bold text-white sm:text-3xl md:text-4xl lg:text-5xl">
-                {{ countdown.seconds.toString().padStart(2, '0') }}
-              </div>
-              <div class="text-xs font-medium text-white/70 sm:text-sm md:text-base">
-                {{ t('timeUnits.seconds') }}
-              </div>
-            </div>
-          </div>
-          <!-- Informations sur les packs -->
-          <div class="mt-6 grid gap-4 sm:grid-cols-2">
-            <div class="rounded-lg bg-primary-500/20 p-4 text-center">
-              <div class="mb-1 text-sm font-medium text-white/70">{{ t('tarifs.promoPackTeOhi') }}</div>
-              <div class="text-xl font-bold text-white">
-                <span class="text-primary-300">{{ t('tarifs.promoTeOhiLine') }}</span>
-              </div>
-            </div>
-            <div class="rounded-lg bg-primary-500/20 p-4 text-center">
-              <div class="mb-1 text-sm font-medium text-white/70">{{ t('tarifs.promoPackUmete') }}</div>
-              <div class="text-xl font-bold text-white">
-                <span class="text-primary-300">{{ t('tarifs.promoUmeteLine') }}</span>
-              </div>
+            <div class="mt-3 text-base font-medium text-white/70 sm:text-lg">
+              {{ t('tarifs.promoCountdownDays') }}
             </div>
           </div>
         </div>
@@ -308,6 +249,9 @@ const vipInvestPacks = computed(() => [
                   <span class="text-lg text-white/60">{{ t('tarifs.currency') }}</span>
                   <span class="text-sm text-white/60">{{ t('tarifs.perSlash') }} {{ teOhiPack.period }}</span>
                 </div>
+                <p class="text-sm text-white/50">
+                  {{ t('tarifs.teOhi.priceApproxEUR') }}
+                </p>
               </div>
             </template>
 
@@ -387,8 +331,11 @@ const vipInvestPacks = computed(() => [
                     {{ formatPrice(umetePack.price) }}
                   </span>
                   <span class="text-lg text-white/60">{{ t('tarifs.currency') }}</span>
-                  <span class="text-sm text-white/60">{{ t('tarifs.perSlash') }} {{ umetePack.period }}</span>
+                  <span class="text-sm text-white/60"> {{ umetePack.period }}</span>
                 </div>
+                <p class="text-sm text-white/50">
+                  {{ t('tarifs.umete.priceApproxEUR') }}
+                </p>
               </div>
             </template>
 

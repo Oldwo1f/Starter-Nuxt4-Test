@@ -13,7 +13,7 @@ definePageMeta({
 const config = useRuntimeConfig()
 const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
 const { t } = useI18n()
-const { dateLocale } = useLocaleDate()
+const { formatEventDate, eventStartTimestampMs } = useTeNatiraaEventDate()
 
 interface NextEvent {
   id: number
@@ -33,12 +33,7 @@ const countdown = ref({
 
 const targetDate = computed(() => {
   if (!nextEvent.value) return 0
-  const [y, m, d] = nextEvent.value.eventDate.split('-').map(Number)
-  const [hour = 8, min = 0] = (nextEvent.value.eventTime || '8h00')
-    .replace('h', ':')
-    .split(':')
-    .map((x) => parseInt(x, 10) || 0)
-  return new Date(y, m - 1, d, hour, min).getTime()
+  return eventStartTimestampMs(nextEvent.value.eventDate, nextEvent.value.eventTime || '8h00')
 })
 
 const updateCountdown = () => {
@@ -60,11 +55,6 @@ const updateCountdown = () => {
 }
 
 let countdownInterval: ReturnType<typeof setInterval> | null = null
-
-const formatEventDate = (iso: string) => {
-  const d = new Date(iso)
-  return d.toLocaleDateString(dateLocale.value, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-}
 
 const fetchNextEvent = async () => {
   try {
@@ -242,14 +232,7 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- Dernière photo horizontale -->
-          <div class="group relative aspect-[1600/747] overflow-hidden rounded-2xl shadow-2xl transition-transform hover:scale-[1.02]">
-            <img
-              :src="tenatiraaH3"
-              :alt="t('home.altTeNatiraa')"
-              class="h-full w-full object-cover"
-            />
-          </div>
+         
         </div>
       </div>
     </section>
@@ -364,9 +347,7 @@ onUnmounted(() => {
               <p class="text-xl font-bold text-white/90">
                 {{ t('teNatiraa.freeKids') }}
               </p>
-              <p class="text-xl font-bold text-white/90">
-                {{ t('teNatiraa.freeStudents') }}
-              </p>
+              
             </div>
           </div>
         </div>

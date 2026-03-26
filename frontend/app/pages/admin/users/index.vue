@@ -23,6 +23,7 @@ const referralData = ref<{
     membres: number
     validees: number
     rewardsEarned: number
+    jijiRewardsEarned: number
   } | null
   referrals: any[]
 } | null>(null)
@@ -177,6 +178,7 @@ const fetchReferralData = async (userId: number) => {
         membres: number
         validees: number
         rewardsEarned: number
+        jijiRewardsEarned: number
       }
       referrals: any[]
     }>(`${API_BASE_URL}/referral/user/${userId}/stats`, {
@@ -1149,11 +1151,20 @@ onUnmounted(() => {
                     <div class="text-xs text-white/60 mt-1">Validées</div>
                   </div>
                 </div>
-                <div class="mt-3 bg-primary-500/10 rounded-lg p-3 text-center border border-primary-500/20">
-                  <div class="text-lg font-bold text-primary-300">
-                    {{ referralData.stats.rewardsEarned }} 🐚
+                <div class="mt-3 bg-primary-500/10 rounded-lg p-3 text-center border border-primary-500/20 space-y-2">
+                  <div>
+                    <div class="text-lg font-bold text-primary-300">
+                      {{ referralData.stats.rewardsEarned }} 🐚
+                    </div>
+                    <div class="text-xs text-white/60 mt-1">Pūpū (parrainage)</div>
                   </div>
-                  <div class="text-xs text-white/60 mt-1">Récompenses gagnées</div>
+                  <div>
+                    <div class="flex items-center justify-center gap-1 text-lg font-bold text-amber-300">
+                      <JijiIcon size="sm" />
+                      <span>{{ referralData.stats.jijiRewardsEarned ?? 0 }}</span>
+                    </div>
+                    <div class="text-xs text-white/60 mt-1">Jetons de jeux (parrainage)</div>
+                  </div>
                 </div>
               </div>
 

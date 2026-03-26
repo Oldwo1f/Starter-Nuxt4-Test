@@ -16,7 +16,7 @@ const authStore = useAuthStore()
 const { canCreateListing } = useMemberCheck()
 const toast = useToast()
 const { t } = useI18n()
-const { dateLocale } = useLocaleDate()
+const { formatEventDate } = useTeNatiraaEventDate()
 const route = useRoute()
 const router = useRouter()
 
@@ -164,10 +164,6 @@ onMounted(async () => {
   }
 })
 
-const formatEventDate = (iso: string) => {
-  const d = new Date(iso)
-  return d.toLocaleDateString(dateLocale.value, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-}
 </script>
 
 <template>

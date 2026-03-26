@@ -24,6 +24,7 @@ export interface BankTransferMeResponse {
   user: {
     role: string
     paidAccessExpiresAt: string | null
+    premiumLifetimeGrantedAt?: string | null
   } | null
 }
 

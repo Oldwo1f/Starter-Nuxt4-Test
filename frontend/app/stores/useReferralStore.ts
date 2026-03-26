@@ -22,6 +22,7 @@ export interface ReferralStats {
   membres: number
   validees: number
   rewardsEarned: number
+  jijiRewardsEarned: number
 }
 
 export const useReferralStore = defineStore('referral', () => {

@@ -6,13 +6,11 @@ import { BankTransferPayment } from '../entities/bank-transfer-payment.entity';
 import { LegacyPaymentVerification } from '../entities/legacy-payment-verification.entity';
 import { User } from '../entities/user.entity';
 import { Transaction } from '../entities/transaction.entity';
-import { WalletModule } from '../wallet/wallet.module';
 import { ReferralModule } from '../referral/referral.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([BankTransferPayment, LegacyPaymentVerification, User, Transaction]),
-    WalletModule,
     ReferralModule,
   ],
   controllers: [BillingController],

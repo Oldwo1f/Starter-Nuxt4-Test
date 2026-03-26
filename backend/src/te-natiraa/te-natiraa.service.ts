@@ -13,6 +13,11 @@ import { CreateTeNatiraaCheckoutSessionDto } from './dto/create-checkout-session
 import { CreateTeNatiraaEventDto } from './dto/create-event.dto';
 import { UpdateTeNatiraaEventDto } from './dto/update-event.dto';
 import { CreateTeNatiraaPresenceCodeDto, UpdateTeNatiraaPresenceCodeDto } from './dto/create-presence-code.dto';
+import {
+  formatTeNatiraaEventDateFrLong,
+  teNatiraaYmdToUtcDate,
+  todayYmdInTeNatiraa,
+} from '../common/te-natiraa-dates';
 
 @Injectable()
 export class TeNatiraaService {
@@ -33,12 +38,11 @@ export class TeNatiraaService {
   ) {}
 
   async getNextEvent(): Promise<TeNatiraaEvent | null> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = todayYmdInTeNatiraa();
     return this.eventsRepository
       .createQueryBuilder('e')
       .where('e.isActive = :active', { active: true })
-      .andWhere('e.eventDate >= :today', { today: today.toISOString().split('T')[0] })
+      .andWhere('e.eventDate >= :today', { today })
       .orderBy('e.eventDate', 'ASC')
       .getOne();
   }
@@ -61,12 +65,7 @@ export class TeNatiraaService {
       isMember = ['member', 'premium', 'vip', 'admin', 'superadmin', 'moderator'].includes(role);
     }
 
-    const eventDate = new Date(nextEvent.eventDate);
-    const eventDateStr = eventDate.toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    });
+    const eventDateStr = formatTeNatiraaEventDateFrLong(nextEvent.eventDate);
 
     return this.stripeService.createTeNatiraaCheckoutSession({
       ...dto,
@@ -92,7 +91,7 @@ export class TeNatiraaService {
   async createEvent(dto: CreateTeNatiraaEventDto) {
     const event = this.eventsRepository.create({
       ...dto,
-      eventDate: new Date(dto.eventDate),
+      eventDate: teNatiraaYmdToUtcDate(dto.eventDate),
       eventTime: dto.eventTime ?? '8h00',
       isActive: dto.isActive ?? true,
     });
@@ -102,8 +101,9 @@ export class TeNatiraaService {
   async updateEvent(id: number, dto: UpdateTeNatiraaEventDto) {
     const event = await this.eventsRepository.findOne({ where: { id } });
     if (!event) throw new NotFoundException('Événement non trouvé');
-    if (dto.eventDate) event.eventDate = new Date(dto.eventDate);
-    Object.assign(event, dto);
+    const { eventDate, ...rest } = dto;
+    Object.assign(event, rest);
+    if (eventDate !== undefined) event.eventDate = teNatiraaYmdToUtcDate(eventDate);
     return this.eventsRepository.save(event);
   }
 

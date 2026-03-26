@@ -320,6 +320,11 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
       icon: 'i-heroicons-user-circle',
       to: '/account/profile',
     },
+    {
+      label: t('common.support'),
+      icon: 'i-heroicons-lifebuoy',
+      to: '/account/support',
+    },
   ]
 
   // Ajouter le lien Administration si l'utilisateur est staff ou admin
@@ -568,7 +573,7 @@ const isActive = (item: MenuItem) => item.active
       </UDrawer>
 
       <!-- Auth Section (Connexion cachée sur mobile, présente dans le drawer) -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 md:ml-6">
         <LanguageSwitcher />
         <UButton
           v-if="!authStore.isAuthenticated"

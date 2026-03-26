@@ -170,6 +170,12 @@ const allAdminMenuItems = [
     roles: ['moderator', 'admin', 'superadmin'], // Accessible aux modérateurs
   },
   {
+    label: 'Bannière',
+    icon: 'i-heroicons-photo',
+    to: '/admin/banner',
+    roles: ['moderator', 'admin', 'superadmin'],
+  },
+  {
     label: 'Vidéos Culture',
     icon: 'i-heroicons-video-camera',
     to: '/admin/culture',

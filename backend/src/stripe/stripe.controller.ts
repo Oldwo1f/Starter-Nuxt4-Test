@@ -25,7 +25,8 @@ export class StripeController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Create a Stripe checkout session',
-    description: 'Creates a Stripe checkout session for subscription payment',
+    description:
+      'Te Ohi: subscription annuelle. Umete: paiement unique 20 000 XPF puis abonnement Te Ohi avec essai 1 an (créé côté serveur après paiement).',
   })
   @ApiResponse({ status: 201, description: 'Checkout session created successfully' })
   async createCheckoutSession(
@@ -39,7 +40,8 @@ export class StripeController {
   @UseGuards(StripeWebhookGuard)
   @ApiOperation({
     summary: 'Stripe webhook endpoint',
-    description: 'Handles Stripe webhook events (checkout.session.completed, etc.)',
+    description:
+      'checkout.session.completed, customer.subscription.*, invoice.payment_succeeded',
   })
   @ApiResponse({ status: 200, description: 'Webhook processed' })
   async webhook(@Req() request: Request) {

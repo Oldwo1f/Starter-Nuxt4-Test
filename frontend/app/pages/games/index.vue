@@ -4,7 +4,7 @@ import { useAuthStore } from '~/stores/useAuthStore'
 import { useWalletStore } from '~/stores/useWalletStore'
 
 definePageMeta({
-  layout: 'default',
+  layout: 'games',
   titleKey: 'games.metaTitle',
 })
 

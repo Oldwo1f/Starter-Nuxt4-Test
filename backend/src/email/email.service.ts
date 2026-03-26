@@ -107,6 +107,13 @@ export class EmailService {
       .trim();
   }
 
+  async sendSupportTicket(to: string, subject: string, textContent: string): Promise<void> {
+    const safeSubject = (subject || 'Support').trim().slice(0, 200);
+    const safeText = (textContent || '').toString().trim();
+    const htmlContent = `<pre style="white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">${this.escapeHtml(safeText)}</pre>`;
+    await this.sendEmail(to, safeSubject, htmlContent, safeText);
+  }
+
   async sendEmailVerification(email: string, firstName: string | null, token: string): Promise<void> {
     const verificationUrl = `${this.frontendUrl}/verify-email?token=${token}`;
     const subject = 'Confirmez votre adresse email - Nuna Heritage';

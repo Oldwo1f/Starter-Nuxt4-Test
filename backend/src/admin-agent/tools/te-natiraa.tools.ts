@@ -4,6 +4,10 @@
  */
 import { TeNatiraaService } from '../../te-natiraa/te-natiraa.service';
 import { TeNatiraaRegistration } from '../../entities/te-natiraa-registration.entity';
+import {
+  formatTeNatiraaEventDateFrLong,
+  formatTeNatiraaEventDateFrShort,
+} from '../../common/te-natiraa-dates';
 
 export const listTeNatiraaRegistrationsTool = {
   type: 'function' as const,
@@ -52,7 +56,7 @@ function formatRegistrationForDisplay(r: TeNatiraaRegistration) {
     r.status === 'pending' ? 'En attente' : r.status === 'paid' ? 'Payé' : r.status === 'validated' ? 'Validé' : r.status;
   const createdAtStr = r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt);
   const eventStr = r.event
-    ? `${r.event.name} - ${new Date(r.event.eventDate).toLocaleDateString('fr-FR')} à ${r.event.eventTime} - ${r.event.location}`
+    ? `${r.event.name} - ${formatTeNatiraaEventDateFrShort(r.event.eventDate)} à ${r.event.eventTime} - ${r.event.location}`
     : undefined;
   return {
     id: r.id,
@@ -90,12 +94,7 @@ export async function executeGetTeNatiraaRegistrationsGrouped(
   const grouped = await teNatiraaService.getRegistrationsGroupedByEvent();
 
   const formatted = grouped.map((g) => {
-    const eventDate = new Date(g.event.eventDate).toLocaleDateString('fr-FR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    const eventDate = formatTeNatiraaEventDateFrLong(g.event.eventDate);
     const totalAdults = g.registrations.reduce((s, r) => s + (r.adultCount || 0), 0);
     const totalChildren = g.registrations.reduce((s, r) => s + (r.childCount || 0), 0);
     return {
@@ -129,7 +128,7 @@ export async function executeListTeNatiraaEvents(
   const formatted = events.map((e) => ({
     id: e.id,
     nom: e.name,
-    date: new Date(e.eventDate).toLocaleDateString('fr-FR'),
+    date: formatTeNatiraaEventDateFrShort(e.eventDate),
     heure: e.eventTime,
     lieu: e.location,
     actif: e.isActive,

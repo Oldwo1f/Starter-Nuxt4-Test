@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
+import { teNatiraaDateColumnTransformer } from '../common/te-natiraa-date-column';
 import { TeNatiraaRegistration } from './te-natiraa-registration.entity';
 
 @Entity('te_natiraa_events')
@@ -16,7 +17,7 @@ export class TeNatiraaEvent {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'date', transformer: teNatiraaDateColumnTransformer })
   eventDate: Date;
 
   @Column({ type: 'varchar', length: 20, default: '8h00' })

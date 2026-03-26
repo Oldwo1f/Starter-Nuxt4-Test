@@ -8,6 +8,8 @@ withDefaults(
   { size: 'md' }
 )
 
+const { t } = useI18n()
+
 const sizeClasses = {
   xs: 'w-4 h-4',
   sm: 'w-5 h-5',
@@ -19,8 +21,8 @@ const sizeClasses = {
 <template>
   <img
     :src="jijiImg"
-    alt="Jiji"
-    class="inline-block flex-shrink-0"
+    :alt="t('games.jijiAlt')"
+    class="inline-block flex-shrink-0 align-middle"
     :class="sizeClasses[size]"
   />
 </template>

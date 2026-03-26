@@ -17,7 +17,9 @@ const { formatDate: formatDateLocale } = useLocaleDate()
 const copied = ref(false)
 const shareMethod = ref<'link' | 'code'>('link')
 
-// Compte à rebours pour Tenatira - 11 avril 2026 à 12h00
+// Clôture du jeu parrainage : 1er mai 2026 00:00 heure de Tahiti (= 10:00 UTC)
+const REFERRAL_CONTEST_END_MS = Date.UTC(2026, 4, 1, 10, 0, 0)
+
 const countdown = ref({
   days: 0,
   hours: 0,
@@ -25,7 +27,7 @@ const countdown = ref({
   seconds: 0,
 })
 
-const targetDate = new Date('2026-04-11T12:00:00').getTime()
+const targetDate = REFERRAL_CONTEST_END_MS
 
 const updateCountdown = () => {
   const now = new Date().getTime()
@@ -196,25 +198,37 @@ const getStatusIcon = (status: string) => {
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               <div class="bg-gradient-to-br from-yellow-500/30 to-yellow-600/20 rounded-lg p-3 border border-yellow-500/40">
-                <div class="flex items-center gap-2 mb-1">
+                <div class="flex items-center gap-2 mb-2">
                   <UIcon name="i-heroicons-trophy" class="w-5 h-5 text-yellow-400" />
                   <span class="font-bold text-yellow-300">{{ t('account.referral.prize1') }}</span>
                 </div>
-                <div class="text-2xl font-bold text-white">200 🐚</div>
+                <div class="text-2xl font-bold text-white">50 🐚</div>
+                <div class="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-amber-300/95">
+                  <span>1 000</span>
+                  <JijiIcon size="sm" />
+                </div>
               </div>
               <div class="bg-gradient-to-br from-gray-400/30 to-gray-500/20 rounded-lg p-3 border border-gray-400/40">
-                <div class="flex items-center gap-2 mb-1">
+                <div class="flex items-center gap-2 mb-2">
                   <UIcon name="i-heroicons-trophy" class="w-5 h-5 text-gray-300" />
                   <span class="font-bold text-gray-300">{{ t('account.referral.prize2') }}</span>
                 </div>
-                <div class="text-2xl font-bold text-white">150 🐚</div>
+                <div class="text-2xl font-bold text-white">30 🐚</div>
+                <div class="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-amber-200/90">
+                  <span>500</span>
+                  <JijiIcon size="sm" />
+                </div>
               </div>
               <div class="bg-gradient-to-br from-orange-500/30 to-orange-600/20 rounded-lg p-3 border border-orange-500/40">
-                <div class="flex items-center gap-2 mb-1">
+                <div class="flex items-center gap-2 mb-2">
                   <UIcon name="i-heroicons-trophy" class="w-5 h-5 text-orange-400" />
                   <span class="font-bold text-orange-300">{{ t('account.referral.prize3') }}</span>
                 </div>
-                <div class="text-2xl font-bold text-white">100 🐚</div>
+                <div class="text-2xl font-bold text-white">20 🐚</div>
+                <div class="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-amber-200/90">
+                  <span>200</span>
+                  <JijiIcon size="sm" />
+                </div>
               </div>
             </div>
 
@@ -224,7 +238,7 @@ const getStatusIcon = (status: string) => {
                 <span class="font-semibold text-primary-300">{{ t('account.referral.consolationTitle') }}</span>
               </div>
               <p class="text-white/90">
-                {{ t('account.referral.consolationP', { shells: '10 🐚', count: 7 }) }}
+                {{ t('account.referral.consolationP', { pupu: '5 🐚', jiji: '100', count: 7 }) }}
               </p>
             </div>
           </div>
@@ -253,11 +267,20 @@ const getStatusIcon = (status: string) => {
         </div>
       </UCard>
       <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
-        <div class="text-center">
-          <div class="text-2xl font-bold text-green-500">
-            {{ referralStore.stats.rewardsEarned }} 🐚
+        <div class="text-center space-y-3">
+          <div>
+            <div class="text-2xl font-bold text-green-500">
+              {{ referralStore.stats.rewardsEarned }} 🐚
+            </div>
+            <div class="text-sm text-white/60 mt-1">{{ t('account.referral.statRewardsPupu') }}</div>
           </div>
-          <div class="text-sm text-white/60 mt-1">{{ t('account.referral.statRewards') }}</div>
+          <div>
+            <div class="flex items-center justify-center gap-1.5 text-2xl font-bold text-amber-400">
+              <JijiIcon size="sm" />
+              <span>{{ referralStore.stats.jijiRewardsEarned ?? 0 }}</span>
+            </div>
+            <div class="text-sm text-white/60 mt-1">{{ t('account.referral.statRewardsJiji') }}</div>
+          </div>
         </div>
       </UCard>
     </div>
@@ -335,7 +358,7 @@ const getStatusIcon = (status: string) => {
           <ul class="space-y-1 list-disc list-inside">
             <li>{{ t('account.referral.howLi1') }}</li>
             <li>{{ t('account.referral.howLi2') }}</li>
-            <li>{{ t('account.referral.howLi3', { amount: '50 Pūpū' }) }}</li>
+            <li>{{ t('account.referral.howLi3', { pupu: '10 Pūpū', jiji: '200' }) }}</li>
             <li>{{ t('account.referral.howLi4') }}</li>
           </ul>
         </div>
@@ -404,8 +427,16 @@ const getStatusIcon = (status: string) => {
             >
               {{ getStatusLabel(referral.status) }}
             </UBadge>
-            <div v-if="referral.status === 'validee'" class="text-green-500 font-semibold">
-              {{ t('account.referral.rewardAmount') }}
+            <div
+              v-if="referral.status === 'validee'"
+              class="text-green-500 font-semibold inline-flex flex-wrap items-center justify-end gap-1"
+            >
+              <span>{{ t('account.referral.rewardPupuPart') }}</span>
+              <span class="text-white/40" aria-hidden="true">·</span>
+              <span class="inline-flex items-center gap-0.5">
+                {{ t('account.referral.rewardJetonsPart') }}
+                <JijiIcon size="xs" />
+              </span>
             </div>
           </div>
         </div>

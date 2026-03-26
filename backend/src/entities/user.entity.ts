@@ -77,6 +77,16 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   paidAccessExpiresAt: Date | null;
 
+  /** Umete one-time payment confirmed — premium tier kept if annual cotisation lapses */
+  @Column({ type: 'timestamp', nullable: true })
+  premiumLifetimeGrantedAt: Date | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  stripeCustomerId: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  stripeTeOhiSubscriptionId: string | null;
+
   @Column({ type: 'varchar', nullable: true })
   resetToken: string | null;
 

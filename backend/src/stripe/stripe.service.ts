@@ -16,11 +16,28 @@ import { TeNatiraaRegistration, TeNatiraaRegistrationStatus } from '../entities/
 import { EmailService } from '../email/email.service';
 import { WalletService } from '../wallet/wallet.service';
 import { ReferralService } from '../referral/referral.service';
+import { inscriptionPupuAmount } from '../common/pupu-inscription';
 
 type PackCode = 'teOhi' | 'umete';
 
-const JIJI_TEOHI = 2000;
-const JIJI_UMETE = 5000;
+const UMETE_ONETIME_TRIAL_DAYS = 365;
+
+/** Stripe API 2026: period end on subscription items; trialing uses trial_end */
+function subscriptionPaidAccessEnd(sub: Stripe.Subscription): Date {
+  if (sub.status === 'trialing' && sub.trial_end) {
+    return new Date(sub.trial_end * 1000);
+  }
+  const item = sub.items?.data?.[0];
+  if (item?.current_period_end) {
+    return new Date(item.current_period_end * 1000);
+  }
+  if (sub.trial_end) {
+    return new Date(sub.trial_end * 1000);
+  }
+  const fallback = new Date();
+  fallback.setFullYear(fallback.getFullYear() + 1);
+  return fallback;
+}
 
 export interface CreateTeNatiraaCheckoutParams {
   firstName: string;
@@ -90,22 +107,23 @@ export class StripeService {
     return hierarchy[role] || 0;
   }
 
-  private getPriceIdForPack(pack: PackCode): string {
-    if (pack === 'teOhi') {
-      const priceId = process.env.STRIPE_TEOHI_PRICE_ID;
-      if (!priceId) {
-        throw new InternalServerErrorException('STRIPE_TEOHI_PRICE_ID is not configured');
-      }
-      return priceId;
+  private getTeOhiPriceId(): string {
+    const priceId = process.env.STRIPE_TEOHI_PRICE_ID;
+    if (!priceId) {
+      throw new InternalServerErrorException('STRIPE_TEOHI_PRICE_ID is not configured');
     }
-    if (pack === 'umete') {
-      const priceId = process.env.STRIPE_UMETE_PRICE_ID;
-      if (!priceId) {
-        throw new InternalServerErrorException('STRIPE_UMETE_PRICE_ID is not configured');
-      }
-      return priceId;
+    return priceId;
+  }
+
+  private getUmeteOnetimePriceId(): string {
+    const priceId =
+      process.env.STRIPE_UMETE_ONETIME_PRICE_ID || process.env.STRIPE_UMETE_PRICE_ID;
+    if (!priceId) {
+      throw new InternalServerErrorException(
+        'STRIPE_UMETE_ONETIME_PRICE_ID (or legacy STRIPE_UMETE_PRICE_ID) is not configured',
+      );
     }
-    throw new BadRequestException('Invalid pack');
+    return priceId;
   }
 
   async createTeNatiraaCheckoutSession(params: CreateTeNatiraaCheckoutParams) {
@@ -213,37 +231,79 @@ export class StripeService {
     }
 
     const amountXpf = this.getAmountForPack(pack);
-    const priceId = this.getPriceIdForPack(pack);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-    // Create Stripe checkout session
-    const session = await this.stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer_email: user.email,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
+    if (pack === 'umete') {
+      const priceId = this.getUmeteOnetimePriceId();
+      const sessionParams: Stripe.Checkout.SessionCreateParams = {
+        mode: 'payment',
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${frontendUrl}/account/cotisation?success=true&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${frontendUrl}/account/cotisation?canceled=true`,
+        metadata: {
+          userId: userId.toString(),
+          pack: 'umete',
+          amountXpf: amountXpf.toString(),
+          umeteOnetime: 'true',
         },
-      ],
+      };
+      if (user.stripeCustomerId) {
+        sessionParams.customer = user.stripeCustomerId;
+      } else {
+        sessionParams.customer_email = user.email || undefined;
+      }
+
+      const session = await this.stripe.checkout.sessions.create(sessionParams);
+
+      const payment = this.paymentsRepository.create({
+        userId,
+        pack: StripePack.UMETE,
+        amountXpf,
+        stripeSessionId: session.id,
+        status: StripePaymentStatus.PENDING,
+      });
+      const savedPayment = await this.paymentsRepository.save(payment);
+
+      return {
+        sessionId: session.id,
+        url: session.url,
+        paymentId: savedPayment.id,
+      };
+    }
+
+    const teOhiPriceId = this.getTeOhiPriceId();
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      mode: 'subscription',
+      line_items: [{ price: teOhiPriceId, quantity: 1 }],
       success_url: `${frontendUrl}/account/cotisation?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${frontendUrl}/account/cotisation?canceled=true`,
       metadata: {
         userId: userId.toString(),
-        pack: pack,
+        pack: 'teOhi',
         amountXpf: amountXpf.toString(),
       },
-    });
+      subscription_data: {
+        metadata: {
+          userId: userId.toString(),
+          source: 'te_ohi_checkout',
+        },
+      },
+    };
+    if (user.stripeCustomerId) {
+      sessionParams.customer = user.stripeCustomerId;
+    } else {
+      sessionParams.customer_email = user.email || undefined;
+    }
 
-    // Save payment record
+    const session = await this.stripe.checkout.sessions.create(sessionParams);
+
     const payment = this.paymentsRepository.create({
       userId,
-      pack: pack as unknown as StripePack,
+      pack: StripePack.TE_OHI,
       amountXpf,
       stripeSessionId: session.id,
       status: StripePaymentStatus.PENDING,
     });
-
     const savedPayment = await this.paymentsRepository.save(payment);
 
     return {
@@ -255,88 +315,94 @@ export class StripeService {
 
   async handleWebhook(event: Stripe.Event) {
     console.log(`[Stripe Webhook] Received event: ${event.type}`, { id: event.id });
-    
+
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
-      console.log(`[Stripe Webhook] Processing checkout.session.completed`, { 
-        sessionId: session.id,
-        userId: session.metadata?.userId 
-      });
       await this.processCheckoutSessionCompleted(session);
-      console.log(`[Stripe Webhook] Successfully processed checkout.session.completed`);
-    } else if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
+    } else if (
+      event.type === 'customer.subscription.created' ||
+      event.type === 'customer.subscription.updated'
+    ) {
       const subscription = event.data.object as Stripe.Subscription;
       await this.processSubscriptionUpdate(subscription);
+    } else if (event.type === 'invoice.payment_succeeded') {
+      const invoice = event.data.object as Stripe.Invoice;
+      await this.processInvoicePaymentSucceeded(invoice);
     }
 
     return { received: true };
   }
 
   private async processCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
-    // Te Natira'a registration (one-time payment)
     if (session.metadata?.type === 'teNatiraa') {
       return this.processTeNatiraaCheckoutCompleted(session);
     }
 
-    // Cotisation (subscription)
+    if (
+      session.metadata?.umeteOnetime === 'true' ||
+      (session.mode === 'payment' && session.metadata?.pack === 'umete')
+    ) {
+      return this.processUmeteOnetimeCheckoutCompleted(session);
+    }
+
+    if (session.mode === 'subscription') {
+      return this.processTeOhiSubscriptionCheckoutCompleted(session);
+    }
+
+    console.error('[Stripe Webhook] Unsupported checkout session mode', {
+      mode: session.mode,
+      metadata: session.metadata,
+    });
+    throw new BadRequestException('Unsupported checkout session');
+  }
+
+  private async processUmeteOnetimeCheckoutCompleted(session: Stripe.Checkout.Session) {
     const userId = parseInt(session.metadata?.userId || '0', 10);
     if (!userId) {
-      console.error(`[Stripe Webhook] Missing userId in session metadata`, { metadata: session.metadata });
+      console.error(`[Stripe Webhook] Umete onetime: missing userId`, session.metadata);
       throw new BadRequestException('Missing userId in session metadata');
     }
 
-    console.log(`[Stripe Webhook] Processing payment for user ${userId}`);
-
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) {
-      console.error(`[Stripe Webhook] User not found`, { userId });
       throw new NotFoundException('User not found');
     }
 
-    console.log(`[Stripe Webhook] User found:`, { 
-      id: user.id, 
-      email: user.email, 
-      currentRole: user.role 
-    });
-
-    // Find payment by session ID
     const payment = await this.paymentsRepository.findOne({
       where: { stripeSessionId: session.id },
     });
-
     if (!payment) {
       throw new NotFoundException('Payment not found');
     }
 
-    // Idempotency: if already processed, skip to avoid double-crediting Pūpū/role
     if (payment.status === StripePaymentStatus.PAID) {
-      console.log(`[Stripe Webhook] Payment already processed for session ${session.id}, skipping`);
+      console.log(`[Stripe Webhook] Umete already processed for session ${session.id}`);
       await this.referralService.checkAndRewardReferrer(userId);
       return payment;
     }
 
-    // Update payment status
+    const customerId =
+      typeof session.customer === 'string' ? session.customer : session.customer?.id;
+    if (!customerId) {
+      throw new BadRequestException('Missing Stripe customer on Umete checkout session');
+    }
+
     payment.status = StripePaymentStatus.PAID;
     payment.paidAt = new Date();
-    payment.stripePaymentIntentId = session.payment_intent as string | null;
-    payment.stripeCustomerId = session.customer as string | null;
-
+    payment.stripePaymentIntentId =
+      typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id ?? null;
+    payment.stripeCustomerId = customerId;
     await this.paymentsRepository.save(payment);
 
-    // Grant access to user
-    const pack = payment.pack as unknown as PackCode;
-    const desiredRole = this.getRoleForPack(pack);
-    const now = new Date();
+    const creditedAt = payment.paidAt;
+    const pupuAmount = inscriptionPupuAmount('umete', creditedAt);
 
-    // Grant inscription Pūpū (50 for Te Ohi, 100 for Umete)
-    const pupuAmount = pack === 'teOhi' ? 50 : 100;
-
-    // Use transaction to ensure atomicity
     await this.dataSource.transaction(async (manager) => {
       const usersRepo = manager.getRepository(User);
       const transactionsRepo = manager.getRepository(Transaction);
 
-      // Reload user with lock to avoid race conditions
       const freshUser = await usersRepo.findOne({
         where: { id: user.id },
         lock: { mode: 'pessimistic_write' },
@@ -345,77 +411,264 @@ export class StripeService {
         throw new NotFoundException('User not found');
       }
 
-      // Upgrade role only if needed (never downgrade) - same logic as billing service
+      const desiredRole = UserRole.PREMIUM;
       const currentLevel = this.getUserRoleLevel(freshUser.role);
       const desiredLevel = this.getUserRoleLevel(desiredRole);
-      console.log(`[Stripe Webhook] Role check:`, { 
-        currentRole: freshUser.role, 
-        currentLevel, 
-        desiredRole, 
-        desiredLevel 
-      });
       if (desiredLevel > currentLevel) {
         freshUser.role = desiredRole;
-        console.log(`[Stripe Webhook] Role upgraded to:`, desiredRole);
-      } else {
-        console.log(`[Stripe Webhook] Role not upgraded (current level ${currentLevel} >= desired level ${desiredLevel})`);
       }
 
-      // Update access expiration: always add 1 year from now (payment date)
-      // This ensures the subscription is always 1 year from the payment, not from existing expiration
-      const next = new Date(now);
+      if (!freshUser.premiumLifetimeGrantedAt) {
+        freshUser.premiumLifetimeGrantedAt = creditedAt;
+      }
+
+      freshUser.stripeCustomerId = customerId;
+
+      const next = new Date(creditedAt);
       next.setFullYear(next.getFullYear() + 1);
       freshUser.paidAccessExpiresAt = next;
-      console.log(`[Stripe Webhook] Access expiration updated:`, {
-        now: now.toISOString(),
-        next: next.toISOString(),
-        previousExpiration: freshUser.paidAccessExpiresAt ? freshUser.paidAccessExpiresAt.toISOString() : null
-      });
 
-      // Update wallet balance
       const balanceBefore = parseFloat(freshUser.walletBalance.toString());
       const balanceAfter = balanceBefore + pupuAmount;
       freshUser.walletBalance = balanceAfter;
-      
+
       await usersRepo.save(freshUser);
-      console.log(`[Stripe Webhook] User updated:`, { 
-        role: freshUser.role, 
-        paidAccessExpiresAt: freshUser.paidAccessExpiresAt,
-        walletBalance: freshUser.walletBalance 
-      });
 
-      // Create transaction record for inscription Pūpū
-      const transaction = transactionsRepo.create({
-        type: TransactionType.CREDIT,
-        amount: pupuAmount,
-        balanceBefore,
-        balanceAfter,
-        status: TransactionStatus.COMPLETED,
-        fromUserId: user.id, // System grants
-        toUserId: user.id,
-        description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation ${pack === 'teOhi' ? 'Te Ohi' : 'Umete'} - Paiement Stripe`,
-      });
-      await transactionsRepo.save(transaction);
+      await transactionsRepo.save(
+        transactionsRepo.create({
+          type: TransactionType.CREDIT,
+          amount: pupuAmount,
+          balanceBefore,
+          balanceAfter,
+          status: TransactionStatus.COMPLETED,
+          fromUserId: user.id,
+          toUserId: user.id,
+          description: `[Nuna'a Heritage] Pūpū d'inscription - Pack Umete (one-shot) - Paiement Stripe`,
+        }),
+      );
+    });
 
-      // Grant Jiji d'inscription (2000 Te Ohi, 5000 Umete)
-      const jijiAmount = pack === 'teOhi' ? JIJI_TEOHI : JIJI_UMETE;
-      await this.walletService.creditJijiSystem(
-        user.id,
-        jijiAmount,
-        `Jiji inscription - Cotisation ${pack === 'teOhi' ? 'Te Ohi' : 'Umete'} - Paiement Stripe`,
-        manager,
+    await this.ensureTeOhiSubscriptionWithTrial(customerId, userId);
+
+    await this.referralService.checkAndRewardReferrer(userId);
+    return payment;
+  }
+
+  private async ensureTeOhiSubscriptionWithTrial(customerId: string, userId: number) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) return;
+
+    if (user.stripeTeOhiSubscriptionId) {
+      try {
+        const existing = await this.stripe.subscriptions.retrieve(user.stripeTeOhiSubscriptionId);
+        if (existing.status === 'active' || existing.status === 'trialing') {
+          console.log(`[Stripe] User ${userId} already has Te Ohi subscription ${existing.id}`);
+          return;
+        }
+      } catch {
+        // continue to create
+      }
+    }
+
+    const teOhiPriceId = this.getTeOhiPriceId();
+    const created = await this.stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: teOhiPriceId }],
+      trial_period_days: UMETE_ONETIME_TRIAL_DAYS,
+      metadata: {
+        userId: String(userId),
+        source: 'umete_onetime_bundle',
+      },
+    });
+    const subscription = await this.stripe.subscriptions.retrieve(created.id, {
+      expand: ['items.data'],
+    });
+
+    user.stripeTeOhiSubscriptionId = subscription.id;
+    user.stripeCustomerId = customerId;
+    user.paidAccessExpiresAt = subscriptionPaidAccessEnd(subscription);
+    await this.usersRepository.save(user);
+
+    console.log(
+      `[Stripe] Created Te Ohi subscription ${subscription.id} with trial for user ${userId}`,
+    );
+  }
+
+  private async processTeOhiSubscriptionCheckoutCompleted(session: Stripe.Checkout.Session) {
+    const userId = parseInt(session.metadata?.userId || '0', 10);
+    if (!userId) {
+      console.error(`[Stripe Webhook] Missing userId in session metadata`, { metadata: session.metadata });
+      throw new BadRequestException('Missing userId in session metadata');
+    }
+
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const payment = await this.paymentsRepository.findOne({
+      where: { stripeSessionId: session.id },
+    });
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    if (payment.status === StripePaymentStatus.PAID) {
+      console.log(`[Stripe Webhook] Payment already processed for session ${session.id}, skipping`);
+      await this.referralService.checkAndRewardReferrer(userId);
+      return payment;
+    }
+
+    const pack = payment.pack as unknown as PackCode;
+    const desiredRole = this.getRoleForPack(pack);
+    const creditedAt = new Date();
+
+    payment.status = StripePaymentStatus.PAID;
+    payment.paidAt = creditedAt;
+    payment.stripePaymentIntentId =
+      typeof session.payment_intent === 'string'
+        ? session.payment_intent
+        : session.payment_intent?.id ?? null;
+    const cust =
+      typeof session.customer === 'string' ? session.customer : session.customer?.id ?? null;
+    payment.stripeCustomerId = cust;
+    await this.paymentsRepository.save(payment);
+
+    const pupuAmount = inscriptionPupuAmount(pack === 'umete' ? 'umete' : 'teOhi', creditedAt);
+
+    const subId =
+      typeof session.subscription === 'string'
+        ? session.subscription
+        : session.subscription?.id ?? null;
+
+    let periodEnd = new Date(creditedAt);
+    periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+    if (subId) {
+      const sub = await this.stripe.subscriptions.retrieve(subId, {
+        expand: ['items.data'],
+      });
+      periodEnd = subscriptionPaidAccessEnd(sub);
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const usersRepo = manager.getRepository(User);
+      const transactionsRepo = manager.getRepository(Transaction);
+
+      const freshUser = await usersRepo.findOne({
+        where: { id: user.id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!freshUser) {
+        throw new NotFoundException('User not found');
+      }
+
+      const currentLevel = this.getUserRoleLevel(freshUser.role);
+      const desiredLevel = this.getUserRoleLevel(desiredRole);
+      if (desiredLevel > currentLevel) {
+        freshUser.role = desiredRole;
+      }
+
+      if (pack === 'umete' && !freshUser.premiumLifetimeGrantedAt) {
+        freshUser.premiumLifetimeGrantedAt = creditedAt;
+      }
+
+      if (cust) {
+        freshUser.stripeCustomerId = cust;
+      }
+      if (subId) {
+        freshUser.stripeTeOhiSubscriptionId = subId;
+      }
+
+      freshUser.paidAccessExpiresAt = periodEnd;
+
+      const balanceBefore = parseFloat(freshUser.walletBalance.toString());
+      const balanceAfter = balanceBefore + pupuAmount;
+      freshUser.walletBalance = balanceAfter;
+
+      await usersRepo.save(freshUser);
+
+      await transactionsRepo.save(
+        transactionsRepo.create({
+          type: TransactionType.CREDIT,
+          amount: pupuAmount,
+          balanceBefore,
+          balanceAfter,
+          status: TransactionStatus.COMPLETED,
+          fromUserId: user.id,
+          toUserId: user.id,
+          description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation ${pack === 'teOhi' ? 'Te Ohi' : 'Umete'} - Paiement Stripe`,
+        }),
       );
     });
 
     await this.referralService.checkAndRewardReferrer(userId);
-
     return payment;
   }
 
   private async processSubscriptionUpdate(subscription: Stripe.Subscription) {
-    // Handle subscription updates if needed
-    // For now, we just log it
-    console.log('Subscription updated:', subscription.id);
+    const sub = subscription as Stripe.Subscription;
+    const userId = parseInt(sub.metadata?.userId || '0', 10);
+    if (!userId) {
+      console.log('[Stripe] subscription update: no userId in metadata', sub.id);
+      return;
+    }
+
+    if (sub.status !== 'active' && sub.status !== 'trialing') {
+      return;
+    }
+
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      return;
+    }
+
+    user.stripeTeOhiSubscriptionId = sub.id;
+    if (typeof sub.customer === 'string') {
+      user.stripeCustomerId = sub.customer;
+    }
+    user.paidAccessExpiresAt = subscriptionPaidAccessEnd(sub);
+    await this.usersRepository.save(user);
+
+    console.log(`[Stripe] Synced subscription ${sub.id} for user ${userId}`);
+  }
+
+  private async processInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+    if (invoice.status !== 'paid') {
+      return;
+    }
+
+    const inv = invoice as Stripe.Invoice & {
+      subscription?: string | Stripe.Subscription | null;
+    };
+    const subRef = inv.subscription;
+    const subId = typeof subRef === 'string' ? subRef : subRef?.id;
+    if (!subId) {
+      return;
+    }
+
+    if ((invoice.amount_paid ?? 0) === 0) {
+      return;
+    }
+
+    const sub = await this.stripe.subscriptions.retrieve(subId, { expand: ['items.data'] });
+    const userId = parseInt(sub.metadata?.userId || '0', 10);
+    if (!userId) {
+      return;
+    }
+
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      return;
+    }
+
+    user.paidAccessExpiresAt = subscriptionPaidAccessEnd(sub);
+    user.stripeTeOhiSubscriptionId = sub.id;
+    if (typeof sub.customer === 'string') {
+      user.stripeCustomerId = sub.customer;
+    }
+    await this.usersRepository.save(user);
+
+    console.log(`[Stripe] invoice.payment_succeeded extended access for user ${userId}`);
   }
 
   async processTeNatiraaBySessionId(sessionId: string) {
@@ -428,7 +681,7 @@ export class StripeService {
     }
 
     if (session.metadata?.type !== 'teNatiraa') {
-      throw new BadRequestException('Cette session n\'est pas une inscription Te Natira\'a');
+      throw new BadRequestException("Cette session n'est pas une inscription Te Natira'a");
     }
 
     const existing = await this.teNatiraaRegistrationsRepository.findOne({
@@ -443,15 +696,15 @@ export class StripeService {
 
   async processPendingPaymentBySessionId(sessionId: string, currentUserId?: number) {
     console.log(`[Stripe] Processing pending payment for session: ${sessionId}`);
-    
-    // Retrieve session from Stripe
+
     const session = await this.stripe.checkout.sessions.retrieve(sessionId);
-    
+
     if (session.payment_status !== 'paid') {
-      throw new BadRequestException(`Session payment status is ${session.payment_status}, expected 'paid'`);
+      throw new BadRequestException(
+        `Session payment status is ${session.payment_status}, expected 'paid'`,
+      );
     }
 
-    // For cotisation: verify session belongs to current user (security)
     if (session.metadata?.type !== 'teNatiraa' && currentUserId !== undefined) {
       const sessionUserId = parseInt(session.metadata?.userId || '0', 10);
       if (sessionUserId !== currentUserId) {
@@ -459,7 +712,6 @@ export class StripeService {
       }
     }
 
-    // Create a mock event to process
     const mockEvent: Stripe.Event = {
       id: `evt_manual_${Date.now()}`,
       object: 'event',
@@ -501,6 +753,9 @@ export class StripeService {
         ? {
             role: user.role,
             paidAccessExpiresAt: user.paidAccessExpiresAt,
+            premiumLifetimeGrantedAt: user.premiumLifetimeGrantedAt,
+            stripeCustomerId: user.stripeCustomerId,
+            stripeTeOhiSubscriptionId: user.stripeTeOhiSubscriptionId,
           }
         : null,
     };

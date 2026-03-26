@@ -8,6 +8,11 @@ import { DataSource, Repository } from 'typeorm';
 import { Referral, ReferralStatus } from '../entities/referral.entity';
 import { User } from '../entities/user.entity';
 import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
+import { WalletService } from '../wallet/wallet.service';
+import {
+  REFERRAL_REWARD_JIJI,
+  REFERRAL_REWARD_PUPU,
+} from './referral.constants';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -20,6 +25,7 @@ export class ReferralService {
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
     private dataSource: DataSource,
+    private walletService: WalletService,
   ) {}
 
   /**
@@ -142,7 +148,7 @@ export class ReferralService {
   }
 
   /**
-   * Crédite le parrain (50 Pūpū) et passe le filleul en `validee` lorsque le filleul a une cotisation effective.
+   * Crédite le parrain (Pūpū + Jiji) et passe le filleul en `validee` lorsque le filleul a une cotisation effective.
    * À appeler après tout passage payant (Stripe, virement confirmé, legacy admin, ou rôle USER → MEMBER/PREMIUM côté admin).
    * Idempotent si déjà `validee`.
    */
@@ -186,7 +192,7 @@ export class ReferralService {
         lockedReferral.status = ReferralStatus.MEMBRE;
         await manager.save(lockedReferral);
 
-        // Créditer le parrain avec 50 pupu
+        // Créditer le parrain (Pūpū + jetons de jeux)
         const referrer = await manager.findOne(User, {
           where: { id: referral.referrerId },
           lock: { mode: 'pessimistic_write' },
@@ -196,27 +202,31 @@ export class ReferralService {
           return; // Parrain introuvable
         }
 
-        const rewardAmount = 50;
         const balanceBefore = parseFloat(referrer.walletBalance.toString());
-        const balanceAfter = balanceBefore + rewardAmount;
+        const balanceAfter = balanceBefore + REFERRAL_REWARD_PUPU;
 
-        // Mettre à jour le solde
         referrer.walletBalance = balanceAfter;
         await manager.save(referrer);
 
-        // Créer la transaction CREDIT
         const creditTransaction = manager.create(Transaction, {
           type: TransactionType.CREDIT,
-          amount: rewardAmount,
+          amount: REFERRAL_REWARD_PUPU,
           balanceBefore,
           balanceAfter,
           status: TransactionStatus.COMPLETED,
-          fromUserId: referredUserId, // Le filleul est l'origine
+          fromUserId: referredUserId,
           toUserId: referrer.id,
           description: `Récompense de parrainage - ${referredEmail} est devenu membre`,
         });
 
         await manager.save(creditTransaction);
+
+        await this.walletService.creditJijiSystem(
+          referrer.id,
+          REFERRAL_REWARD_JIJI,
+          `Récompense de parrainage (Jiji) - ${referredEmail} est devenu membre`,
+          manager,
+        );
 
         // Marquer comme validée pour éviter les crédits multiples
         lockedReferral.status = ReferralStatus.VALIDEE;
@@ -247,7 +257,8 @@ export class ReferralService {
       inscrits,
       membres,
       validees,
-      rewardsEarned: validees * 50, // 50 pupu par filleul validé
+      rewardsEarned: validees * REFERRAL_REWARD_PUPU,
+      jijiRewardsEarned: validees * REFERRAL_REWARD_JIJI,
     };
   }
 }

@@ -11,6 +11,9 @@ interface User {
   isActive: boolean
   isCertified?: boolean
   paidAccessExpiresAt?: string | null
+  premiumLifetimeGrantedAt?: string | null
+  hasActiveCotisation?: boolean
+  hasPremiumLifetime?: boolean
   phoneNumber?: string | null
   commune?: string | null
   contactPreferences?: {

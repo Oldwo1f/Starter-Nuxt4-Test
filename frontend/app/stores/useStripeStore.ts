@@ -24,6 +24,9 @@ export interface StripeMeResponse {
   user: {
     role: string
     paidAccessExpiresAt: string | null
+    premiumLifetimeGrantedAt?: string | null
+    stripeCustomerId?: string | null
+    stripeTeOhiSubscriptionId?: string | null
   } | null
 }
 

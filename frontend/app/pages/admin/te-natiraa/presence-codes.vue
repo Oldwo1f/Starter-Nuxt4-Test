@@ -30,6 +30,7 @@ const toast = useToast()
 
 const codes = ref<PresenceCode[]>([])
 const events = ref<TeNatiraaEventRow[]>([])
+const { formatEventDate } = useTeNatiraaEventDate()
 const loading = ref(false)
 const newLabel = ref('')
 const newEventId = ref<number | null>(null)
@@ -38,7 +39,7 @@ const qrDataUrls = ref<Record<number, string>>({})
 const eventSelectItems = computed(() => [
   { label: '— Aucun —', value: null as number | null },
   ...events.value.map((e) => ({
-    label: `${e.name} (${new Date(e.eventDate).toLocaleDateString('fr-FR')})`,
+    label: `${e.name} (${formatEventDate(e.eventDate)})`,
     value: e.id,
   })),
 ])

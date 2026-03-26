@@ -7,6 +7,7 @@ import { ReferralService } from '../referral/referral.service';
 import { EmailService } from '../email/email.service';
 import { WalletService } from '../wallet/wallet.service';
 import { User } from '../entities/user.entity';
+import { hasActiveCotisation, hasPremiumLifetime } from '../common/access-policy';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import * as crypto from 'crypto';
 import axios from 'axios';
@@ -60,6 +61,9 @@ export class AuthService {
         emailVerified: user.emailVerified,
         isActive: user.isActive,
         paidAccessExpiresAt: user.paidAccessExpiresAt,
+        premiumLifetimeGrantedAt: user.premiumLifetimeGrantedAt,
+        hasActiveCotisation: hasActiveCotisation(user),
+        hasPremiumLifetime: hasPremiumLifetime(user),
         phoneNumber: user.phoneNumber,
         commune: user.commune,
         contactPreferences: user.contactPreferences,
@@ -144,6 +148,9 @@ export class AuthService {
         emailVerified: user.emailVerified,
         isActive: user.isActive,
         paidAccessExpiresAt: user.paidAccessExpiresAt,
+        premiumLifetimeGrantedAt: user.premiumLifetimeGrantedAt,
+        hasActiveCotisation: hasActiveCotisation(user),
+        hasPremiumLifetime: hasPremiumLifetime(user),
         phoneNumber: user.phoneNumber,
         commune: user.commune,
         contactPreferences: user.contactPreferences,

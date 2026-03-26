@@ -98,7 +98,7 @@ export class BillingController {
   @ApiOperation({
     summary: 'Confirm a verification and grant Pūpū d\'inscription (Admin only)',
     description:
-      'Confirms the payment, marks it as paid, and grants the user their inscription Pūpū (50 for Te Ohi, 100 for Umete)',
+      'Confirms the payment, marks it as paid, and grants the user their inscription Pūpū (10 pour Te Ohi et Umete)',
   })
   @ApiParam({ name: 'paymentId', type: Number, description: 'Payment ID to confirm' })
   @ApiResponse({ status: 201, description: 'Verification confirmed and Pūpū granted' })
@@ -158,7 +158,7 @@ export class BillingController {
   @ApiOperation({
     summary: 'Confirm a legacy verification and grant Pūpū d\'inscription (Admin only)',
     description:
-      'Confirms the legacy payment verification, grants Pūpū d\'inscription (50 for Te Ohi), and optionally upgrades user to premium. Can set custom expiration date with day/month.',
+      'Confirms the legacy payment verification, grants Pūpū d\'inscription (10 for Te Ohi), and optionally upgrades user to premium. Can set custom expiration date with day/month.',
   })
   @ApiParam({ name: 'id', type: Number, description: 'Verification ID to confirm' })
   @ApiResponse({ status: 201, description: 'Verification confirmed and Pūpū granted' })

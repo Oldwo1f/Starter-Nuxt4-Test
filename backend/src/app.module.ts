@@ -30,6 +30,8 @@ import { GamesModule } from './games/games.module';
 import { BadgesModule } from './badges/badges.module';
 import { TestimonialsModule } from './testimonials/testimonials.module';
 import { LaunchModeModule } from './launch-mode/launch-mode.module';
+import { SupportModule } from './support/support.module';
+import { BannerModule } from './banner/banner.module';
 
 @Module({
   imports: [
@@ -62,6 +64,8 @@ import { LaunchModeModule } from './launch-mode/launch-mode.module';
     BadgesModule,
     TestimonialsModule,
     LaunchModeModule,
+    SupportModule,
+    BannerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

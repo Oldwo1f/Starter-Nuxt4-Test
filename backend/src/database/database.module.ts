@@ -47,6 +47,7 @@ import { UserBadge } from '../entities/user-badge.entity';
 import { CultureConsultation } from '../entities/culture-consultation.entity';
 import { TestimonialSubmission } from '../entities/testimonial-submission.entity';
 import { LaunchModeConfig } from '../entities/launch-mode-config.entity';
+import { SiteBannerConfig } from '../entities/site-banner-config.entity';
 
 @Module({
   imports: [
@@ -57,11 +58,11 @@ import { LaunchModeConfig } from '../entities/launch-mode-config.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'nunaheritage',
-      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, PartnerSoutienQrCode, PartnerSoutienQrClaim, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent, TeNatiraaPresenceCode, TeNatiraaPresenceClaim, KikiriDraw, KikiriBet, KikiriChatMessage, KikiriConfig, KikiriSession, BingoConfig, BingoSession, BingoRound, BingoGrid, BingoChatMessage, JijiTransaction, JijiWeeklyCredit, GamePeriodWinner, UserBadge, CultureConsultation, TestimonialSubmission, LaunchModeConfig],
+      entities: [User, BlogPost, Location, Category, Listing, Transaction, Partner, PartnerSoutienQrCode, PartnerSoutienQrClaim, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent, TeNatiraaPresenceCode, TeNatiraaPresenceClaim, KikiriDraw, KikiriBet, KikiriChatMessage, KikiriConfig, KikiriSession, BingoConfig, BingoSession, BingoRound, BingoGrid, BingoChatMessage, JijiTransaction, JijiWeeklyCredit, GamePeriodWinner, UserBadge, CultureConsultation, TestimonialSubmission, LaunchModeConfig, SiteBannerConfig],
       synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV === 'development',
     }),
-    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, PartnerSoutienQrCode, PartnerSoutienQrClaim, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent, TeNatiraaPresenceCode, TeNatiraaPresenceClaim, KikiriDraw, KikiriBet, KikiriChatMessage, KikiriConfig, KikiriSession, BingoConfig, BingoSession, BingoRound, BingoGrid, BingoChatMessage, JijiTransaction, JijiWeeklyCredit, GamePeriodWinner, UserBadge, CultureConsultation, TestimonialSubmission, LaunchModeConfig]),
+    TypeOrmModule.forFeature([User, BlogPost, Location, Category, Listing, Transaction, Partner, PartnerSoutienQrCode, PartnerSoutienQrClaim, Goodie, Culture, Course, AcademyModule, Video, CourseProgress, Referral, BankTransferPayment, StripePayment, LegacyPaymentVerification, RefreshToken, Todo, Poll, PollOption, PollResponse, Conversation, Message, TeNatiraaRegistration, TeNatiraaEvent, TeNatiraaPresenceCode, TeNatiraaPresenceClaim, KikiriDraw, KikiriBet, KikiriChatMessage, KikiriConfig, KikiriSession, BingoConfig, BingoSession, BingoRound, BingoGrid, BingoChatMessage, JijiTransaction, JijiWeeklyCredit, GamePeriodWinner, UserBadge, CultureConsultation, TestimonialSubmission, LaunchModeConfig, SiteBannerConfig]),
   ],
   exports: [TypeOrmModule],
 })

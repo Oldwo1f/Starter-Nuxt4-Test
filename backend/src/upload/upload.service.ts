@@ -52,6 +52,11 @@ export class UploadService {
     if (!existsSync(testimonialsPath)) {
       mkdirSync(testimonialsPath, { recursive: true });
     }
+
+    const siteBannersPath = join(this.uploadPath, 'banners', 'site');
+    if (!existsSync(siteBannersPath)) {
+      mkdirSync(siteBannersPath, { recursive: true });
+    }
   }
 
   validateFile(file: Express.Multer.File): void {
@@ -595,5 +600,50 @@ export class UploadService {
       const filename = match[2];
       await this.deleteCourseThumbnail(courseId, filename);
     }
+  }
+
+  // Site banner methods
+  getSiteBannerPath(type: 'desktop' | 'mobile', filename: string): string {
+    return join(this.uploadPath, 'banners', 'site', type, filename);
+  }
+
+  getSiteBannerUrl(type: 'desktop' | 'mobile', filename: string): string {
+    return `/uploads/banners/site/${type}/${filename}`;
+  }
+
+  async saveSiteBannerImage(
+    type: 'desktop' | 'mobile',
+    file: Express.Multer.File,
+  ): Promise<string> {
+    this.validateFile(file);
+
+    const dir = join(this.uploadPath, 'banners', 'site', type);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+
+    const filename = this.generateFileName(file.originalname);
+    const filePath = this.getSiteBannerPath(type, filename);
+    writeFileSync(filePath, file.buffer);
+    return this.getSiteBannerUrl(type, filename);
+  }
+
+  async deleteSiteBannerImage(type: 'desktop' | 'mobile', filename: string): Promise<void> {
+    const filePath = this.getSiteBannerPath(type, filename);
+    if (existsSync(filePath)) {
+      unlinkSync(filePath);
+    }
+  }
+
+  async deleteOldSiteBannerImage(imageUrl: string | null): Promise<void> {
+    if (!imageUrl) return;
+
+    // Expected format: /uploads/banners/site/{type}/{filename}
+    const match = imageUrl.match(/\/uploads\/banners\/site\/(desktop|mobile)\/(.+)$/);
+    if (!match) return;
+
+    const type = match[1] as 'desktop' | 'mobile';
+    const filename = match[2];
+    await this.deleteSiteBannerImage(type, filename);
   }
 }

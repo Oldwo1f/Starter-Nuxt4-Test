@@ -1,6 +1,6 @@
 <script setup lang="ts">
 definePageMeta({
-  layout: 'default',
+  layout: 'academy',
 })
 
 import Player from '@vimeo/player'

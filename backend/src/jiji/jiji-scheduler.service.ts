@@ -10,13 +10,13 @@ const TAHITI_SUNDAY_MIDNIGHT_UTC_HOUR = 10;
 const CHECK_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
 const JIJI_BY_ROLE: Record<string, number> = {
-  [UserRole.USER]: 1000,
-  [UserRole.MEMBER]: 3000,
-  [UserRole.PREMIUM]: 5000,
-  [UserRole.VIP]: 5000,
-  [UserRole.ADMIN]: 5000,
-  [UserRole.MODERATOR]: 5000,
-  [UserRole.SUPERADMIN]: 5000,
+  [UserRole.USER]: 50,
+  [UserRole.MEMBER]: 200,
+  [UserRole.PREMIUM]: 400,
+  [UserRole.VIP]: 400,
+  [UserRole.ADMIN]: 400,
+  [UserRole.MODERATOR]: 400,
+  [UserRole.SUPERADMIN]: 400,
 };
 
 @Injectable()

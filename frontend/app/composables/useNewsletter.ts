@@ -2,6 +2,7 @@ import type { Poll, PollResults, PollStatus } from '~/stores/usePollStore'
 import type { BlogPost } from '~/stores/useBlogStore'
 import type { Listing } from '~/stores/useMarketplaceStore'
 import { useAuthStore } from '~/stores/useAuthStore'
+import { formatTeNatiraaEventDateFr } from '~/utils/teNatiraaDate'
 
 export interface TeNatiraaEvent {
   id: number
@@ -347,12 +348,7 @@ export const useNewsletter = () => {
     // Générer le HTML du Te Natira'a (mise en avant)
     const generateTeNatiraaHTML = (event: TeNatiraaEvent): string => {
       const inscriptionUrl = `${frontendUrl}/te-natiraa/inscription`
-      const eventDate = new Date(event.eventDate).toLocaleDateString('fr-FR', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
+      const eventDate = formatTeNatiraaEventDateFr(event.eventDate)
       return `
         <div style="margin-bottom: 30px; padding: 24px; background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%); border-radius: 12px; border: 2px solid #3B82F6;">
           <div style="display: inline-block; padding: 6px 14px; background-color: #3B82F6; color: #FFFFFF; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">

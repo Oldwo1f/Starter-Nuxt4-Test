@@ -31,7 +31,7 @@ Body:
 
 Packs:
 - `teOhi` → 5 000 XPF/an → rôle `member`
-- `umete` → 20 000 XPF/an → rôle `premium`
+- `umete` → 20 000 XPF **paiement unique** → rôle `premium` + `premiumLifetimeGrantedAt` (cotisation annuelle : prévoir abonnement Te Ohi séparément, ex. Stripe)
 
 ### (Utilisateur) Lire le statut
 

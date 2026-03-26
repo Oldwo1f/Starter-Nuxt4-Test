@@ -8,7 +8,7 @@ const isChatDrawerOpen = ref(false)
 const unreadChatCount = ref(0)
 
 definePageMeta({
-  layout: 'default',
+  layout: 'games',
   middleware: 'auth',
   titleKey: 'games.metaBingo',
 })

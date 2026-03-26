@@ -93,6 +93,11 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
       icon: 'i-heroicons-user-circle',
       to: '/account/profile',
     },
+    {
+      label: t('common.support'),
+      icon: 'i-heroicons-lifebuoy',
+      to: '/account/support',
+    },
   ]
 
   // Ajouter le lien Administration si l'utilisateur est staff ou admin
