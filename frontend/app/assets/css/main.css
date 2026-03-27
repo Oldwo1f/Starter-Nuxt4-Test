@@ -44,11 +44,18 @@ nav [class*="Button"] * {
   color: white !important;
 }
 
-/* Mobile: éviter le drag des images pendant le scroll tactile */
+/* Mobile: éviter les captures accidentelles au scroll tactile */
 @media (hover: none) and (pointer: coarse) {
-  img:not([draggable="true"]) {
+  img:not([draggable="true"]),
+  a:not([draggable="true"]),
+  button:not([draggable="true"]) {
     -webkit-user-drag: none;
     user-select: none;
     -webkit-touch-callout: none;
+  }
+
+  a,
+  button {
+    touch-action: manipulation;
   }
 }

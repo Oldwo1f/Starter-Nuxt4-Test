@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nuxt build --dotenv ../.env",
-    "dev": "nuxt dev --dotenv ../.env --port 3000",
+    "dev": "nuxt dev --dotenv ../.env --port 3000 --host",
     "generate": "nuxt generate --dotenv ../.env",
     "preview": "nuxt preview --dotenv ../.env",
     "postinstall": "nuxt prepare"
