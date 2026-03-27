@@ -5,6 +5,13 @@ import jijiTokenImg from '~/assets/images/jiji_perspective.png'
 import tasJijiImg from '~/assets/images/tas_jiji.png'
 import bipSound from '~/assets/BIP.wav'
 
+const shakeSoundUrls = Object.values(
+  import.meta.glob('~/assets/kikiri/*.mp3', {
+    eager: true,
+    import: 'default',
+  }) as Record<string, string>,
+)
+
 const props = defineProps<{
   draw: KikiriDraw | null
   canBet: boolean
@@ -1056,9 +1063,12 @@ function animateDomeClose() {
   draw()
 }
 
-function playBipSound() {
+function playCupShakeSound() {
   try {
-    const audio = new Audio(bipSound)
+    const randomShakeSound = shakeSoundUrls.length > 0
+      ? shakeSoundUrls[Math.floor(Math.random() * shakeSoundUrls.length)]
+      : bipSound
+    const audio = new Audio(randomShakeSound)
     audio.volume = 0.7
     audio.play().catch(() => {
       try {
@@ -1082,7 +1092,7 @@ function startCupShake() {
   cupShaking.value = true
   domeShakeX.value = 0
   animationStartTime.value = performance.now()
-  playBipSound()
+  playCupShakeSound()
   requestAnimationFrame(animateCupShake)
 }
 

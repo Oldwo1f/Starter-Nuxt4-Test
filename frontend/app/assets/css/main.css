@@ -43,3 +43,12 @@ nav button[class*="Button"] *,
 nav [class*="Button"] * {
   color: white !important;
 }
+
+/* Mobile: éviter le drag des images pendant le scroll tactile */
+@media (hover: none) and (pointer: coarse) {
+  img:not([draggable="true"]) {
+    -webkit-user-drag: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
