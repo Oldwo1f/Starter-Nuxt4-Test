@@ -52,16 +52,35 @@ interface PendingLegacyVerification {
   }
 }
 
+interface PendingManualFlowVerification {
+  id: number
+  channel: 'ccp_marama' | 'deblock_rib' | 'deblock_instant'
+  createdAt: string
+  user: {
+    id: number
+    email: string
+    firstName: string | null
+    lastName: string | null
+  }
+}
+
 const pendingVerifications = ref<PendingVerification[]>([])
 const pendingLegacyVerifications = ref<PendingLegacyVerification[]>([])
+const pendingManualFlowVerifications = ref<PendingManualFlowVerification[]>([])
 const isLoading = ref(false)
 const isLoadingLegacy = ref(false)
+const isLoadingManualFlow = ref(false)
 const isConfirming = ref<number | null>(null)
 const isRejecting = ref<number | null>(null)
+const isConfirmingManualFlow = ref<number | null>(null)
+const isRejectingManualFlow = ref<number | null>(null)
 const activeTab = ref<'bank' | 'legacy'>('bank')
 const upgradeToPremium = ref<Record<number, boolean>>({})
 const customExpirationDay = ref<Record<number, number | null>>({})
 const customExpirationMonth = ref<Record<number, number | null>>({})
+const upgradeToPremiumManualFlow = ref<Record<number, boolean>>({})
+const customExpirationDayManualFlow = ref<Record<number, number | null>>({})
+const customExpirationMonthManualFlow = ref<Record<number, number | null>>({})
 
 const formatDate = (iso: string) => {
   const d = new Date(iso)
@@ -273,9 +292,142 @@ const getPaidWithLabel = (paidWith: string) => {
   return paidWith === 'naho' ? 'Naho' : 'Tamiga'
 }
 
+const getManualFlowChannelLabel = (channel: string) => {
+  const labels: Record<string, string> = {
+    ccp_marama: 'Virement — CCP Marama (La Poste)',
+    deblock_rib: 'Virement — Déblock (RIB)',
+    deblock_instant: 'Déblock instantané',
+  }
+  return labels[channel] || channel
+}
+
+const fetchPendingManualFlowVerifications = async () => {
+  if (!authStore.accessToken) {
+    return
+  }
+
+  isLoadingManualFlow.value = true
+  try {
+    const response = await $fetch<PendingManualFlowVerification[]>(
+      `${API_BASE_URL}/billing/bank-transfer/manual-flow/pending-verifications`,
+      {
+        headers: {
+          Authorization: `Bearer ${authStore.accessToken}`,
+        },
+      }
+    )
+    pendingManualFlowVerifications.value = response
+  } catch (err: any) {
+    toast.add({
+      title: 'Erreur',
+      description: err.data?.message || err.message || 'Impossible de charger les demandes CCP / Déblock',
+      color: 'red',
+    })
+  } finally {
+    isLoadingManualFlow.value = false
+  }
+}
+
+const confirmManualFlowVerification = async (verificationId: number) => {
+  if (!authStore.accessToken) {
+    return
+  }
+
+  const day = customExpirationDayManualFlow.value[verificationId]
+  const month = customExpirationMonthManualFlow.value[verificationId]
+  if ((day && !month) || (!day && month)) {
+    toast.add({
+      title: 'Erreur',
+      description: 'Veuillez renseigner à la fois le jour et le mois, ou aucun des deux.',
+      color: 'red',
+    })
+    return
+  }
+
+  isConfirmingManualFlow.value = verificationId
+  try {
+    const body: Record<string, unknown> = {
+      upgradeToPremium: upgradeToPremiumManualFlow.value[verificationId] || false,
+    }
+    if (day && month) {
+      body.expirationDay = Number(day)
+      body.expirationMonth = Number(month)
+    }
+
+    await $fetch(
+      `${API_BASE_URL}/billing/bank-transfer/manual-flow/confirm-verification/${verificationId}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.accessToken}`,
+        },
+        body,
+      }
+    )
+    toast.add({
+      title: 'Vérification confirmée',
+      description: 'La demande a été confirmée et les Pūpū d\'inscription ont été attribués.',
+      color: 'success',
+    })
+    delete upgradeToPremiumManualFlow.value[verificationId]
+    delete customExpirationDayManualFlow.value[verificationId]
+    delete customExpirationMonthManualFlow.value[verificationId]
+    await fetchPendingManualFlowVerifications()
+  } catch (err: any) {
+    toast.add({
+      title: 'Erreur',
+      description: err.data?.message || err.message || 'Impossible de confirmer la vérification',
+      color: 'red',
+    })
+  } finally {
+    isConfirmingManualFlow.value = null
+  }
+}
+
+const rejectManualFlowVerification = async (verificationId: number) => {
+  if (!authStore.accessToken) {
+    return
+  }
+
+  if (!confirm('Êtes-vous sûr de vouloir rejeter cette demande ? Les droits de l\'utilisateur seront retirés.')) {
+    return
+  }
+
+  isRejectingManualFlow.value = verificationId
+  try {
+    await $fetch(
+      `${API_BASE_URL}/billing/bank-transfer/manual-flow/reject-verification/${verificationId}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.accessToken}`,
+        },
+      }
+    )
+    toast.add({
+      title: 'Vérification rejetée',
+      description: 'La demande a été rejetée et les droits ont été retirés.',
+      color: 'amber',
+    })
+    delete upgradeToPremiumManualFlow.value[verificationId]
+    delete customExpirationDayManualFlow.value[verificationId]
+    delete customExpirationMonthManualFlow.value[verificationId]
+    await fetchPendingManualFlowVerifications()
+  } catch (err: any) {
+    toast.add({
+      title: 'Erreur',
+      description: err.data?.message || err.message || 'Impossible de rejeter la vérification',
+      color: 'red',
+    })
+  } finally {
+    isRejectingManualFlow.value = null
+  }
+}
+
 onMounted(() => {
   fetchPendingVerifications()
   fetchPendingLegacyVerifications()
+  fetchPendingManualFlowVerifications()
 })
 </script>
 
@@ -312,11 +464,12 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- Vérifications virement bancaire -->
-    <UCard v-if="activeTab === 'bank'" class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+    <div v-if="activeTab === 'bank'" class="space-y-6">
+    <!-- Vérifications virement bancaire (référence NH-…) -->
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
       <template #header>
         <div class="flex items-center justify-between">
-          <h2 class="text-xl font-semibold">Paiements à vérifier</h2>
+          <h2 class="text-xl font-semibold">Paiements à vérifier (référence bancaire)</h2>
           <UButton variant="outline" size="sm" :loading="isLoading" @click="fetchPendingVerifications">
             <UIcon name="i-heroicons-arrow-path" class="w-4 h-4" />
             Actualiser
@@ -393,6 +546,127 @@ onMounted(() => {
         </table>
       </div>
     </UCard>
+
+    <!-- Demandes sans référence NH (CCP Marama, RIB Déblock, Déblock instantané) -->
+    <UCard class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold">Virements / Déblock (sans référence NH)</h2>
+          <UButton variant="outline" size="sm" :loading="isLoadingManualFlow" @click="fetchPendingManualFlowVerifications">
+            <UIcon name="i-heroicons-arrow-path" class="w-4 h-4" />
+            Actualiser
+          </UButton>
+        </div>
+      </template>
+
+      <div v-if="isLoadingManualFlow && pendingManualFlowVerifications.length === 0" class="py-12 text-center">
+        <div class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent" />
+      </div>
+
+      <div v-else-if="pendingManualFlowVerifications.length === 0" class="py-12 text-center text-white/60">
+        <UIcon name="i-heroicons-check-circle" class="mx-auto mb-2 h-12 w-12 text-green-500/50" />
+        <p>Aucune demande CCP / Déblock en attente</p>
+      </div>
+
+      <div v-else class="overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="border-b border-white/10">
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white/80">Date de la demande</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white/80">Nom</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white/80">Prénom</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white/80">Email</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white/80">Moyen déclaré</th>
+              <th class="px-4 py-3 text-right text-sm font-semibold text-white/80">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="verification in pendingManualFlowVerifications"
+              :key="verification.id"
+              class="border-b border-white/5 hover:bg-white/5 transition-colors"
+            >
+              <td class="px-4 py-3 text-sm text-white/70">
+                {{ formatDate(verification.createdAt) }}
+              </td>
+              <td class="px-4 py-3 text-sm text-white/70">
+                {{ verification.user.lastName || '-' }}
+              </td>
+              <td class="px-4 py-3 text-sm text-white/70">
+                {{ verification.user.firstName || '-' }}
+              </td>
+              <td class="px-4 py-3 text-sm text-white/70">
+                {{ verification.user.email }}
+              </td>
+              <td class="px-4 py-3 text-sm">
+                <UBadge color="amber" variant="subtle">
+                  {{ getManualFlowChannelLabel(verification.channel) }}
+                </UBadge>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex flex-col gap-3">
+                  <div class="flex items-center justify-end gap-2">
+                    <label class="flex items-center gap-2 text-xs text-white/60">
+                      <input
+                        type="checkbox"
+                        :checked="upgradeToPremiumManualFlow[verification.id] || false"
+                        @change="upgradeToPremiumManualFlow[verification.id] = ($event.target as HTMLInputElement).checked"
+                        class="rounded"
+                      />
+                      Premium
+                    </label>
+                  </div>
+                  <div class="flex items-center justify-end gap-2 text-xs">
+                    <span class="text-white/60">Expiration:</span>
+                    <select
+                      v-model.number="customExpirationMonthManualFlow[verification.id]"
+                      class="rounded bg-white/10 border border-white/20 text-white px-2 py-1 text-xs min-w-[100px] [&>option]:bg-gray-900 [&>option]:text-white"
+                    >
+                      <option :value="null">Mois</option>
+                      <option v-for="month in 12" :key="month" :value="month">
+                        {{ new Date(2024, month - 1, 1).toLocaleDateString('fr-FR', { month: 'long' }) }}
+                      </option>
+                    </select>
+                    <select
+                      v-model.number="customExpirationDayManualFlow[verification.id]"
+                      class="rounded bg-white/10 border border-white/20 text-white px-2 py-1 text-xs min-w-[70px] [&>option]:bg-gray-900 [&>option]:text-white"
+                      :class="{ 'opacity-50 cursor-not-allowed': !customExpirationMonthManualFlow[verification.id] }"
+                      :disabled="!customExpirationMonthManualFlow[verification.id]"
+                    >
+                      <option :value="null">Jour</option>
+                      <option v-for="day in 31" :key="day" :value="day">{{ day }}</option>
+                    </select>
+                  </div>
+                  <div class="flex items-center justify-end gap-2">
+                    <UButton
+                      color="green"
+                      variant="solid"
+                      size="sm"
+                      class="bg-green-600 hover:bg-green-700 text-white"
+                      :loading="isConfirmingManualFlow === verification.id"
+                      @click="confirmManualFlowVerification(verification.id)"
+                    >
+                      Confirmer
+                    </UButton>
+                    <UButton
+                      color="red"
+                      variant="solid"
+                      size="sm"
+                      class="bg-red-600 hover:bg-red-700 text-white"
+                      :loading="isRejectingManualFlow === verification.id"
+                      @click="rejectManualFlowVerification(verification.id)"
+                    >
+                      Rejeter
+                    </UButton>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </UCard>
+    </div>
 
     <!-- Vérifications legacy -->
     <UCard v-if="activeTab === 'legacy'" class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">

@@ -4,7 +4,7 @@ definePageMeta({
 })
 
 import { useAuthStore } from '~/stores/useAuthStore'
-import { useFacebook } from '~/composables/useFacebook'
+// import { useFacebook } from '~/composables/useFacebook'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -14,7 +14,7 @@ const { t } = useI18n()
 const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
-const isFacebookLoading = ref(false)
+// const isFacebookLoading = ref(false)
 const error = ref('')
 
 // Récupérer l'URL de retour depuis les query params
@@ -41,41 +41,41 @@ const handleLogin = async () => {
   }
 }
 
-const handleFacebookLogin = async () => {
-  error.value = ''
-  isFacebookLoading.value = true
-
-  try {
-    const { initFacebook, login: facebookLogin, isMobile, redirectToFacebookLogin } = useFacebook()
-
-    // Sur mobile, les popups sont souvent bloquées → utiliser le flux redirect
-    if (isMobile()) {
-      redirectToFacebookLogin(getReturnUrl(), 'login')
-      return // La page va se recharger pour la redirection
-    }
-
-    // Desktop : flux popup classique
-    await initFacebook()
-    const fbResponse = await facebookLogin()
-    const emailToUse = fbResponse.email || `fb_${fbResponse.userID}@facebook.temp`
-
-    const result = await authStore.facebookLogin(
-      fbResponse.userID,
-      emailToUse,
-      fbResponse.accessToken
-    )
-
-    if (result.success) {
-      router.push(getReturnUrl())
-    } else {
-      error.value = result.error || t('auth.login.facebookError')
-    }
-  } catch (err: any) {
-    error.value = err.message || t('auth.login.facebookError')
-  } finally {
-    isFacebookLoading.value = false
-  }
-}
+// const handleFacebookLogin = async () => {
+//   error.value = ''
+//   isFacebookLoading.value = true
+//
+//   try {
+//     const { initFacebook, login: facebookLogin, isMobile, redirectToFacebookLogin } = useFacebook()
+//
+//     // Sur mobile, les popups sont souvent bloquées → utiliser le flux redirect
+//     if (isMobile()) {
+//       redirectToFacebookLogin(getReturnUrl(), 'login')
+//       return // La page va se recharger pour la redirection
+//     }
+//
+//     // Desktop : flux popup classique
+//     await initFacebook()
+//     const fbResponse = await facebookLogin()
+//     const emailToUse = fbResponse.email || `fb_${fbResponse.userID}@facebook.temp`
+//
+//     const result = await authStore.facebookLogin(
+//       fbResponse.userID,
+//       emailToUse,
+//       fbResponse.accessToken
+//     )
+//
+//     if (result.success) {
+//       router.push(getReturnUrl())
+//     } else {
+//       error.value = result.error || t('auth.login.facebookError')
+//     }
+//   } catch (err: any) {
+//     error.value = err.message || t('auth.login.facebookError')
+//   } finally {
+//     isFacebookLoading.value = false
+//   }
+// }
 </script>
 
 <template>
@@ -136,6 +136,7 @@ const handleFacebookLogin = async () => {
           </UButton>
         </form>
 
+        <!--
         <div class="mt-6">
           <div class="relative">
             <div class="absolute inset-0 flex items-center">
@@ -160,6 +161,7 @@ const handleFacebookLogin = async () => {
             {{ t('auth.login.facebook') }}
           </UButton>
         </div>
+        -->
 
         <div class="mt-6 text-center">
           <p class="text-sm text-white/60">

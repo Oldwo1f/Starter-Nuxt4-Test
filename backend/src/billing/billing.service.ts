@@ -17,6 +17,11 @@ import {
   LegacyPaidWith,
   LegacyVerificationStatus,
 } from '../entities/legacy-payment-verification.entity';
+import {
+  ManualTransferFlowVerification,
+  ManualTransferFlowChannel,
+  ManualTransferFlowStatus,
+} from '../entities/manual-transfer-flow-verification.entity';
 import { User, UserRole } from '../entities/user.entity';
 import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
 import { ReferralService } from '../referral/referral.service';
@@ -31,6 +36,8 @@ export class BillingService {
     private paymentsRepository: Repository<BankTransferPayment>,
     @InjectRepository(LegacyPaymentVerification)
     private legacyVerificationsRepository: Repository<LegacyPaymentVerification>,
+    @InjectRepository(ManualTransferFlowVerification)
+    private manualTransferFlowRepository: Repository<ManualTransferFlowVerification>,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     @InjectRepository(Transaction)
@@ -749,6 +756,274 @@ export class BillingService {
       // Remove user rights
       const user = await usersRepo.findOne({
         where: { id: freshVerification.userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      user.role = UserRole.USER;
+      user.paidAccessExpiresAt = null;
+      user.premiumLifetimeGrantedAt = null;
+      await usersRepo.save(user);
+    });
+
+    return { ok: true };
+  }
+
+  // --- Manual transfer flow (CCP / Déblock RIB / Déblock instantané), listed under admin « Virements » ---
+
+  async requestManualTransferFlowVerification(userId: number, channel: ManualTransferFlowChannel) {
+    const existing = await this.manualTransferFlowRepository.findOne({
+      where: { userId, status: ManualTransferFlowStatus.PENDING },
+    });
+    if (existing) {
+      return { ok: true, alreadyRequested: true, verificationId: existing.id };
+    }
+
+    const now = new Date();
+    const desiredRole = UserRole.MEMBER;
+
+    await this.dataSource.transaction(async (manager) => {
+      const manualRepo = manager.getRepository(ManualTransferFlowVerification);
+      const usersRepo = manager.getRepository(User);
+
+      const verification = manualRepo.create({
+        userId,
+        channel,
+        status: ManualTransferFlowStatus.PENDING,
+        pupuInscriptionReceived: false,
+      });
+      await manualRepo.save(verification);
+
+      const user = await usersRepo.findOne({
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const currentLevel = this.getUserRoleLevel(user.role);
+      const desiredLevel = this.getUserRoleLevel(desiredRole);
+      if (desiredLevel > currentLevel) {
+        user.role = desiredRole;
+      }
+
+      const next = new Date(now);
+      next.setFullYear(next.getFullYear() + 1);
+      user.paidAccessExpiresAt = next;
+
+      await usersRepo.save(user);
+    });
+
+    return { ok: true, alreadyRequested: false };
+  }
+
+  async getMyManualTransferFlowVerification(userId: number) {
+    const verification = await this.manualTransferFlowRepository.findOne({
+      where: { userId, status: ManualTransferFlowStatus.PENDING },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!verification) {
+      return { verification: null, user: null };
+    }
+
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'role', 'paidAccessExpiresAt', 'premiumLifetimeGrantedAt'],
+    });
+
+    return {
+      verification: {
+        id: verification.id,
+        channel: verification.channel,
+        status: verification.status,
+        createdAt: verification.createdAt,
+      },
+      user: user
+        ? {
+            role: user.role,
+            paidAccessExpiresAt: user.paidAccessExpiresAt,
+            premiumLifetimeGrantedAt: user.premiumLifetimeGrantedAt,
+          }
+        : null,
+    };
+  }
+
+  async getPendingManualTransferFlowVerifications() {
+    const rows = await this.manualTransferFlowRepository.find({
+      where: { status: ManualTransferFlowStatus.PENDING },
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+    });
+
+    return rows.map((v) => ({
+      id: v.id,
+      channel: v.channel,
+      createdAt: v.createdAt,
+      user: {
+        id: v.user.id,
+        email: v.user.email,
+        firstName: v.user.firstName,
+        lastName: v.user.lastName,
+      },
+    }));
+  }
+
+  async confirmManualTransferFlowVerification(
+    verificationId: number,
+    adminUserId: number,
+    upgradeToPremium: boolean = false,
+    expirationDay?: number,
+    expirationMonth?: number,
+  ) {
+    const verification = await this.manualTransferFlowRepository.findOne({
+      where: { id: verificationId },
+      relations: ['user'],
+    });
+    if (!verification) {
+      throw new NotFoundException('Verification not found');
+    }
+
+    if (verification.status !== ManualTransferFlowStatus.PENDING) {
+      throw new BadRequestException('Only pending verifications can be confirmed');
+    }
+
+    if ((expirationDay && !expirationMonth) || (!expirationDay && expirationMonth)) {
+      throw new BadRequestException('Both expirationDay and expirationMonth must be provided, or neither');
+    }
+    if (expirationDay && expirationMonth) {
+      if (expirationDay < 1 || expirationDay > 31 || expirationMonth < 1 || expirationMonth > 12) {
+        throw new BadRequestException('Invalid expiration date: day must be 1-31, month must be 1-12');
+      }
+    }
+
+    const now = new Date();
+    const finalRole = upgradeToPremium ? UserRole.PREMIUM : UserRole.MEMBER;
+    const channelLabel = verification.channel;
+
+    await this.dataSource.transaction(async (manager) => {
+      const manualRepo = manager.getRepository(ManualTransferFlowVerification);
+      const usersRepo = manager.getRepository(User);
+      const transactionsRepo = manager.getRepository(Transaction);
+
+      const fresh = await manualRepo.findOne({
+        where: { id: verification.id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!fresh || fresh.status !== ManualTransferFlowStatus.PENDING) {
+        return;
+      }
+
+      fresh.status = ManualTransferFlowStatus.CONFIRMED;
+      await manualRepo.save(fresh);
+
+      const user = await usersRepo.findOne({
+        where: { id: fresh.userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const currentLevel = this.getUserRoleLevel(user.role);
+      const desiredLevel = this.getUserRoleLevel(finalRole);
+      if (desiredLevel > currentLevel) {
+        user.role = finalRole;
+      }
+
+      let next: Date;
+      if (
+        expirationDay !== undefined &&
+        expirationDay !== null &&
+        expirationMonth !== undefined &&
+        expirationMonth !== null
+      ) {
+        const currentYear = now.getFullYear();
+        const customDate = new Date(currentYear, expirationMonth - 1, expirationDay);
+        if (customDate.getDate() !== expirationDay || customDate.getMonth() !== expirationMonth - 1) {
+          throw new BadRequestException(`Invalid date: ${expirationDay}/${expirationMonth} does not exist`);
+        }
+        if (customDate < now) {
+          next = new Date(currentYear + 1, expirationMonth - 1, expirationDay);
+        } else {
+          next = customDate;
+        }
+      } else {
+        next = new Date(now);
+        next.setFullYear(next.getFullYear() + 1);
+      }
+      user.paidAccessExpiresAt = next;
+
+      if (!fresh.pupuInscriptionReceived) {
+        const creditedAt = new Date();
+        const pupuPack: PackCode = finalRole === UserRole.PREMIUM ? 'umete' : 'teOhi';
+        const pupuAmount = inscriptionPupuAmount(pupuPack, creditedAt);
+        if (pupuPack === 'umete' && !user.premiumLifetimeGrantedAt) {
+          user.premiumLifetimeGrantedAt = creditedAt;
+        }
+        const balanceBefore = parseFloat(user.walletBalance.toString());
+        const balanceAfter = balanceBefore + pupuAmount;
+        user.walletBalance = balanceAfter;
+        await usersRepo.save(user);
+
+        await transactionsRepo.save(
+          transactionsRepo.create({
+            type: TransactionType.CREDIT,
+            amount: pupuAmount,
+            balanceBefore,
+            balanceAfter,
+            status: TransactionStatus.COMPLETED,
+            fromUserId: adminUserId,
+            toUserId: user.id,
+            description: `[Nuna'a Heritage] Pūpū d'inscription - Cotisation (virement ${channelLabel})`,
+          }),
+        );
+
+        fresh.pupuInscriptionReceived = true;
+        await manualRepo.save(fresh);
+      } else {
+        await usersRepo.save(user);
+      }
+    });
+
+    await this.referralService.checkAndRewardReferrer(verification.userId);
+
+    return { ok: true };
+  }
+
+  async rejectManualTransferFlowVerification(verificationId: number, _adminUserId: number) {
+    const verification = await this.manualTransferFlowRepository.findOne({
+      where: { id: verificationId },
+      relations: ['user'],
+    });
+    if (!verification) {
+      throw new NotFoundException('Verification not found');
+    }
+
+    if (verification.status !== ManualTransferFlowStatus.PENDING) {
+      throw new BadRequestException('Only pending verifications can be rejected');
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const manualRepo = manager.getRepository(ManualTransferFlowVerification);
+      const usersRepo = manager.getRepository(User);
+
+      const fresh = await manualRepo.findOne({
+        where: { id: verification.id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!fresh || fresh.status !== ManualTransferFlowStatus.PENDING) {
+        return;
+      }
+
+      fresh.status = ManualTransferFlowStatus.REJECTED;
+      await manualRepo.save(fresh);
+
+      const user = await usersRepo.findOne({
+        where: { id: fresh.userId },
         lock: { mode: 'pessimistic_write' },
       });
       if (!user) {

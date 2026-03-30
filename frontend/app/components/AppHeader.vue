@@ -92,10 +92,10 @@ const heritageMenuItems = computed<MenuItem[]>(() => [
     active: route.path === '/',
   },
   {
-    label: t('nav.blog'),
-    to: '/blog',
-    icon: 'i-heroicons-document-text',
-    active: route.path.startsWith('/blog'),
+    label: t('nav.culture'),
+    to: '/culture',
+    icon: 'i-heroicons-video-camera',
+    active: route.path.startsWith('/culture'),
   },
   {
     label: t('nav.polls'),
@@ -110,10 +110,10 @@ const heritageMenuItems = computed<MenuItem[]>(() => [
     active: route.path.startsWith('/goodies'),
   },
   {
-    label: t('nav.culture'),
-    to: '/culture',
-    icon: 'i-heroicons-video-camera',
-    active: route.path.startsWith('/culture'),
+    label: t('nav.blog'),
+    to: '/blog',
+    icon: 'i-heroicons-document-text',
+    active: route.path.startsWith('/blog'),
   },
   {
     label: t('nav.partners'),
@@ -189,14 +189,14 @@ const activeMenuItems = computed(() => {
   return heritageMenuItems.value
 })
 
-// Desktop Heritage : liens principaux (mobile drawer inchangé via heritageMenuItems)
+// Desktop Heritage : liens principaux (mobile drawer via heritageMenuItems)
 const heritageDesktopPrimaryItems = computed<MenuItem[]>(() => {
   const items: MenuItem[] = [
     {
-      label: t('nav.blog'),
-      to: '/blog',
-      icon: 'i-heroicons-document-text',
-      active: route.path.startsWith('/blog'),
+      label: t('nav.culture'),
+      to: '/culture',
+      icon: 'i-heroicons-video-camera',
+      active: route.path.startsWith('/culture'),
     },
     {
       label: t('nav.academy'),
@@ -242,7 +242,7 @@ const heritageMoreMenuActive = computed(() => {
   const tarifsOnlyInMore = !showNosPacksInPrimaryNav.value
   return (
     p.startsWith('/goodies')
-    || p.startsWith('/culture')
+    || p.startsWith('/blog')
     || p.startsWith('/partners')
     || (tarifsOnlyInMore && p.startsWith('/tarifs'))
     || p.startsWith('/te-natiraa')
@@ -263,9 +263,9 @@ const heritageMoreMenuItems = computed<DropdownMenuItem[][]>(() => {
       to: '/goodies',
     },
     {
-      label: t('nav.culture'),
-      icon: 'i-heroicons-video-camera',
-      to: '/culture',
+      label: t('nav.blog'),
+      icon: 'i-heroicons-document-text',
+      to: '/blog',
     },
     {
       label: t('nav.partners'),

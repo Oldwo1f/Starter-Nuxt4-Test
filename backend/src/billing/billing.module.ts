@@ -4,13 +4,20 @@ import { BillingController } from './billing.controller';
 import { BillingService } from './billing.service';
 import { BankTransferPayment } from '../entities/bank-transfer-payment.entity';
 import { LegacyPaymentVerification } from '../entities/legacy-payment-verification.entity';
+import { ManualTransferFlowVerification } from '../entities/manual-transfer-flow-verification.entity';
 import { User } from '../entities/user.entity';
 import { Transaction } from '../entities/transaction.entity';
 import { ReferralModule } from '../referral/referral.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([BankTransferPayment, LegacyPaymentVerification, User, Transaction]),
+    TypeOrmModule.forFeature([
+      BankTransferPayment,
+      LegacyPaymentVerification,
+      ManualTransferFlowVerification,
+      User,
+      Transaction,
+    ]),
     ReferralModule,
   ],
   controllers: [BillingController],

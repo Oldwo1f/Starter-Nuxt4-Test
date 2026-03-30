@@ -4,7 +4,7 @@ definePageMeta({
 })
 
 import { useAuthStore } from '~/stores/useAuthStore'
-import { useFacebook } from '~/composables/useFacebook'
+// import { useFacebook } from '~/composables/useFacebook'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -17,7 +17,7 @@ const confirmPassword = ref('')
 const phoneNumber = ref('')
 const referralCode = ref('')
 const isLoading = ref(false)
-const isFacebookLoading = ref(false)
+// const isFacebookLoading = ref(false)
 const error = ref('')
 const success = ref('')
 
@@ -67,45 +67,45 @@ const handleRegister = async () => {
   }
 }
 
-const handleFacebookLogin = async () => {
-  error.value = ''
-  success.value = ''
-  isFacebookLoading.value = true
-
-  try {
-    const { initFacebook, login: facebookLogin, isMobile, redirectToFacebookLogin } = useFacebook()
-
-    // Sur mobile, les popups sont souvent bloquées → utiliser le flux redirect
-    if (isMobile()) {
-      redirectToFacebookLogin('/', 'register')
-      return // La page va se recharger pour la redirection
-    }
-
-    // Desktop : flux popup classique
-    await initFacebook()
-    const fbResponse = await facebookLogin()
-    const emailToUse = fbResponse.email || `fb_${fbResponse.userID}@facebook.temp`
-
-    const result = await authStore.facebookLogin(
-      fbResponse.userID,
-      emailToUse,
-      fbResponse.accessToken
-    )
-
-    if (result.success) {
-      success.value = t('auth.register.facebookSuccess')
-      setTimeout(() => {
-        router.push('/')
-      }, 1000)
-    } else {
-      error.value = result.error || t('auth.register.facebookError')
-    }
-  } catch (err: any) {
-    error.value = err.message || t('auth.register.facebookError')
-  } finally {
-    isFacebookLoading.value = false
-  }
-}
+// const handleFacebookLogin = async () => {
+//   error.value = ''
+//   success.value = ''
+//   isFacebookLoading.value = true
+//
+//   try {
+//     const { initFacebook, login: facebookLogin, isMobile, redirectToFacebookLogin } = useFacebook()
+//
+//     // Sur mobile, les popups sont souvent bloquées → utiliser le flux redirect
+//     if (isMobile()) {
+//       redirectToFacebookLogin('/', 'register')
+//       return // La page va se recharger pour la redirection
+//     }
+//
+//     // Desktop : flux popup classique
+//     await initFacebook()
+//     const fbResponse = await facebookLogin()
+//     const emailToUse = fbResponse.email || `fb_${fbResponse.userID}@facebook.temp`
+//
+//     const result = await authStore.facebookLogin(
+//       fbResponse.userID,
+//       emailToUse,
+//       fbResponse.accessToken
+//     )
+//
+//     if (result.success) {
+//       success.value = t('auth.register.facebookSuccess')
+//       setTimeout(() => {
+//         router.push('/')
+//       }, 1000)
+//     } else {
+//       error.value = result.error || t('auth.register.facebookError')
+//     }
+//   } catch (err: any) {
+//     error.value = err.message || t('auth.register.facebookError')
+//   } finally {
+//     isFacebookLoading.value = false
+//   }
+// }
 </script>
 
 <template>
@@ -196,12 +196,13 @@ const handleFacebookLogin = async () => {
             block
             size="lg"
             :loading="isLoading"
-            :disabled="isLoading || isFacebookLoading"
+            :disabled="isLoading"
           >
             {{ t('auth.register.submit') }}
           </UButton>
         </form>
 
+        <!--
         <div class="mt-6">
           <div class="relative">
             <div class="absolute inset-0 flex items-center">
@@ -226,6 +227,7 @@ const handleFacebookLogin = async () => {
             {{ t('auth.register.facebook') }}
           </UButton>
         </div>
+        -->
 
         <div class="mt-6 text-center">
           <p class="text-sm text-white/60">

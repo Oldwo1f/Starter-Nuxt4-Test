@@ -43,6 +43,27 @@ export interface LegacyVerificationMeResponse {
   } | null
 }
 
+export type ManualTransferFlowChannel =
+  | 'ccp_marama'
+  | 'deblock_rib'
+  | 'deblock_instant'
+
+export interface ManualTransferFlowVerification {
+  id: number
+  channel: ManualTransferFlowChannel
+  status: 'pending' | 'confirmed' | 'rejected'
+  createdAt: string
+}
+
+export interface ManualTransferFlowMeResponse {
+  verification: ManualTransferFlowVerification | null
+  user: {
+    role: string
+    paidAccessExpiresAt: string | null
+    premiumLifetimeGrantedAt?: string | null
+  } | null
+}
+
 export const useBillingStore = defineStore('billing', () => {
   const config = useRuntimeConfig()
   const API_BASE_URL = config.public.apiBaseUrl || 'http://localhost:3001'
@@ -51,6 +72,7 @@ export const useBillingStore = defineStore('billing', () => {
   const payment = ref<BankTransferPayment | null>(null)
   const userAccess = ref<BankTransferMeResponse['user']>(null)
   const legacyVerification = ref<LegacyVerification | null>(null)
+  const manualTransferFlowVerification = ref<ManualTransferFlowVerification | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
@@ -183,6 +205,70 @@ export const useBillingStore = defineStore('billing', () => {
     }
   }
 
+  const fetchMyManualTransferFlowVerification = async () => {
+    if (!authStore.accessToken) {
+      return { success: false, error: 'Non authentifié' }
+    }
+
+    error.value = null
+    try {
+      const response = await $fetch<ManualTransferFlowMeResponse>(
+        `${API_BASE_URL}/billing/bank-transfer/manual-flow/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${authStore.accessToken}`,
+          },
+        }
+      )
+      manualTransferFlowVerification.value = response.verification
+      return { success: true, data: response }
+    } catch (err: any) {
+      error.value =
+        err.data?.message ||
+        err.message ||
+        "Erreur lors de la récupération de l'état de la vérification"
+      return { success: false, error: error.value }
+    }
+  }
+
+  const requestManualTransferFlowVerification = async (channel: ManualTransferFlowChannel) => {
+    if (!authStore.accessToken) {
+      return { success: false, error: 'Non authentifié' }
+    }
+
+    isLoading.value = true
+    error.value = null
+    try {
+      const response = await $fetch<{ ok: boolean; alreadyRequested?: boolean }>(
+        `${API_BASE_URL}/billing/bank-transfer/manual-flow/request-verification`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${authStore.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: { channel },
+        }
+      )
+
+      if (response.ok) {
+        await authStore.fetchProfile()
+        await fetchMyManualTransferFlowVerification()
+        return { success: true, data: response }
+      }
+
+      return { success: false, error: 'Erreur lors de la demande de vérification' }
+    } catch (err: any) {
+      error.value =
+        err.data?.message ||
+        err.message ||
+        "Erreur lors de la demande de vérification"
+      return { success: false, error: error.value }
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   const fetchMyLegacyVerification = async () => {
     if (!authStore.accessToken) {
       return { success: false, error: 'Non authentifié' }
@@ -216,6 +302,7 @@ export const useBillingStore = defineStore('billing', () => {
     payment,
     userAccess,
     legacyVerification,
+    manualTransferFlowVerification,
     isLoading,
     error,
     fetchMyBankTransfer,
@@ -223,6 +310,8 @@ export const useBillingStore = defineStore('billing', () => {
     requestVerification,
     requestLegacyVerification,
     fetchMyLegacyVerification,
+    fetchMyManualTransferFlowVerification,
+    requestManualTransferFlowVerification,
   }
 })
 

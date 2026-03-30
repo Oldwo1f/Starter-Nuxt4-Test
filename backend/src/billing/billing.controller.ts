@@ -6,6 +6,7 @@ import { BillingService } from './billing.service';
 import { CreateBankTransferIntentDto } from './dto/create-bank-transfer-intent.dto';
 import { BankTransferWebhookDto } from './dto/bank-transfer-webhook.dto';
 import { RequestLegacyVerificationDto } from './dto/request-legacy-verification.dto';
+import { RequestManualTransferFlowDto } from './dto/request-manual-transfer-flow.dto';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../entities/user.entity';
@@ -107,6 +108,70 @@ export class BillingController {
     @Param('paymentId', ParseIntPipe) paymentId: number,
   ) {
     return this.billingService.confirmVerification(paymentId, user.id);
+  }
+
+  /** Cotisation payée via CCP Marama, RIB Déblock ou Déblock instantané (sans intent NH-…) */
+  @Post('bank-transfer/manual-flow/request-verification')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Demander une vérification manuelle (virement coordonnées / Déblock)',
+    description:
+      'Crée une demande listée côté admin dans les vérifications virement. Accès membre optimiste 1 an, comme le flux legacy.',
+  })
+  async requestManualTransferFlow(
+    @CurrentUser() user: any,
+    @Body() dto: RequestManualTransferFlowDto,
+  ) {
+    return this.billingService.requestManualTransferFlowVerification(user.id, dto.channel);
+  }
+
+  @Get('bank-transfer/manual-flow/me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'État de la demande de vérification manuelle (CCP / Déblock) en cours' })
+  async getMyManualTransferFlow(@CurrentUser() user: any) {
+    return this.billingService.getMyManualTransferFlowVerification(user.id);
+  }
+
+  @Get('bank-transfer/manual-flow/pending-verifications')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Liste des demandes CCP / Déblock en attente (admin)' })
+  async getPendingManualTransferFlow() {
+    return this.billingService.getPendingManualTransferFlowVerifications();
+  }
+
+  @Post('bank-transfer/manual-flow/confirm-verification/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiParam({ name: 'id', type: Number })
+  async confirmManualTransferFlow(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) verificationId: number,
+    @Body() body: { upgradeToPremium?: boolean; expirationDay?: number; expirationMonth?: number },
+  ) {
+    return this.billingService.confirmManualTransferFlowVerification(
+      verificationId,
+      user.id,
+      body.upgradeToPremium || false,
+      body.expirationDay,
+      body.expirationMonth,
+    );
+  }
+
+  @Post('bank-transfer/manual-flow/reject-verification/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiParam({ name: 'id', type: Number })
+  async rejectManualTransferFlow(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) verificationId: number,
+  ) {
+    return this.billingService.rejectManualTransferFlowVerification(verificationId, user.id);
   }
 
   // Legacy payment verification endpoints

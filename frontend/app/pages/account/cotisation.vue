@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { useBillingStore, type BankTransferPack } from '~/stores/useBillingStore'
-import { useStripeStore, type StripePack } from '~/stores/useStripeStore'
+import {
+  useBillingStore,
+  type BankTransferPack,
+  type ManualTransferFlowChannel,
+} from '~/stores/useBillingStore'
+import { useStripeStore } from '~/stores/useStripeStore'
 import { useAuthStore } from '~/stores/useAuthStore'
 import teohiImage from '~/assets/images/pictopack/teohi.jpeg'
 import umeteImage from '~/assets/images/pictopack/umete.jpeg'
@@ -28,6 +32,27 @@ const selectedPaidWith = ref<'naho' | 'tamiga' | null>(null)
 const hasPendingLegacyVerification = computed(() => {
   return billingStore.legacyVerification?.status === 'pending'
 })
+
+const hasPendingManualFlowVerification = computed(() => {
+  return billingStore.manualTransferFlowVerification?.status === 'pending'
+})
+
+const isManualFlowConfirmOpen = ref(false)
+const pendingManualFlowChannel = ref<ManualTransferFlowChannel | null>(null)
+
+watch(isManualFlowConfirmOpen, (open) => {
+  if (!open) {
+    pendingManualFlowChannel.value = null
+  }
+})
+
+const hasPendingPaymentVerification = computed(
+  () => hasPendingLegacyVerification.value || hasPendingManualFlowVerification.value,
+)
+
+const manualFlowChannelMessageKey = (channel: ManualTransferFlowChannel) => {
+  return `account.cotisation.manualFlowChannel_${channel}` as const
+}
 
 const packs = [
   {
@@ -68,6 +93,105 @@ const toggleAccordion = (panel: string) => {
     openAccordion.value = null
   } else {
     openAccordion.value = panel
+  }
+}
+
+type BankRibRow = { labelKey: string; value: string }
+
+type BankTransferBlock =
+  | {
+      kind: 'rib'
+      titleKey: string
+      subtitleKey?: string
+      rows: BankRibRow[]
+    }
+  | {
+      kind: 'deblock'
+      titleKey: string
+      handle: string
+      hintKey: string
+    }
+  | {
+      kind: 'cash'
+      titleKey: string
+      introKey: string
+    }
+
+type BankAccordionPanel = {
+  panelId: string
+  icon: string
+  block: BankTransferBlock
+  manualChannel?: ManualTransferFlowChannel
+}
+
+const bankAccordionPanels: BankAccordionPanel[] = [
+  {
+    panelId: 'bank-ccp',
+    icon: 'i-heroicons-building-library',
+    manualChannel: 'ccp_marama',
+    block: {
+      kind: 'rib',
+      titleKey: 'account.cotisation.bankCcpTitle',
+      subtitleKey: 'account.cotisation.bankCcpSubtitle',
+      rows: [
+        { labelKey: 'account.cotisation.bankFieldBankCode', value: '14168' },
+        { labelKey: 'account.cotisation.bankFieldGuichet', value: '00001' },
+        { labelKey: 'account.cotisation.bankFieldAccount', value: '10017214801' },
+        { labelKey: 'account.cotisation.bankFieldKey', value: '29' },
+      ],
+    },
+  },
+  {
+    panelId: 'bank-deblock-rib',
+    icon: 'i-heroicons-building-office-2',
+    manualChannel: 'deblock_rib',
+    block: {
+      kind: 'rib',
+      titleKey: 'account.cotisation.bankDeblockRibTitle',
+      rows: [
+        { labelKey: 'account.cotisation.bankFieldBankCode', value: '17748' },
+        { labelKey: 'account.cotisation.bankFieldGuichet', value: '01984' },
+        { labelKey: 'account.cotisation.bankFieldAccount', value: 'RVASRU8KUGM' },
+        { labelKey: 'account.cotisation.bankFieldKey', value: '44' },
+      ],
+    },
+  },
+  {
+    panelId: 'bank-deblock-app',
+    icon: 'i-heroicons-device-phone-mobile',
+    manualChannel: 'deblock_instant',
+    block: {
+      kind: 'deblock',
+      titleKey: 'account.cotisation.bankDeblockAppTitle',
+      handle: '@nahorai',
+      hintKey: 'account.cotisation.bankDeblockAppHint',
+    },
+  },
+  {
+    panelId: 'bank-cash',
+    icon: 'i-heroicons-banknotes',
+    block: {
+      kind: 'cash',
+      titleKey: 'account.cotisation.bankCashSectionTitle',
+      introKey: 'account.cotisation.bankCashIntro',
+    },
+  },
+]
+
+const copyBankDetail = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.add({
+      title: t('account.cotisation.toastCopiedTitle'),
+      description: t('account.cotisation.toastCopiedDesc'),
+      color: 'success',
+    })
+  } catch {
+    toast.add({
+      title: t('pollUi.errorTitle'),
+      description: t('account.cotisation.toastCopyFail'),
+      color: 'error',
+    })
   }
 }
 
@@ -139,18 +263,18 @@ const memberRoleLabel = computed(() => {
 //   }
 // }
 
-// Gérer le paiement par carte
-const handleCardPayment = async () => {
-  const res = await stripeStore.createCheckoutSession(pack.value as StripePack)
-  if (!res.success) {
-    toast.add({
-      title: t('pollUi.errorTitle'),
-      description: res.error || t('account.cotisation.toastSessionError'),
-      color: 'error',
-    })
-  }
-  // La redirection vers Stripe se fait automatiquement dans le store
-}
+// Paiement par carte : mis en pause pour l'instant
+// const handleCardPayment = async () => {
+//   const res = await stripeStore.createCheckoutSession(pack.value as StripePack)
+//   if (!res.success) {
+//     toast.add({
+//       title: t('pollUi.errorTitle'),
+//       description: res.error || t('account.cotisation.toastSessionError'),
+//       color: 'error',
+//     })
+//   }
+//   // La redirection vers Stripe se fait automatiquement dans le store
+// }
 
 // Paiements par virement: mis en pause pour l'instant
 // const handleBankTransfer = async () => {
@@ -170,14 +294,48 @@ const handleCardPayment = async () => {
 //   })
 // }
 
-// Upgrade vers Premium
-const handleUpgradeToPremium = async () => {
-  pack.value = 'umete'
-  // Lancer directement le processus de paiement pour Umete
-  await handleCardPayment()
-}
+// Upgrade vers Premium (Stripe carte) : mis en pause avec le paiement par carte
+// const handleUpgradeToPremium = async () => {
+//   pack.value = 'umete'
+//   await handleCardPayment()
+// }
 
 // Gérer la vérification legacy
+const handleManualTransferFlowVerification = async (channel: ManualTransferFlowChannel) => {
+  const res = await billingStore.requestManualTransferFlowVerification(channel)
+  if (res.success) {
+    await billingStore.fetchMyManualTransferFlowVerification()
+    openAccordion.value = null
+  } else {
+    toast.add({
+      title: t('pollUi.errorTitle'),
+      description: res.error || t('account.cotisation.toastVerificationError'),
+      color: 'error',
+    })
+  }
+}
+
+const openManualFlowConfirm = (channel: ManualTransferFlowChannel) => {
+  pendingManualFlowChannel.value = channel
+  isManualFlowConfirmOpen.value = true
+}
+
+const cancelManualFlowConfirm = () => {
+  isManualFlowConfirmOpen.value = false
+}
+
+const confirmManualFlowVerificationFromModal = async () => {
+  const channel = pendingManualFlowChannel.value
+  if (!channel) {
+    return
+  }
+  try {
+    await handleManualTransferFlowVerification(channel)
+  } finally {
+    isManualFlowConfirmOpen.value = false
+  }
+}
+
 const handleLegacyVerification = async () => {
   if (!selectedPaidWith.value) {
     toast.add({
@@ -211,6 +369,7 @@ const router = useRouter()
 onMounted(async () => {
   // await billingStore.fetchMyBankTransfer()
   await billingStore.fetchMyLegacyVerification()
+  await billingStore.fetchMyManualTransferFlowVerification()
   await stripeStore.fetchMyStripePayment()
 
   // Vérifier si on revient de Stripe
@@ -262,9 +421,9 @@ onMounted(async () => {
       </p>
     </div>
 
-    <!-- Card Vérification en cours -->
+    <!-- Card Vérification en cours (legacy ou virement CCP / Déblock) -->
     <UCard
-      v-if="hasPendingLegacyVerification"
+      v-if="hasPendingPaymentVerification"
       class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0"
     >
       <template #header>
@@ -299,10 +458,23 @@ onMounted(async () => {
           </ul>
         </div>
 
-        <div v-if="billingStore.legacyVerification" class="rounded-lg border border-white/10 bg-black/20 p-4">
+        <div
+          v-if="hasPendingLegacyVerification && billingStore.legacyVerification"
+          class="rounded-lg border border-white/10 bg-black/20 p-4"
+        >
           <div class="text-sm text-white/60 mb-1">{{ t('account.cotisation.paidWith') }}</div>
           <div class="text-lg font-semibold text-white">
             {{ billingStore.legacyVerification.paidWith === 'naho' ? 'Naho' : 'Tamiga' }}
+          </div>
+        </div>
+
+        <div
+          v-if="hasPendingManualFlowVerification && billingStore.manualTransferFlowVerification"
+          class="rounded-lg border border-white/10 bg-black/20 p-4"
+        >
+          <div class="text-sm text-white/60 mb-1">{{ t('account.cotisation.paymentMethodLabel') }}</div>
+          <div class="text-lg font-semibold text-white">
+            {{ t(manualFlowChannelMessageKey(billingStore.manualTransferFlowVerification.channel)) }}
           </div>
         </div>
       </div>
@@ -339,17 +511,12 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- Bouton Upgrade to Premium si seulement membre -->
-          <div v-if="isOnlyMember" class="pt-4 border-t border-green-500/20">
-            <UButton
-              color="primary"
-              size="lg"
-              block
-              @click="handleUpgradeToPremium"
-            >
-              <UIcon name="i-heroicons-arrow-up" class="h-5 w-5 mr-2" />
-              Passer à Premium
-            </UButton>
+          <!-- Paiement carte en pause : upgrade Premium via les options ci-dessous (accordéons) -->
+          <div
+            v-if="isOnlyMember"
+            class="pt-4 border-t border-green-500/20 rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-white/75"
+          >
+            Pour passer à Premium, utilise pour l’instant les moyens indiqués dans « J’ai déjà payé ma cotisation » ou « Je ne peux pas payer par carte » (paiement par carte bientôt de retour).
           </div>
         </div>
 
@@ -424,7 +591,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- Bouton Payer par carte (hors accordéon) -->
+          <!-- Paiement par carte : mis en pause pour l'instant
           <div class="pt-4 border-t border-white/10">
             <UButton
               color="primary"
@@ -440,6 +607,12 @@ onMounted(async () => {
               {{ t('account.cotisation.stripeHint') }}
             </p>
           </div>
+          -->
+          <!-- <div class="pt-4 border-t border-white/10 rounded-lg border border-amber-500/25 bg-amber-500/10 p-4">
+            <p class="text-sm text-amber-100/90 text-center">
+              Le paiement par carte est temporairement indisponible. Utilise les options dans les sections ci-dessous (déjà payé, liquide, virement).
+            </p>
+          </div> -->
 
           <!-- Accordéon J'ai déjà payé ma cotisation -->
           <div class="pt-4 border-t border-white/10">
@@ -602,97 +775,210 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- Accordéon Je ne peux pas payer par carte -->
-          <div class="pt-4 border-t border-white/10">
+          <!-- Paiement sans carte : cartes-accordéons (virements, Déblock, liquide) -->
+          <div class="pt-4 border-t border-white/10 space-y-4">
+            <!-- <div class="space-y-1">
+              <h3 class="text-lg font-semibold text-white sm:text-xl">
+                {{ t('account.cotisation.bankPanelsSectionTitle') }}
+              </h3>
+              <p class="text-sm text-white/65 leading-relaxed">
+                {{ t('account.cotisation.bankPanelsSectionSubtitle') }}
+              </p>
+            </div> -->
+
             <div
+              v-for="panel in bankAccordionPanels"
+              :key="panel.panelId"
               class="group relative overflow-hidden rounded-2xl border-0 bg-gradient-to-br from-white/5 to-white/[0.02] transition-all duration-500"
               :class="{
-                'ring-2 ring-orange-500/50 shadow-2xl shadow-orange-500/20': openAccordion === 'bank',
+                'ring-2 ring-orange-500/50 shadow-xl shadow-orange-500/15': openAccordion === panel.panelId,
               }"
             >
               <button
-                class="flex w-full items-center justify-between p-6 text-left transition-all hover:bg-white/5"
-                @click="toggleAccordion('bank')"
+                type="button"
+                class="flex w-full items-center justify-between gap-3 p-4 text-left transition-all hover:bg-white/5 sm:p-5"
+                @click="toggleAccordion(panel.panelId)"
               >
-                <div class="flex items-center gap-4">
+                <div class="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
                   <div
-                    class="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/20 transition-all"
+                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/20 transition-all sm:h-12 sm:w-12"
                     :class="{
-                      'bg-orange-500/30 scale-110': openAccordion === 'bank',
+                      'bg-orange-500/30 scale-105': openAccordion === panel.panelId,
                     }"
                   >
                     <UIcon
-                      name="i-heroicons-banknotes"
-                      class="h-6 w-6 text-orange-400 transition-all"
+                      :name="panel.icon"
+                      class="h-5 w-5 text-orange-400 transition-all sm:h-6 sm:w-6"
                       :class="{
-                        'text-orange-300 scale-110': openAccordion === 'bank',
+                        'text-orange-300': openAccordion === panel.panelId,
                       }"
                     />
                   </div>
-                  <h3
-                    class="text-xl font-bold text-white transition-all sm:text-2xl"
+                  <h4
+                    class="min-w-0 text-base font-bold leading-snug text-white transition-colors sm:text-lg"
                     :class="{
-                      'text-orange-400': openAccordion === 'bank',
+                      'text-orange-300': openAccordion === panel.panelId,
                     }"
                   >
-                    {{ t('account.cotisation.accordionBank') }}
-                  </h3>
+                    {{ t(panel.block.titleKey) }}
+                  </h4>
                 </div>
                 <UIcon
                   name="i-heroicons-chevron-down"
-                  class="h-6 w-6 text-white/60 transition-all duration-300"
+                  class="h-5 w-5 shrink-0 text-white/60 transition-all duration-300 sm:h-6 sm:w-6"
                   :class="{
-                    'rotate-180 text-orange-400': openAccordion === 'bank',
+                    'rotate-180 text-orange-400': openAccordion === panel.panelId,
                   }"
                 />
               </button>
 
-              <!-- Contenu accordéon virement -->
               <div
                 class="overflow-hidden transition-all duration-500"
                 :class="{
-                  'max-h-0': openAccordion !== 'bank',
-                  'max-h-[1000px]': openAccordion === 'bank',
+                  'max-h-0': openAccordion !== panel.panelId,
+                  'max-h-[min(85vh,1400px)]': openAccordion === panel.panelId,
                 }"
               >
-                <div class="border-t border-white/10 p-6 space-y-6">
-                  <div class="space-y-4">
-                    <p class="text-white/80">
-                      Voici les options disponibles si tu ne peux pas payer par carte.
+                <div class="space-y-3 border-t border-white/10 p-4 sm:p-5">
+                  <p
+                    v-if="panel.block.kind === 'rib' && panel.block.subtitleKey"
+                    class="text-sm text-white/55"
+                  >
+                    {{ t(panel.block.subtitleKey) }}
+                  </p>
+
+                  <template v-if="panel.block.kind === 'rib'">
+                    <dl class="space-y-2">
+                      <div
+                        v-for="(row, idx) in panel.block.rows"
+                        :key="idx"
+                        class="flex flex-wrap items-center gap-2 gap-y-1 justify-between rounded-lg border border-white/5 bg-black/25 px-3 py-2"
+                      >
+                        <dt class="shrink-0 text-xs text-white/50">
+                          {{ t(row.labelKey) }}
+                        </dt>
+                        <div class="flex min-w-0 flex-1 items-center justify-end gap-2">
+                          <dd class="break-all text-right font-mono text-sm tabular-nums text-orange-100">
+                            {{ row.value }}
+                          </dd>
+                          <button
+                            type="button"
+                            class="shrink-0 rounded-md p-1.5 text-orange-300 transition-colors hover:bg-white/10"
+                            :aria-label="t('account.cotisation.bankCopyAria')"
+                            @click.stop="copyBankDetail(row.value)"
+                          >
+                            <UIcon name="i-heroicons-clipboard-document" class="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </dl>
+
+                    <div
+                      v-if="panel.manualChannel"
+                      class="space-y-3 border-t border-white/10 pt-4"
+                    >
+                      <div class="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+                        <p class="text-sm text-red-300">
+                          {{ t('account.cotisation.legacyWarning') }}
+                        </p>
+                      </div>
+                      <UButton
+                        color="success"
+                        variant="solid"
+                        size="lg"
+                        block
+                        :disabled="hasPendingManualFlowVerification"
+                        :loading="billingStore.isLoading"
+                        class="bg-green-600 hover:bg-green-700 font-semibold text-white"
+                        @click.stop="
+                          panel.manualChannel && openManualFlowConfirm(panel.manualChannel)
+                        "
+                      >
+                        {{ t('account.cotisation.startVerification') }}
+                      </UButton>
+                    </div>
+                  </template>
+
+                  <template v-else-if="panel.block.kind === 'deblock'">
+                    <div class="flex flex-wrap items-center gap-3">
+                      <span class="font-mono text-xl font-semibold tracking-tight text-orange-200">
+                        {{ panel.block.handle }}
+                      </span>
+                      <button
+                        type="button"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-orange-500/40 bg-orange-500/15 px-3 py-1.5 text-sm text-orange-200 transition-colors hover:bg-orange-500/25"
+                        :aria-label="t('account.cotisation.bankCopyAria')"
+                        @click.stop="copyBankDetail(panel.block.handle)"
+                      >
+                        <UIcon name="i-heroicons-clipboard-document" class="h-4 w-4" />
+                        {{ t('account.cotisation.bankCopyButton') }}
+                      </button>
+                    </div>
+                    <p class="text-sm leading-relaxed text-white/70">
+                      {{ t(panel.block.hintKey, { pseudo: panel.block.handle }) }}
+                      <a
+                        class="whitespace-nowrap text-orange-300 underline underline-offset-2 hover:text-orange-200"
+                        href="tel:+68987384716"
+                      >
+                        +689 87 38 47 16
+                      </a>
                     </p>
 
-                    <ul class="space-y-3">
+                    <div
+                      v-if="panel.manualChannel"
+                      class="space-y-3 border-t border-white/10 pt-4"
+                    >
+                      <div class="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+                        <p class="text-sm text-red-300">
+                          {{ t('account.cotisation.legacyWarning') }}
+                        </p>
+                      </div>
+                      <UButton
+                        color="success"
+                        variant="solid"
+                        size="lg"
+                        block
+                        :disabled="hasPendingManualFlowVerification"
+                        :loading="billingStore.isLoading"
+                        class="bg-green-600 hover:bg-green-700 font-semibold text-white"
+                        @click.stop="
+                          panel.manualChannel && openManualFlowConfirm(panel.manualChannel)
+                        "
+                      >
+                        {{ t('account.cotisation.startVerification') }}
+                      </UButton>
+                    </div>
+                  </template>
+
+                  <template v-else-if="panel.block.kind === 'cash'">
+                    <p class="text-sm text-white/65">
+                      {{ t(panel.block.introKey) }}
+                    </p>
+                    <ul class="space-y-3 pt-1">
                       <li class="rounded-lg border border-white/10 bg-black/20 p-4">
-                        <div class="font-semibold text-white">Paiement en liquide à PK 18</div>
-                        <div class="text-sm text-white/70 mt-1">
-                          Contact : Tamiga —
-                          <a class="text-orange-300 hover:text-orange-200 underline underline-offset-2" href="tel:+68989780115">
+                        <div class="font-semibold text-white">
+                          {{ t('account.cotisation.bankCashPk18Title') }}
+                        </div>
+                        <div class="mt-1 text-sm text-white/70">
+                          {{ t('account.cotisation.bankContactTamiga') }} —
+                          <a class="text-orange-300 underline underline-offset-2 hover:text-orange-200" href="tel:+68989780115">
                             +689 89 78 01 15
                           </a>
                         </div>
                       </li>
-
                       <li class="rounded-lg border border-white/10 bg-black/20 p-4">
-                        <div class="font-semibold text-white">Paiement en liquide à Taravao</div>
-                        <div class="text-sm text-white/70 mt-1">
-                          Contact : Naho —
-                          <a class="text-orange-300 hover:text-orange-200 underline underline-offset-2" href="tel:+68987384716">
-                            +689 87 38 47 16
-                          </a>
+                        <div class="font-semibold text-white">
+                          {{ t('account.cotisation.bankCashTaravaoTitle') }}
                         </div>
-                      </li>
-
-                      <li class="rounded-lg border border-white/10 bg-black/20 p-4">
-                        <div class="font-semibold text-white">Paiement par virement “deblock” sur le compte @nahorai</div>
-                        <div class="text-sm text-white/70 mt-1">
-                          Contact : Naho —
-                          <a class="text-orange-300 hover:text-orange-200 underline underline-offset-2" href="tel:+68987384716">
+                        <div class="mt-1 text-sm text-white/70">
+                          {{ t('account.cotisation.bankContactNaho') }} —
+                          <a class="text-orange-300 underline underline-offset-2 hover:text-orange-200" href="tel:+68987384716">
                             +689 87 38 47 16
                           </a>
                         </div>
                       </li>
                     </ul>
-                  </div>
+                  </template>
                 </div>
               </div>
             </div>
@@ -705,5 +991,48 @@ onMounted(async () => {
     <div v-if="billingStore.error" class="text-sm text-red-400">
       {{ billingStore.error }}
     </div>
+
+    <UModal v-model:open="isManualFlowConfirmOpen" :ui="{ wrapper: 'max-w-md' }">
+      <template #header>
+        <div class="flex items-center gap-2">
+          <UIcon name="i-heroicons-banknotes" class="h-5 w-5 text-green-400" />
+          <span class="font-medium">{{ t('account.cotisation.manualFlowConfirmTitle') }}</span>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-4 p-6 pt-0">
+          <UAlert
+            color="warning"
+            variant="soft"
+            icon="i-heroicons-exclamation-triangle"
+            :description="t('account.cotisation.manualFlowConfirmDescription')"
+          />
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            :disabled="billingStore.isLoading"
+            @click="cancelManualFlowConfirm"
+          >
+            {{ t('account.cotisation.manualFlowConfirmCancel') }}
+          </UButton>
+          <UButton
+            color="success"
+            class="bg-green-600 hover:bg-green-700 font-semibold text-white"
+            :loading="billingStore.isLoading"
+            :disabled="billingStore.isLoading"
+            icon="i-heroicons-check-circle"
+            @click="confirmManualFlowVerificationFromModal"
+          >
+            {{ t('account.cotisation.startVerification') }}
+          </UButton>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
