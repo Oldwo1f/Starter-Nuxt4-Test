@@ -17,6 +17,8 @@ import { KikiriConfigService } from '../kikiri/kikiri-config.service';
 import { BingoSchedulerService } from '../bingo/bingo-scheduler.service';
 import { KikiriSchedulerService } from '../kikiri/kikiri-scheduler.service';
 import { TeNatiraaService } from '../te-natiraa/te-natiraa.service';
+import { BannerService } from '../banner/banner.service';
+import { StripeService } from '../stripe/stripe.service';
 import { UserRole } from '../entities/user.entity';
 import {
   listUsersTool,
@@ -140,11 +142,17 @@ import {
   getPendingLegacyVerificationsTool,
   confirmLegacyVerificationTool,
   rejectLegacyVerificationTool,
+  getPendingManualTransferFlowTool,
+  confirmManualTransferFlowTool,
+  rejectManualTransferFlowTool,
   executeGetPendingBankVerifications,
   executeConfirmBankVerification,
   executeGetPendingLegacyVerifications,
   executeConfirmLegacyVerification,
   executeRejectLegacyVerification,
+  executeGetPendingManualTransferFlow,
+  executeConfirmManualTransferFlow,
+  executeRejectManualTransferFlow,
 } from './tools/billing.tools';
 import {
   adminCreditUserTool,
@@ -180,10 +188,42 @@ import {
   listTeNatiraaRegistrationsTool,
   getTeNatiraaRegistrationsGroupedTool,
   listTeNatiraaEventsTool,
+  getTeNatiraaEventTool,
+  createTeNatiraaEventTool,
+  updateTeNatiraaEventTool,
+  deleteTeNatiraaEventTool,
+  listTeNatiraaPresenceCodesTool,
+  createTeNatiraaPresenceCodeTool,
+  updateTeNatiraaPresenceCodeTool,
   executeListTeNatiraaRegistrations,
   executeGetTeNatiraaRegistrationsGrouped,
   executeListTeNatiraaEvents,
+  executeGetTeNatiraaEvent,
+  executeCreateTeNatiraaEvent,
+  executeUpdateTeNatiraaEvent,
+  executeDeleteTeNatiraaEvent,
+  executeListTeNatiraaPresenceCodes,
+  executeCreateTeNatiraaPresenceCode,
+  executeUpdateTeNatiraaPresenceCode,
 } from './tools/te-natiraa.tools';
+import {
+  getSiteBannerTool,
+  updateSiteBannerTool,
+  executeGetSiteBanner,
+  executeUpdateSiteBanner,
+} from './tools/banner.tools';
+import {
+  stripeGetUserSummaryTool,
+  stripeListPaymentsTool,
+  stripeReplayCheckoutSessionTool,
+  stripeCancelTeOhiSubscriptionTool,
+  stripeRefundPaymentTool,
+  executeStripeGetUserSummary,
+  executeStripeListPayments,
+  executeStripeReplayCheckoutSession,
+  executeStripeCancelTeOhiSubscription,
+  executeStripeRefundPayment,
+} from './tools/stripe-admin.tools';
 
 const SYSTEM_PROMPT = `Tu es un assistant d'administration pour le site Nuna Heritage. L'utilisateur t'accède via un chat et tu l'aides à gérer l'ensemble du site.
 
@@ -193,6 +233,11 @@ const SYSTEM_PROMPT = `Tu es un assistant d'administration pour le site Nuna Her
 - **Peu d'éléments** (≤ 5) : utilise une liste à puces.
 - **Beaucoup d'éléments** (> 5) : utilise un tableau Markdown (le chat applique bordures et padding automatiquement).
 - **Images** : max 100px de hauteur. Pour les **avatars utilisateur** OBLIGATOIREMENT : \`<img src="URL" alt="avatar" />\` (alt="avatar" est requis pour le style rond 32px).
+
+## Images fournies par l'utilisateur (IMPORTANT)
+Tu ne reçois pas de fichier binaire : seulement le texte du chat. Si une action nécessite une image **nouvelle** (bannière, visuel à référencer par URL, etc.) :
+1. **Demande clairement** à l'utilisateur d'utiliser le bouton **« Joindre une image »** sous la zone de saisie, puis d'envoyer son message (l'URL \`/uploads/agent/...\` sera incluse automatiquement).
+2. Quand cette URL apparaît dans le message, utilise-la dans l'outil adapté (ex. \`update_site_banner\` avec \`desktopImageUrl\` ou \`mobileImageUrl\`).
 
 ## Recherche utilisateurs (IMPORTANT)
 Quand l'utilisateur demande à trouver, chercher ou lister quelqu'un par son nom (même sans dire "recherche") :
@@ -211,12 +256,14 @@ Exemples : "trouve Marie", "c'est qui Dupont ?", "liste les Jean" → utilise li
 **Culture (vidéos)** : list_cultures, get_culture, create_culture, update_culture, delete_culture
 **Partenaires** : list_partners, get_partner, create_partner, update_partner, delete_partner
 **Académie** : list_academy_courses, get_academy_course, create_academy_course, update_academy_course, delete_academy_course, create_academy_module, get_academy_module, update_academy_module, delete_academy_module, create_academy_video, get_academy_video, update_academy_video, delete_academy_video
-**Billing** (admin/superadmin) : get_pending_bank_verifications, confirm_bank_verification, get_pending_legacy_verifications, confirm_legacy_verification, reject_legacy_verification
+**Billing** (admin/superadmin) : get_pending_bank_verifications, confirm_bank_verification, get_pending_legacy_verifications, confirm_legacy_verification, reject_legacy_verification ; **flux manuel CCP/Déblock** : get_pending_manual_transfer_flow, confirm_manual_transfer_flow, reject_manual_transfer_flow
 **Wallet** (admin/superadmin) : admin_credit_user
+**Stripe** (admin/superadmin) : stripe_get_user_summary, stripe_list_recent_payments, stripe_replay_checkout_session (session Stripe payée non traitée), stripe_cancel_te_ohi_subscription, stripe_refund_payment (id interne stripe_payments)
+**Bannière site** (staff) : get_site_banner, update_site_banner — images : URLs \`/uploads/agent/...\` après dépôt par l'utilisateur
 **Parrainage** : get_referral_stats, get_referral_code
 **Marketplace** : list_listings, get_listing, update_listing, delete_listing
 **Jeux (Bingo, Kikiri)** : get_game_config (game), update_game_config, open_game (game), close_game (game). Pour ouvrir/fermer : open_game ou close_game. Pour modifier horaires/vitesse : update_game_config.
-**Te Natira'a** : list_te_natiraa_registrations (page, limit, eventId), get_te_natiraa_registrations_grouped (affiche inscriptions par événement, format propre), list_te_natiraa_events`;
+**Te Natira'a** : list_te_natiraa_registrations, get_te_natiraa_registrations_grouped, list_te_natiraa_events, get_te_natiraa_event, create_te_natiraa_event, update_te_natiraa_event, delete_te_natiraa_event ; **codes présence** : list_te_natiraa_presence_codes, create_te_natiraa_presence_code, update_te_natiraa_presence_code`;
 
 const TOOLS = [
   listUsersTool,
@@ -274,6 +321,9 @@ const TOOLS = [
   getPendingLegacyVerificationsTool,
   confirmLegacyVerificationTool,
   rejectLegacyVerificationTool,
+  getPendingManualTransferFlowTool,
+  confirmManualTransferFlowTool,
+  rejectManualTransferFlowTool,
   adminCreditUserTool,
   getReferralStatsTool,
   getReferralCodeTool,
@@ -288,6 +338,20 @@ const TOOLS = [
   listTeNatiraaRegistrationsTool,
   getTeNatiraaRegistrationsGroupedTool,
   listTeNatiraaEventsTool,
+  getTeNatiraaEventTool,
+  createTeNatiraaEventTool,
+  updateTeNatiraaEventTool,
+  deleteTeNatiraaEventTool,
+  listTeNatiraaPresenceCodesTool,
+  createTeNatiraaPresenceCodeTool,
+  updateTeNatiraaPresenceCodeTool,
+  getSiteBannerTool,
+  updateSiteBannerTool,
+  stripeGetUserSummaryTool,
+  stripeListPaymentsTool,
+  stripeReplayCheckoutSessionTool,
+  stripeCancelTeOhiSubscriptionTool,
+  stripeRefundPaymentTool,
 ];
 
 export interface ChatMessage {
@@ -317,6 +381,8 @@ export class AdminAgentService {
     private readonly bingoSchedulerService: BingoSchedulerService,
     private readonly kikiriSchedulerService: KikiriSchedulerService,
     private readonly teNatiraaService: TeNatiraaService,
+    private readonly bannerService: BannerService,
+    private readonly stripeService: StripeService,
   ) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (apiKey) {
@@ -528,6 +594,16 @@ export class AdminAgentService {
         return executeConfirmLegacyVerification(this.billingService, currentUser, args as Parameters<typeof executeConfirmLegacyVerification>[2]);
       case 'reject_legacy_verification':
         return executeRejectLegacyVerification(this.billingService, currentUser, args as { verificationId: number });
+      case 'get_pending_manual_transfer_flow':
+        return executeGetPendingManualTransferFlow(this.billingService, currentUser);
+      case 'confirm_manual_transfer_flow':
+        return executeConfirmManualTransferFlow(
+          this.billingService,
+          currentUser,
+          args as Parameters<typeof executeConfirmManualTransferFlow>[2],
+        );
+      case 'reject_manual_transfer_flow':
+        return executeRejectManualTransferFlow(this.billingService, currentUser, args as { verificationId: number });
       case 'admin_credit_user':
         return executeAdminCreditUser(this.walletService, currentUser, args as { userId: number; amount: number; description: string });
       case 'get_referral_stats':
@@ -579,6 +655,46 @@ export class AdminAgentService {
         return executeGetTeNatiraaRegistrationsGrouped(this.teNatiraaService);
       case 'list_te_natiraa_events':
         return executeListTeNatiraaEvents(this.teNatiraaService);
+      case 'get_te_natiraa_event':
+        return executeGetTeNatiraaEvent(this.teNatiraaService, args as { id: number });
+      case 'create_te_natiraa_event':
+        return executeCreateTeNatiraaEvent(
+          this.teNatiraaService,
+          args as Parameters<typeof executeCreateTeNatiraaEvent>[1],
+        );
+      case 'update_te_natiraa_event':
+        return executeUpdateTeNatiraaEvent(
+          this.teNatiraaService,
+          args as Parameters<typeof executeUpdateTeNatiraaEvent>[1],
+        );
+      case 'delete_te_natiraa_event':
+        return executeDeleteTeNatiraaEvent(this.teNatiraaService, args as { id: number });
+      case 'list_te_natiraa_presence_codes':
+        return executeListTeNatiraaPresenceCodes(this.teNatiraaService);
+      case 'create_te_natiraa_presence_code':
+        return executeCreateTeNatiraaPresenceCode(
+          this.teNatiraaService,
+          args as { label?: string; eventId?: number },
+        );
+      case 'update_te_natiraa_presence_code':
+        return executeUpdateTeNatiraaPresenceCode(
+          this.teNatiraaService,
+          args as Parameters<typeof executeUpdateTeNatiraaPresenceCode>[1],
+        );
+      case 'get_site_banner':
+        return executeGetSiteBanner(this.bannerService);
+      case 'update_site_banner':
+        return executeUpdateSiteBanner(this.bannerService, currentUser, args as Parameters<typeof executeUpdateSiteBanner>[2]);
+      case 'stripe_get_user_summary':
+        return executeStripeGetUserSummary(this.stripeService, currentUser, args as { userId: number });
+      case 'stripe_list_recent_payments':
+        return executeStripeListPayments(this.stripeService, currentUser, args as { limit?: number });
+      case 'stripe_replay_checkout_session':
+        return executeStripeReplayCheckoutSession(this.stripeService, currentUser, args as { sessionId: string });
+      case 'stripe_cancel_te_ohi_subscription':
+        return executeStripeCancelTeOhiSubscription(this.stripeService, currentUser, args as { userId: number });
+      case 'stripe_refund_payment':
+        return executeStripeRefundPayment(this.stripeService, currentUser, args as { paymentId: number });
       default:
         return JSON.stringify({ error: `Outil inconnu: ${name}` });
     }

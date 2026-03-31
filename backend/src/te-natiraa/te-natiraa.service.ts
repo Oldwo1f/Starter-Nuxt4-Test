@@ -88,6 +88,14 @@ export class TeNatiraaService {
     });
   }
 
+  async getEventById(id: number): Promise<TeNatiraaEvent> {
+    const event = await this.eventsRepository.findOne({ where: { id } });
+    if (!event) {
+      throw new NotFoundException('Événement non trouvé');
+    }
+    return event;
+  }
+
   async createEvent(dto: CreateTeNatiraaEventDto) {
     const event = this.eventsRepository.create({
       ...dto,

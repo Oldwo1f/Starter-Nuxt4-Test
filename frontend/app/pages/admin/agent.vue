@@ -25,6 +25,8 @@ const messages = ref<ChatMessage[]>([])
 const input = ref('')
 const isLoading = ref(false)
 const messagesEnd = ref<HTMLElement | null>(null)
+const pendingImageUrls = ref<string[]>([])
+const imageInputRef = ref<HTMLInputElement | null>(null)
 
 const {
   isSupported: isSpeechSupported,
@@ -151,8 +153,62 @@ const displayedTranscript = computed(() => {
   return acc && cur ? `${acc} ${cur}` : acc || cur
 })
 
+const removePendingImage = (url: string) => {
+  pendingImageUrls.value = pendingImageUrls.value.filter((u) => u !== url)
+}
+
+const triggerImagePick = () => {
+  imageInputRef.value?.click()
+}
+
+const onImageSelected = async (e: Event) => {
+  const el = e.target as HTMLInputElement
+  const file = el.files?.[0]
+  if (!file) return
+
+  if (!authStore.accessToken) {
+    toast.add({
+      title: 'Non connecté',
+      description: 'Veuillez vous reconnecter.',
+      color: 'red',
+    })
+    el.value = ''
+    return
+  }
+
+  const fd = new FormData()
+  fd.append('file', file)
+
+  try {
+    const res = await $fetch<{ url: string }>(`${API_BASE_URL}/admin/agent/upload-image`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${authStore.accessToken}`,
+      },
+      body: fd,
+    })
+    pendingImageUrls.value.push(res.url)
+    toast.add({
+      title: 'Image prête',
+      description: 'Elle sera incluse dans le prochain message.',
+      color: 'primary',
+    })
+  } catch (err: any) {
+    const msg = err.data?.message || err.message || 'Échec du dépôt'
+    toast.add({ title: 'Upload', description: msg, color: 'red' })
+  } finally {
+    el.value = ''
+  }
+}
+
 const sendMessage = async () => {
-  const text = input.value.trim()
+  const raw = input.value.trim()
+  const prefix =
+    pendingImageUrls.value.length > 0
+      ? `${pendingImageUrls.value.map((u) => `[Image jointe: ${u}]`).join('\n')}\n\n`
+      : ''
+  const text = `${prefix}${raw}`.trim()
+
   if (!text || isLoading.value) return
 
   if (!authStore.accessToken) {
@@ -166,6 +222,7 @@ const sendMessage = async () => {
 
   messages.value.push({ role: 'user', content: text })
   input.value = ''
+  pendingImageUrls.value = []
   isLoading.value = true
 
   try {
@@ -175,10 +232,10 @@ const sendMessage = async () => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${authStore.accessToken}`,
       },
-      body: JSON.stringify({
+      body: {
         message: text,
         history: messages.value.slice(0, -1).slice(-CONTEXT_MESSAGE_LIMIT),
-      }),
+      },
     })
 
     messages.value.push({ role: 'assistant', content: response })
@@ -275,7 +332,7 @@ watch(
       <div>
         <h1 class="text-xl font-semibold text-white">Agent IA</h1>
         <p class="text-sm text-white/60">
-          Discutez avec l'assistant pour gérer les utilisateurs et le blog. Ex: « Liste les 5 derniers utilisateurs » ou « Crée un article de blog ».
+          Gestion du site via le chat. Pour une image (bannière, ressource avec URL) : utilisez « Joindre une image » — l’URL <code class="rounded bg-white/10 px-1">/uploads/agent/…</code> est ajoutée au message envoyé à l’agent.
         </p>
       </div>
       <UButton
@@ -411,7 +468,23 @@ watch(
           </div>
         </Transition>
 
+        <input
+          ref="imageInputRef"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          class="sr-only"
+          @change="onImageSelected"
+        >
         <div class="flex items-center gap-2">
+          <UTooltip text="Joindre une image (JPEG, PNG, WebP) — le chemin sera inclus au message pour l’agent">
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-heroicons-photo"
+              :disabled="isLoading"
+              @click="triggerImagePick"
+            />
+          </UTooltip>
           <UTooltip
             v-if="isSpeechSupported && !isRecording"
             text="Parler (capture vocale)"
@@ -477,11 +550,33 @@ watch(
           <UButton
             color="primary"
             :loading="isLoading"
-            :disabled="!input.trim()"
+            :disabled="!input.trim() && pendingImageUrls.length === 0"
             @click="sendMessage"
           >
             Envoyer
           </UButton>
+        </div>
+        <div v-if="pendingImageUrls.length" class="flex flex-wrap gap-2">
+          <div
+            v-for="url in pendingImageUrls"
+            :key="url"
+            class="flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs text-white/80"
+          >
+            <img
+              :src="`${API_BASE_URL.replace(/\/$/, '')}${url}`"
+              alt=""
+              class="h-8 w-8 rounded object-cover"
+            >
+            <span class="max-w-[12rem] truncate font-mono">{{ url }}</span>
+            <button
+              type="button"
+              class="flex size-6 items-center justify-center rounded text-white/50 hover:bg-white/10 hover:text-white"
+              :aria-label="`Retirer ${url}`"
+              @click="removePendingImage(url)"
+            >
+              ×
+            </button>
+          </div>
         </div>
       </div>
     </div>

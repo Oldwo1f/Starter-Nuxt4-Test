@@ -163,7 +163,7 @@ const bankAccordionPanels: BankAccordionPanel[] = [
     block: {
       kind: 'deblock',
       titleKey: 'account.cotisation.bankDeblockAppTitle',
-      handle: '@nahorai',
+      handle: '@nohorai',
       hintKey: 'account.cotisation.bankDeblockAppHint',
     },
   },
@@ -610,7 +610,7 @@ onMounted(async () => {
           -->
           <!-- <div class="pt-4 border-t border-white/10 rounded-lg border border-amber-500/25 bg-amber-500/10 p-4">
             <p class="text-sm text-amber-100/90 text-center">
-              Le paiement par carte est temporairement indisponible. Utilise les options dans les sections ci-dessous (déjà payé, liquide, virement).
+              Le paiement par carte est temporairement indisponible. Utilise les options dans les sections ci-dessous (déjà payé, espèces, virement).
             </p>
           </div> -->
 
@@ -775,7 +775,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- Paiement sans carte : cartes-accordéons (virements, Déblock, liquide) -->
+          <!-- Paiement sans carte : cartes-accordéons (virements, Déblock, espèces) -->
           <div class="pt-4 border-t border-white/10 space-y-4">
             <!-- <div class="space-y-1">
               <h3 class="text-lg font-semibold text-white sm:text-xl">

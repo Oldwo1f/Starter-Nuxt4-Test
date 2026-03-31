@@ -91,14 +91,9 @@ onUnmounted(() => {
           {{ t('teNatiraa.heroSubtitle') }}
         </p>
         <div v-if="nextEvent" class="mt-8">
-          <UButton
-            to="/te-natiraa/inscription"
-            size="xl"
-            color="primary"
-            icon="i-heroicons-ticket"
-          >
-            {{ t('teNatiraa.registerCta') }}
-          </UButton>
+          <p class="text-lg font-semibold text-primary-200 sm:text-xl">
+            {{ t('teNatiraa.registrationComingSoon') }}
+          </p>
         </div>
       </div>
       <!-- Effet de fond décoratif -->
@@ -370,15 +365,6 @@ onUnmounted(() => {
             {{ t('teNatiraa.ctaSubtitle') }}
           </p>
           <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <UButton
-              v-if="nextEvent"
-              to="/te-natiraa/inscription"
-              size="xl"
-              color="primary"
-              icon="i-heroicons-ticket"
-            >
-              {{ t('teNatiraa.registerCta') }}
-            </UButton>
             <UButton
               to="/"
               size="xl"

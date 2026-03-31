@@ -16,6 +16,9 @@ import { MarketplaceModule } from '../marketplace/marketplace.module';
 import { BingoModule } from '../bingo/bingo.module';
 import { KikiriModule } from '../kikiri/kikiri.module';
 import { TeNatiraaModule } from '../te-natiraa/te-natiraa.module';
+import { UploadModule } from '../upload/upload.module';
+import { BannerModule } from '../banner/banner.module';
+import { StripeModule } from '../stripe/stripe.module';
 
 @Module({
   imports: [
@@ -34,6 +37,9 @@ import { TeNatiraaModule } from '../te-natiraa/te-natiraa.module';
     BingoModule,
     KikiriModule,
     TeNatiraaModule,
+    UploadModule,
+    BannerModule,
+    StripeModule,
   ],
   controllers: [AdminAgentController],
   providers: [AdminAgentService],

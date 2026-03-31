@@ -74,6 +74,48 @@ export const rejectLegacyVerificationTool = {
   },
 };
 
+export const getPendingManualTransferFlowTool = {
+  type: 'function' as const,
+  function: {
+    name: 'get_pending_manual_transfer_flow',
+    description:
+      'Liste les demandes de vérification CCP / Déblock (flux manuel cotisation) en attente. Admin/superadmin.',
+    parameters: { type: 'object', properties: {} },
+  },
+};
+
+export const confirmManualTransferFlowTool = {
+  type: 'function' as const,
+  function: {
+    name: 'confirm_manual_transfer_flow',
+    description:
+      'Confirme une vérification flux manuel (CCP/Déblock). Admin/superadmin. Option upgradeToPremium, dates expiration.',
+    parameters: {
+      type: 'object',
+      properties: {
+        verificationId: { type: 'number' },
+        upgradeToPremium: { type: 'boolean' },
+        expirationDay: { type: 'number', description: 'Jour 1-31 (avec expirationMonth)' },
+        expirationMonth: { type: 'number', description: 'Mois 1-12' },
+      },
+      required: ['verificationId'],
+    },
+  },
+};
+
+export const rejectManualTransferFlowTool = {
+  type: 'function' as const,
+  function: {
+    name: 'reject_manual_transfer_flow',
+    description: 'Rejette une demande flux manuel CCP/Déblock. Admin/superadmin.',
+    parameters: {
+      type: 'object',
+      properties: { verificationId: { type: 'number' } },
+      required: ['verificationId'],
+    },
+  },
+};
+
 export async function executeGetPendingBankVerifications(
   billingService: BillingService,
   currentUser: { role: UserRole },
@@ -131,4 +173,47 @@ export async function executeRejectLegacyVerification(
   requireAdmin(currentUser);
   await billingService.rejectLegacyVerification(args.verificationId, currentUser.id);
   return JSON.stringify({ success: true, message: `Vérification ${args.verificationId} rejetée` });
+}
+
+export async function executeGetPendingManualTransferFlow(
+  billingService: BillingService,
+  currentUser: { role: UserRole },
+): Promise<string> {
+  requireAdmin(currentUser);
+  const list = await billingService.getPendingManualTransferFlowVerifications();
+  return JSON.stringify(list, null, 2);
+}
+
+export async function executeConfirmManualTransferFlow(
+  billingService: BillingService,
+  currentUser: { id: number; role: UserRole },
+  args: {
+    verificationId: number;
+    upgradeToPremium?: boolean;
+    expirationDay?: number;
+    expirationMonth?: number;
+  },
+): Promise<string> {
+  requireAdmin(currentUser);
+  const result = await billingService.confirmManualTransferFlowVerification(
+    args.verificationId,
+    currentUser.id,
+    args.upgradeToPremium ?? false,
+    args.expirationDay,
+    args.expirationMonth,
+  );
+  return JSON.stringify(result, null, 2);
+}
+
+export async function executeRejectManualTransferFlow(
+  billingService: BillingService,
+  currentUser: { id: number; role: UserRole },
+  args: { verificationId: number },
+): Promise<string> {
+  requireAdmin(currentUser);
+  await billingService.rejectManualTransferFlowVerification(args.verificationId, currentUser.id);
+  return JSON.stringify({
+    success: true,
+    message: `Demande flux manuel ${args.verificationId} rejetée`,
+  });
 }

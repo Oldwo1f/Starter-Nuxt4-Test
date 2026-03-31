@@ -646,4 +646,20 @@ export class UploadService {
     const filename = match[2];
     await this.deleteSiteBannerImage(type, filename);
   }
+
+  /** Images déposées via l'agent admin (JPEG/PNG/Webp, max taille config). Pas de contrainte de dimensions. */
+  async saveAdminAgentImage(userId: number, file: Express.Multer.File): Promise<string> {
+    this.validateFile(file);
+
+    const dir = join(this.uploadPath, 'agent', userId.toString());
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+
+    const filename = this.generateFileName(file.originalname);
+    const filePath = join(dir, filename);
+    writeFileSync(filePath, file.buffer);
+
+    return `/uploads/agent/${userId}/${filename}`;
+  }
 }

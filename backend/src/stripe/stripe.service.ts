@@ -760,4 +760,111 @@ export class StripeService {
         : null,
     };
   }
+
+  /** Admin / agent : résumé cotisation Stripe pour un utilisateur. */
+  async adminGetUserStripeSummary(userId: number) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const payment = await this.paymentsRepository.findOne({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+    return {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      stripeCustomerId: user.stripeCustomerId,
+      stripeTeOhiSubscriptionId: user.stripeTeOhiSubscriptionId,
+      paidAccessExpiresAt: user.paidAccessExpiresAt,
+      premiumLifetimeGrantedAt: user.premiumLifetimeGrantedAt,
+      latestStripePayment: payment
+        ? {
+            id: payment.id,
+            pack: payment.pack,
+            amountXpf: payment.amountXpf,
+            status: payment.status,
+            stripeSessionId: payment.stripeSessionId,
+            stripePaymentIntentId: payment.stripePaymentIntentId,
+            paidAt: payment.paidAt,
+            createdAt: payment.createdAt,
+          }
+        : null,
+    };
+  }
+
+  async adminListStripePayments(limit: number) {
+    const take = Math.min(100, Math.max(1, limit || 20));
+    const rows = await this.paymentsRepository.find({
+      order: { createdAt: 'DESC' },
+      take,
+      relations: ['user'],
+    });
+    return rows.map((p) => ({
+      id: p.id,
+      userId: p.userId,
+      userEmail: p.user?.email,
+      pack: p.pack,
+      amountXpf: p.amountXpf,
+      status: p.status,
+      stripeSessionId: p.stripeSessionId,
+      stripePaymentIntentId: p.stripePaymentIntentId,
+      paidAt: p.paidAt,
+      createdAt: p.createdAt,
+    }));
+  }
+
+  /**
+   * Admin : rejoue le traitement d'une session checkout payée (webhook manquant).
+   * Ne vérifie pas que la session appartient à l'utilisateur courant.
+   */
+  async adminReplayCheckoutSession(sessionId: string) {
+    return this.processPendingPaymentBySessionId(sessionId, undefined);
+  }
+
+  async adminCancelTeOhiSubscription(userId: number) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (!user.stripeTeOhiSubscriptionId) {
+      return { cancelled: false, message: 'Aucun abonnement Te Ohi enregistré pour cet utilisateur.' };
+    }
+    try {
+      await this.stripe.subscriptions.cancel(user.stripeTeOhiSubscriptionId);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Erreur Stripe';
+      throw new BadRequestException(msg);
+    }
+    user.stripeTeOhiSubscriptionId = null;
+    await this.usersRepository.save(user);
+    return {
+      cancelled: true,
+      message: 'Abonnement annulé côté Stripe ; stripeTeOhiSubscriptionId effacé sur le profil.',
+    };
+  }
+
+  /** Rembourse le paiement associé (payment_intent). Admin uniquement. */
+  async adminRefundStripePayment(paymentId: number) {
+    const payment = await this.paymentsRepository.findOne({ where: { id: paymentId } });
+    if (!payment) {
+      throw new NotFoundException('Paiement introuvable');
+    }
+    if (payment.status !== StripePaymentStatus.PAID) {
+      throw new BadRequestException('Seuls les paiements au statut "paid" peuvent être remboursés.');
+    }
+    if (!payment.stripePaymentIntentId) {
+      throw new BadRequestException('Pas de payment_intent Stripe associé à cet enregistrement.');
+    }
+    const refund = await this.stripe.refunds.create({
+      payment_intent: payment.stripePaymentIntentId,
+    });
+    return {
+      refundId: refund.id,
+      status: refund.status,
+      paymentId: payment.id,
+      amountXpf: payment.amountXpf,
+    };
+  }
 }
