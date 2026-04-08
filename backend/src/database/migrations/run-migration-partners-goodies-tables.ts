@@ -13,7 +13,9 @@ async function runMigration() {
   });
 
   try {
-    console.log('🔄 Running migration: partners + goodies tables (IF NOT EXISTS)...\n');
+    console.log(
+      '🔄 Running migration: partners + goodies tables (idempotent, goodies.accessLevel)...\n',
+    );
 
     await client.connect();
     console.log('✓ Database connection established\n');
