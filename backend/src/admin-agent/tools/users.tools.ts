@@ -95,7 +95,8 @@ export const deleteUserTool = {
   type: 'function' as const,
   function: {
     name: 'delete_user',
-    description: 'Supprime un utilisateur par ID. Irréversible. Admin/superadmin uniquement.',
+    description:
+      'Archive un utilisateur par ID (compte désactivé, données conservées). Admin/superadmin uniquement. Impossible d’archiver son propre compte.',
     parameters: {
       type: 'object',
       properties: {
@@ -178,10 +179,10 @@ export async function executeUpdateUser(
 
 export async function executeDeleteUser(
   usersService: UsersService,
-  currentUser: { role: UserRole },
+  currentUser: { role: UserRole; id: number },
   args: { id: number },
 ): Promise<string> {
   requireAdmin(currentUser);
-  await usersService.remove(args.id);
-  return JSON.stringify({ success: true, message: `Utilisateur ${args.id} supprimé` });
+  await usersService.archiveUser(args.id, currentUser.id);
+  return JSON.stringify({ success: true, message: `Utilisateur ${args.id} archivé` });
 }

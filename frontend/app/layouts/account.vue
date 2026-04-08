@@ -479,7 +479,7 @@ const isActive = (path: string) => {
                 </UBadge>
               </NuxtLink>
               <!-- User menu -->
-              <UDropdownMenu :items="userMenuItems">
+              <UDropdownMenu :items="userMenuItems" :modal="false">
                 <UButton
                   color="neutral"
                   variant="ghost"

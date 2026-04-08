@@ -7,7 +7,7 @@ const { t } = useI18n()
 
 const mailtoHref = computed(() => {
   const subj = encodeURIComponent(t(`participationCallout.${props.context}.mailSubject`))
-  return `mailto:contact@nunaheritage.pf?subject=${subj}`
+  return `mailto:nunaaheritage@gmail.com?subject=${subj}`
 })
 </script>
 

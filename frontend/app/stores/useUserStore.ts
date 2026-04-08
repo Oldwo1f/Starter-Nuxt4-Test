@@ -11,6 +11,8 @@ export interface User {
   role: string
   emailVerified?: boolean
   isActive?: boolean
+  /** Présent si le compte a été archivé depuis l’admin (DELETE utilisateur) */
+  archivedAt?: string | null
   isCertified?: boolean
   respectAnciensBadgeGranted?: boolean
   lastLogin?: string | null
@@ -80,6 +82,8 @@ export const useUserStore = defineStore('user', () => {
   const globalFilter = ref('')
   const idFilter = ref('')
   const roleFilter = ref('all')
+  /** Comptes affichés : actifs (hors archivés), archivés seulement, ou tous */
+  const usersScope = ref<'active' | 'archived' | 'all'>('active')
   const dateFilter = ref('')
 
   // États pour le tri et la pagination
@@ -109,7 +113,7 @@ export const useUserStore = defineStore('user', () => {
   })
 
   // Watchers pour déclencher le fetch lors des changements
-  watch([globalFilter, idFilter, roleFilter, dateFilter], () => {
+  watch([globalFilter, idFilter, roleFilter, usersScope, dateFilter], () => {
     if (pagination.value.pageIndex !== 0) {
       pagination.value.pageIndex = 0
     } else if (!isFetching.value) {
@@ -155,6 +159,8 @@ export const useUserStore = defineStore('user', () => {
       if (dateFilter.value) {
         params.createdAt = dateFilter.value
       }
+
+      params.usersScope = usersScope.value
 
       if (sorting.value.length > 0 && sorting.value[0]) {
         const sort = sorting.value[0]
@@ -390,10 +396,10 @@ export const useUserStore = defineStore('user', () => {
 
       return {
         success: true,
-        message: `L'utilisateur ${userEmail} a été supprimé avec succès.`,
+        message: `L'utilisateur ${userEmail} a été archivé. Le compte est désactivé et les données sont conservées.`,
       }
     } catch (err: any) {
-      const errorMessage = err.data?.message || err.message || 'Erreur lors de la suppression de l\'utilisateur'
+      const errorMessage = err.data?.message || err.message || 'Erreur lors de l\'archivage de l\'utilisateur'
       error.value = errorMessage
       return {
         success: false,
@@ -408,6 +414,7 @@ export const useUserStore = defineStore('user', () => {
     globalFilter.value = ''
     idFilter.value = ''
     roleFilter.value = 'all'
+    usersScope.value = 'active'
     dateFilter.value = ''
     sorting.value = []
     pagination.value = {
@@ -488,6 +495,7 @@ export const useUserStore = defineStore('user', () => {
     globalFilter,
     idFilter,
     roleFilter,
+    usersScope,
     dateFilter,
     sorting,
     pagination,

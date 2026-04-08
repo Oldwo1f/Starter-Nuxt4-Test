@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import bgGamesImage from '~/assets/images/bg-jeux.jpg'
+import bgGamesImage from '~/assets/images/bg.jpeg'
 </script>
 
 <template>

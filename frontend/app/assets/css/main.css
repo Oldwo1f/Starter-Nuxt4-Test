@@ -4,6 +4,8 @@
 /* Forcer le dark mode */
 html {
   color-scheme: dark;
+  /* Évite le décalage quand Radix/Reka met body en overflow:hidden (menus, modales) */
+  scrollbar-gutter: stable;
 }
 
 html.dark,

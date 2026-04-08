@@ -469,8 +469,13 @@
       "toastCopiedDesc": "Référence copiée",
       "toastCopyFail": "Copie impossible",
       "manualFlowConfirmTitle": "Demande de vérification",
-      "manualFlowConfirmDescription": "Assurez-vous d'avoir effectué le virement avant de demander une vérification.",
-      "manualFlowConfirmCancel": "Annuler"
+      "manualFlowConfirmDescription": "Assurez-vous d'avoir effectué le virement et joint une capture d'écran de la preuve avant d'envoyer la demande.",
+      "manualFlowConfirmCancel": "Annuler",
+      "transferProofHint": "Pour accélérer la vérification, envoie une capture d'écran ou une photo claire de la preuve de ton virement (relevé, confirmation bancaire ou capture de l'application).",
+      "transferProofLabel": "Joindre la preuve de virement (image)",
+      "transferProofFormats": "Formats acceptés : JPEG, PNG ou WebP — 5 Mo maximum.",
+      "transferProofRemove": "Retirer l'image",
+      "toastProofRequired": "Merci de joindre une image de preuve de virement avant de lancer la vérification."
     },
     "badgesPage": {
       "title": "Mes badges",
@@ -1278,6 +1283,14 @@
     "loading": "Chargement des partenaires...",
     "discover": "Découvrir {name}",
     "empty": "Aucun partenaire pour le moment",
+    "emptyField": "—",
+    "colActivity": "Activité",
+    "colName": "Nom",
+    "colEmail": "Email",
+    "colPhone": "Téléphone",
+    "colDescription": "Description",
+    "visitWebsite": "Site web de {name} (nouvel onglet)",
+    "directoryTitle": "Annuaire",
     "soutienQrTitle": "Points soutien (QR)",
     "soutienQrDescription": "Lors d’événements ou chez nos partenaires, un QR peut vous faire gagner 1 point « soutien » (série Connecter / badges) une fois par code. Scannez-le avec votre téléphone : si vous n’êtes pas connecté, la page vous demandera de vous identifier pour valider le point."
   },
@@ -1389,6 +1402,7 @@
     "labelDate": "Date",
     "labelPlace": "Lieu",
     "labelTime": "Heure",
+    "pupuParticipation": "10 Pūpū 🐚 offerts pour la participation au Te Natira'a",
     "noUpcoming": "Aucun Te Natira'a à venir pour le moment. Revenez bientôt !",
     "pricesSection": "Tarifs",
     "members": "Membres",

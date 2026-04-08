@@ -8,6 +8,11 @@ CREATE TABLE IF NOT EXISTS partners (
   link VARCHAR,
   "bannerHorizontalUrl" VARCHAR,
   "bannerVerticalUrl" VARCHAR,
+  email VARCHAR,
+  activity TEXT,
+  description TEXT,
+  phone VARCHAR,
+  premium BOOLEAN NOT NULL DEFAULT false,
   "createdAt" TIMESTAMP DEFAULT NOW(),
   "updatedAt" TIMESTAMP DEFAULT NOW()
 );

@@ -43,6 +43,10 @@ export class ManualTransferFlowVerification {
   @Column({ type: 'boolean', default: false })
   pupuInscriptionReceived: boolean;
 
+  /** Capture d’écran ou image de preuve de virement (URL servie sous /uploads/…) */
+  @Column({ type: 'varchar', length: 512, nullable: true })
+  proofImageUrl: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

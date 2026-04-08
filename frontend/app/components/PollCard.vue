@@ -6,11 +6,20 @@ import { useAuthStore } from '~/stores/useAuthStore'
 interface Props {
   poll: Poll
   showResponse?: boolean // Si true, affiche le formulaire de réponse dans la card
+  /** Fond sans dégradé (ex. home sur image plein écran) */
+  clearSurface?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showResponse: false,
+  clearSurface: false,
 })
+
+const pollCardSurfaceClass = computed(() =>
+  props.clearSurface
+    ? 'border border-white/15 bg-transparent hover:border-white/25 hover:shadow-xl hover:shadow-black/25'
+    : 'bg-gradient-to-br from-white/5 to-white/[0.02] border-0 hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20',
+)
 
 const pollStore = usePollStore()
 const authStore = useAuthStore()
@@ -148,10 +157,13 @@ const handleCardClick = () => {
 
 <template>
   <UCard
-    class="group bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20"
-    :class="{
-      'cursor-pointer': !showResponse || poll.type !== 'qcm' || hasResponded,
-    }"
+    class="group transition-all hover:scale-[1.02]"
+    :class="[
+      pollCardSurfaceClass,
+      {
+        'cursor-pointer': !showResponse || poll.type !== 'qcm' || hasResponded,
+      },
+    ]"
     @click="handleCardClick"
   >
     <div class="space-y-4">

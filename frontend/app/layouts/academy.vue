@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import bgAcademyImage from '~/assets/images/bg-academy.jpg'
+import bgAcademyImage from '~/assets/images/bg.jpeg'
 </script>
 
 <template>

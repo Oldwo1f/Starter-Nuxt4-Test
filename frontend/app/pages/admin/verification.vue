@@ -55,6 +55,7 @@ interface PendingLegacyVerification {
 interface PendingManualFlowVerification {
   id: number
   channel: 'ccp_marama' | 'deblock_rib' | 'deblock_instant'
+  proofImageUrl: string | null
   createdAt: string
   user: {
     id: number
@@ -577,6 +578,7 @@ onMounted(() => {
               <th class="px-4 py-3 text-left text-sm font-semibold text-white/80">Prénom</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-white/80">Email</th>
               <th class="px-4 py-3 text-left text-sm font-semibold text-white/80">Moyen déclaré</th>
+              <th class="px-4 py-3 text-left text-sm font-semibold text-white/80">Preuve</th>
               <th class="px-4 py-3 text-right text-sm font-semibold text-white/80">Action</th>
             </tr>
           </thead>
@@ -602,6 +604,18 @@ onMounted(() => {
                 <UBadge color="amber" variant="subtle">
                   {{ getManualFlowChannelLabel(verification.channel) }}
                 </UBadge>
+              </td>
+              <td class="px-4 py-3 text-sm">
+                <a
+                  v-if="verification.proofImageUrl"
+                  :href="`${API_BASE_URL}${verification.proofImageUrl}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-primary-400 hover:text-primary-300 underline underline-offset-2"
+                >
+                  Ouvrir l'image
+                </a>
+                <span v-else class="text-white/40">—</span>
               </td>
               <td class="px-4 py-3">
                 <div class="flex flex-col gap-3">

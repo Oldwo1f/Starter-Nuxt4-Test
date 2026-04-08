@@ -8,6 +8,7 @@ import { ManualTransferFlowVerification } from '../entities/manual-transfer-flow
 import { User } from '../entities/user.entity';
 import { Transaction } from '../entities/transaction.entity';
 import { ReferralModule } from '../referral/referral.module';
+import { UploadModule } from '../upload/upload.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ReferralModule } from '../referral/referral.module';
       Transaction,
     ]),
     ReferralModule,
+    UploadModule,
   ],
   controllers: [BillingController],
   providers: [BillingService],

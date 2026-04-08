@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { KikiriChatMessage } from '~/composables/useKikiriSocket'
+import { useGameChatDisplayedMessages } from '~/composables/useGameChatDisplayedMessages'
 
 const CHAT_SOUND_STORAGE_KEY = 'kikiri-chat-sound-enabled'
 
@@ -42,7 +43,10 @@ function scrollToBottom() {
 }
 
 watch(
-  () => [props.messages.length, props.messages[props.messages.length - 1]?.id],
+  () => [
+    displayedMessages.value.length,
+    displayedMessages.value[displayedMessages.value.length - 1]?.id,
+  ],
   () => scrollToBottom(),
   { flush: 'post' },
 )

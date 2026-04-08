@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsOptional, IsInt, Min, IsString, IsEnum, IsDateString } from 'class-validator';
+import { IsOptional, IsInt, Min, IsString, IsEnum, IsDateString, IsIn } from 'class-validator';
 import { UserRole } from '../../entities/user.entity';
 
 export enum SortOrder {
@@ -53,4 +53,13 @@ export class PaginationQueryDto {
   @IsOptional()
   @IsEnum(SortOrder)
   sortOrder?: SortOrder = SortOrder.ASC;
+
+  @ApiPropertyOptional({
+    description: 'Liste des comptes : actifs (non archivés), archivés uniquement, ou tous',
+    enum: ['active', 'archived', 'all'],
+    default: 'active',
+  })
+  @IsOptional()
+  @IsIn(['active', 'archived', 'all'])
+  usersScope?: 'active' | 'archived' | 'all' = 'active';
 }

@@ -31,6 +31,36 @@ const columns = [
     enableSorting: false,
   },
   {
+    id: 'email',
+    accessorKey: 'email',
+    header: 'Email',
+    enableSorting: false,
+  },
+  {
+    id: 'activity',
+    accessorKey: 'activity',
+    header: 'Activité',
+    enableSorting: false,
+  },
+  {
+    id: 'description',
+    accessorKey: 'description',
+    header: 'Description',
+    enableSorting: false,
+  },
+  {
+    id: 'phone',
+    accessorKey: 'phone',
+    header: 'Téléphone',
+    enableSorting: false,
+  },
+  {
+    id: 'premium',
+    accessorKey: 'premium',
+    header: 'Premium',
+    enableSorting: true,
+  },
+  {
     id: 'banners',
     accessorKey: 'banners',
     header: 'Bannières',
@@ -293,6 +323,56 @@ onMounted(() => {
               <span v-else class="text-white/40">-</span>
             </template>
 
+            <template #email-cell="{ row }">
+              <a
+                v-if="(row.original || row)?.email"
+                :href="`mailto:${(row.original || row).email}`"
+                class="text-primary-400 hover:text-primary-300 underline truncate max-w-[14rem] inline-block align-bottom"
+              >
+                {{ (row.original || row).email }}
+              </a>
+              <span v-else class="text-white/40">-</span>
+            </template>
+
+            <template #activity-cell="{ row }">
+              <span
+                class="text-white/80 line-clamp-2 max-w-xs"
+                :title="(row.original || row)?.activity || undefined"
+              >
+                {{ (row.original || row)?.activity || '—' }}
+              </span>
+            </template>
+
+            <template #description-cell="{ row }">
+              <span
+                class="text-white/80 line-clamp-2 max-w-sm"
+                :title="(row.original || row)?.description || undefined"
+              >
+                {{ (row.original || row)?.description || '—' }}
+              </span>
+            </template>
+
+            <template #phone-cell="{ row }">
+              <a
+                v-if="(row.original || row)?.phone"
+                :href="`tel:${String((row.original || row).phone).replace(/\s/g, '')}`"
+                class="text-primary-400 hover:text-primary-300 whitespace-nowrap"
+              >
+                {{ (row.original || row).phone }}
+              </a>
+              <span v-else class="text-white/40">-</span>
+            </template>
+
+            <template #premium-cell="{ row }">
+              <span
+                v-if="(row.original || row)?.premium"
+                class="inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium bg-amber-500/20 text-amber-300"
+              >
+                Premium
+              </span>
+              <span v-else class="text-white/40 text-xs">—</span>
+            </template>
+
             <template #banners-cell="{ row }">
               <div class="flex items-center gap-2">
                 <span
@@ -383,6 +463,53 @@ onMounted(() => {
               icon="i-heroicons-link"
               size="xl"
               class="w-full"
+            />
+          </UFormGroup>
+
+          <UFormGroup label="Email" name="email">
+            <UInput
+              v-model="partnerStore.form.email"
+              type="email"
+              placeholder="contact@example.com"
+              icon="i-heroicons-envelope"
+              size="xl"
+              class="w-full"
+            />
+          </UFormGroup>
+
+          <UFormGroup label="Activité" name="activity">
+            <UTextarea
+              v-model="partnerStore.form.activity"
+              placeholder="Secteur, description courte…"
+              :rows="3"
+              class="w-full"
+            />
+          </UFormGroup>
+
+          <UFormGroup label="Téléphone" name="phone">
+            <UInput
+              v-model="partnerStore.form.phone"
+              type="tel"
+              placeholder="+689 …"
+              icon="i-heroicons-phone"
+              size="xl"
+              class="w-full"
+            />
+          </UFormGroup>
+
+          <UFormGroup label="Description (page publique)" name="description">
+            <UTextarea
+              v-model="partnerStore.form.description"
+              placeholder="Texte affiché sur la page Partenaires…"
+              :rows="4"
+              class="w-full"
+            />
+          </UFormGroup>
+
+          <UFormGroup label="Partenaire premium" name="premium">
+            <UCheckbox
+              v-model="partnerStore.form.premium"
+              label="Mettre en avant comme partenaire premium"
             />
           </UFormGroup>
 

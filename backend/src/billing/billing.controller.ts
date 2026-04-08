@@ -1,20 +1,25 @@
-import { Body, Controller, Get, Headers, Post, Param, ParseIntPipe, UnauthorizedException, UseGuards, InternalServerErrorException } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam } from '@nestjs/swagger';
+import { Body, Controller, Get, Headers, Post, Param, ParseIntPipe, UnauthorizedException, UseGuards, InternalServerErrorException, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { BillingService } from './billing.service';
 import { CreateBankTransferIntentDto } from './dto/create-bank-transfer-intent.dto';
 import { BankTransferWebhookDto } from './dto/bank-transfer-webhook.dto';
 import { RequestLegacyVerificationDto } from './dto/request-legacy-verification.dto';
-import { RequestManualTransferFlowDto } from './dto/request-manual-transfer-flow.dto';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../entities/user.entity';
+import { ManualTransferFlowChannel } from '../entities/manual-transfer-flow-verification.entity';
+import { UploadService } from '../upload/upload.service';
 
 @ApiTags('billing')
 @Controller('billing')
 export class BillingController {
-  constructor(private readonly billingService: BillingService) {}
+  constructor(
+    private readonly billingService: BillingService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   @Post('bank-transfer/intent')
   @UseGuards(JwtAuthGuard)
@@ -113,17 +118,45 @@ export class BillingController {
   /** Cotisation payée via CCP Marama, RIB Déblock ou Déblock instantané (sans intent NH-…) */
   @Post('bank-transfer/manual-flow/request-verification')
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('proof'))
   @ApiBearerAuth('JWT-auth')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['channel', 'proof'],
+      properties: {
+        channel: {
+          type: 'string',
+          enum: Object.values(ManualTransferFlowChannel),
+          example: ManualTransferFlowChannel.CCP_MARAMA,
+        },
+        proof: { type: 'string', format: 'binary', description: 'Capture de la preuve de virement (JPEG, PNG ou WebP)' },
+      },
+    },
+  })
   @ApiOperation({
     summary: 'Demander une vérification manuelle (virement coordonnées / Déblock)',
     description:
-      'Crée une demande listée côté admin dans les vérifications virement. Accès membre optimiste 1 an, comme le flux legacy.',
+      'Crée une demande listée côté admin dans les vérifications virement. Joindre une image de preuve de virement. Accès membre optimiste 1 an, comme le flux legacy.',
   })
   async requestManualTransferFlow(
     @CurrentUser() user: any,
-    @Body() dto: RequestManualTransferFlowDto,
+    @Body() body: { channel?: string },
+    @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.billingService.requestManualTransferFlowVerification(user.id, dto.channel);
+    const raw = body?.channel;
+    if (!raw || !Object.values(ManualTransferFlowChannel).includes(raw as ManualTransferFlowChannel)) {
+      throw new BadRequestException('Canal de paiement invalide ou manquant.');
+    }
+    const channel = raw as ManualTransferFlowChannel;
+    if (!file) {
+      throw new BadRequestException(
+        'Merci de joindre une capture d’écran ou une image attestant le virement.',
+      );
+    }
+    const proofImageUrl = await this.uploadService.saveManualTransferProof(user.id, file);
+    return this.billingService.requestManualTransferFlowVerification(user.id, channel, proofImageUrl);
   }
 
   @Get('bank-transfer/manual-flow/me')

@@ -52,6 +52,7 @@ export interface ManualTransferFlowVerification {
   id: number
   channel: ManualTransferFlowChannel
   status: 'pending' | 'confirmed' | 'rejected'
+  proofImageUrl?: string | null
   createdAt: string
 }
 
@@ -231,7 +232,10 @@ export const useBillingStore = defineStore('billing', () => {
     }
   }
 
-  const requestManualTransferFlowVerification = async (channel: ManualTransferFlowChannel) => {
+  const requestManualTransferFlowVerification = async (
+    channel: ManualTransferFlowChannel,
+    proofFile: File,
+  ) => {
     if (!authStore.accessToken) {
       return { success: false, error: 'Non authentifié' }
     }
@@ -239,16 +243,19 @@ export const useBillingStore = defineStore('billing', () => {
     isLoading.value = true
     error.value = null
     try {
+      const formData = new FormData()
+      formData.append('channel', channel)
+      formData.append('proof', proofFile)
+
       const response = await $fetch<{ ok: boolean; alreadyRequested?: boolean }>(
         `${API_BASE_URL}/billing/bank-transfer/manual-flow/request-verification`,
         {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${authStore.accessToken}`,
-            'Content-Type': 'application/json',
           },
-          body: { channel },
-        }
+          body: formData,
+        },
       )
 
       if (response.ok) {

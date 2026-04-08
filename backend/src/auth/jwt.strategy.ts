@@ -20,6 +20,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException();
     }
+    if (!user.isActive) {
+      throw new UnauthorizedException();
+    }
     const effectiveRole = effectiveUserRole(user);
 
     return {

@@ -37,6 +37,18 @@ import { RolesGuard } from '../auth/roles.guard';
 import { UserRole } from '../entities/user.entity';
 import { UploadService } from '../upload/upload.service';
 
+function optionalTrimmedFormString(v: unknown): string | null | undefined {
+  if (v === undefined) return undefined;
+  if (v === null) return null;
+  const s = String(v).trim();
+  return s === '' ? null : s;
+}
+
+function parseOptionalPremium(v: unknown): boolean | undefined {
+  if (v === undefined || v === null || v === '') return undefined;
+  return v === true || v === 'true';
+}
+
 @ApiTags('partners')
 @Controller('partners')
 export class PartnersController {
@@ -70,6 +82,13 @@ export class PartnersController {
     const partner = await this.partnersService.create(
       createPartnerDto.name,
       createPartnerDto.link,
+      undefined,
+      undefined,
+      createPartnerDto.email ?? null,
+      createPartnerDto.activity ?? null,
+      createPartnerDto.phone ?? null,
+      createPartnerDto.description ?? null,
+      createPartnerDto.premium ?? false,
     );
 
     // Traiter les fichiers uploadés
@@ -265,12 +284,23 @@ export class PartnersController {
       finalBannerVerticalUrl = undefined;
     }
 
+    const email = optionalTrimmedFormString(updatePartnerDto.email);
+    const activity = optionalTrimmedFormString(updatePartnerDto.activity);
+    const phone = optionalTrimmedFormString(updatePartnerDto.phone);
+    const description = optionalTrimmedFormString(updatePartnerDto.description);
+    const premium = parseOptionalPremium(updatePartnerDto.premium);
+
     return this.partnersService.update(
       id,
       updatePartnerDto.name,
       updatePartnerDto.link,
       finalBannerHorizontalUrl === null ? undefined : finalBannerHorizontalUrl,
       finalBannerVerticalUrl === null ? undefined : finalBannerVerticalUrl,
+      email,
+      activity,
+      phone,
+      description,
+      premium,
     );
   }
 

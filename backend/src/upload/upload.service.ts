@@ -57,6 +57,10 @@ export class UploadService {
     if (!existsSync(siteBannersPath)) {
       mkdirSync(siteBannersPath, { recursive: true });
     }
+    const manualTransferProofPath = join(this.uploadPath, 'billing', 'manual-transfer-proof');
+    if (!existsSync(manualTransferProofPath)) {
+      mkdirSync(manualTransferProofPath, { recursive: true });
+    }
   }
 
   validateFile(file: Express.Multer.File): void {
@@ -92,6 +96,27 @@ export class UploadService {
 
   getAvatarUrl(userId: number, filename: string): string {
     return `/uploads/avatars/${userId}/${filename}`;
+  }
+
+  getManualTransferProofPath(userId: number, filename: string): string {
+    return join(this.uploadPath, 'billing', 'manual-transfer-proof', userId.toString(), filename);
+  }
+
+  getManualTransferProofUrl(userId: number, filename: string): string {
+    return `/uploads/billing/manual-transfer-proof/${userId}/${filename}`;
+  }
+
+  /** Preuve de virement (cotisation) — JPEG/PNG/WebP, même règles que validateFile */
+  async saveManualTransferProof(userId: number, file: Express.Multer.File): Promise<string> {
+    this.validateFile(file);
+    const userDir = join(this.uploadPath, 'billing', 'manual-transfer-proof', userId.toString());
+    if (!existsSync(userDir)) {
+      mkdirSync(userDir, { recursive: true });
+    }
+    const filename = this.generateFileName(file.originalname);
+    const filePath = this.getManualTransferProofPath(userId, filename);
+    writeFileSync(filePath, file.buffer);
+    return this.getManualTransferProofUrl(userId, filename);
   }
 
   async saveAvatar(userId: number, file: Express.Multer.File): Promise<string> {

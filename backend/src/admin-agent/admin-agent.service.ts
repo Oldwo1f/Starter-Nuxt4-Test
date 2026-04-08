@@ -248,7 +248,7 @@ Exemples : "trouve Marie", "c'est qui Dupont ?", "liste les Jean" → utilise li
 
 ## Outils disponibles
 
-**Utilisateurs** : list_users (firstName, lastName, email, commune, search), get_user, update_user_role, update_user, delete_user
+**Utilisateurs** : list_users (firstName, lastName, email, commune, search), get_user, update_user_role, update_user, delete_user (archive le compte, données conservées)
 **Blog** : list_blog_posts, get_blog_post, create_blog_post, update_blog_post, delete_blog_post
 **Goodies** : list_goodies, get_goodie, create_goodie, update_goodie, delete_goodie
 **Sondages** : list_polls, get_poll, create_poll, update_poll, delete_poll, get_poll_responses, delete_poll_response

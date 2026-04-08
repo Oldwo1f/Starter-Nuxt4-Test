@@ -23,6 +23,21 @@ export class Partner {
   @Column({ type: 'varchar', nullable: true })
   bannerVerticalUrl: string | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  email: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  activity: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  phone: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  premium: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 

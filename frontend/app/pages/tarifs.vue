@@ -45,7 +45,7 @@ onUnmounted(() => {
 // Handler pour le bouton "Nous contacter" des packs VIP
 const handleContactVIP = () => {
   const subj = encodeURIComponent(t('tarifs.contactMailSubject'))
-  window.location.href = `mailto:contact@nunaheritage.pf?subject=${subj}`
+  window.location.href = `mailto:nunaaheritage@gmail.com?subject=${subj}`
 }
 
 // Formatage des prix en XPF
@@ -158,9 +158,9 @@ const vipInvestPacks = computed(() => [
 </script>
 
 <template>
-  <div class="min-h-screen bg-black">
+  <div class="min-h-screen bg-transparent">
     <!-- Section Hero -->
-    <section class="relative overflow-hidden bg-gradient-to-b from-primary-900/20 via-black to-black px-4 py-16 sm:py-24">
+    <section class="relative overflow-hidden bg-transparent px-4 py-16 sm:py-24">
       <div class="relative z-10 mx-auto max-w-7xl">
         <div class="text-center">
           <h1 class="mb-4 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
@@ -171,19 +171,14 @@ const vipInvestPacks = computed(() => [
           </p>
         </div>
       </div>
-      <!-- Effet de fond décoratif -->
-      <div class="absolute inset-0 -z-0">
-        <div class="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-primary-500/10 blur-3xl" />
-        <div class="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-primary-600/10 blur-3xl" />
-      </div>
     </section>
 
     <!-- Bandeau Promo de Lancement -->
-    <section class="relative bg-black/50 py-8 sm:py-12">
+    <section class="relative bg-transparent py-8 sm:py-12">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="rounded-2xl border border-primary-500/30 bg-gradient-to-br from-primary-900/40 to-primary-800/30 p-6 sm:p-8 backdrop-blur-sm">
+        <div class="rounded-2xl border border-white/20 bg-transparent p-6 sm:p-8">
           <div class="mb-6 text-center">
-            <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary-500/20 px-4 py-2 text-sm font-semibold text-primary-300">
+            <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-white/25 bg-transparent px-4 py-2 text-sm font-semibold text-primary-300">
               <UIcon name="i-heroicons-sparkles" class="h-5 w-5" />
               <span>{{ t('tarifs.promoBadge') }}</span>
             </div>
@@ -210,12 +205,12 @@ const vipInvestPacks = computed(() => [
     </section>
 
     <!-- Section Packs Principaux -->
-    <section class="relative bg-black/50 py-16 sm:py-24">
+    <section class="relative bg-transparent py-16 sm:py-24">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid gap-8 sm:grid-cols-1 md:grid-cols-2">
           <!-- Pack Te Ohi -->
           <UCard
-            class="group relative overflow-hidden bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20"
+            class="group relative overflow-hidden border border-white/15 bg-transparent transition-all hover:scale-[1.02] hover:border-white/25 hover:shadow-xl hover:shadow-black/25"
           >
             <template #header>
               <div class="space-y-4">
@@ -299,7 +294,7 @@ const vipInvestPacks = computed(() => [
 
           <!-- Pack UMETE -->
           <UCard
-            class="group relative overflow-hidden bg-gradient-to-br from-primary-500/10 via-white/5 to-white/[0.02] border-2 border-primary-500/50 transition-all hover:scale-[1.02] hover:border-primary-500 hover:shadow-2xl hover:shadow-primary-500/30"
+            class="group relative overflow-hidden border-2 border-primary-500/50 bg-transparent transition-all hover:scale-[1.02] hover:border-primary-400 hover:shadow-2xl hover:shadow-black/30"
           >
             <template #header>
               <div class="space-y-4">
@@ -385,7 +380,7 @@ const vipInvestPacks = computed(() => [
     </section>
 
     <!-- Section Packs VIP Invest -->
-    <section class="relative bg-black py-16 sm:py-24">
+    <section class="relative bg-transparent py-16 sm:py-24">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-3xl font-bold text-white sm:text-4xl">
@@ -400,7 +395,7 @@ const vipInvestPacks = computed(() => [
           <UCard
             v-for="(pack, index) in vipInvestPacks"
             :key="index"
-            class="group relative overflow-hidden bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/20"
+            class="group relative overflow-hidden border border-white/15 bg-transparent transition-all hover:scale-[1.02] hover:border-white/25 hover:shadow-lg hover:shadow-black/25"
           >
             <template #header>
               <div class="space-y-4">

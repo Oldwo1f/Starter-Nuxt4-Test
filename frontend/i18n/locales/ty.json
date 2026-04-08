@@ -469,8 +469,13 @@
       "toastCopiedDesc": "Ua tāruahia te référence",
       "toastCopyFail": "Aita e nehenehe e tārua",
       "manualFlowConfirmTitle": "Hi'opo'ara'a o te virement",
-      "manualFlowConfirmDescription": "Ia ha'apūpū mai 'a 'oe ua oti tā 'oe virement i mua i te hi'opo'ara'a.",
-      "manualFlowConfirmCancel": "Fa'aea"
+      "manualFlowConfirmDescription": "Ia ha'apūpū mai 'a 'oe ua oti tā 'oe virement, e farii hoki i te parau 'ā'ini (screenshot) o te hō'ō'ito i mua i te tuku i te hi'opo'ara'a.",
+      "manualFlowConfirmCancel": "Fa'aea",
+      "transferProofHint": "No te fa'aitoito i te hi'opo'ara'a, tuku mai i te parau 'ā'ini (screenshot) rāhi 'ā'au (rave bancaire, ha'uti i te aparara'i).",
+      "transferProofLabel": "Farii i te parau 'ā'ini o te hō'ō'ito (virement)",
+      "transferProofFormats": "Te tahi atu matomatagi : JPEG, PNG, WebP — e tae atu i te 5 Mo.",
+      "transferProofRemove": "A'ea i te parau 'ā'ini",
+      "toastProofRequired": "Ia farii māmau i te parau 'ā'ini o te hō'ō'ito i mua i te ha'amata i te hi'opo'ara'a."
     },
     "badgesPage": {
       "title": "Tā'u mau tapa'o",
@@ -1279,6 +1284,14 @@
       "loading": "Te fa'atere mai nei i te mau hoa...",
       "discover": "A hi'o ia {name}",
       "empty": "Aita ā e hoa i teie nei",
+      "emptyField": "—",
+      "colActivity": "Ha'api'iraa",
+      "colName": "I'oa",
+      "colEmail": "Imere",
+      "colPhone": "Niuniu",
+      "colDescription": "Ha'amarama",
+      "visitWebsite": "A hi'o i te 'api a {name} (tapuni hou)",
+      "directoryTitle": "Tārava",
       "soutienQrTitle": "Pūpū tauturu (QR)",
       "soutienQrDescription": "I te mau fa'anahora'a a i te mau hoa, e nehenehe te QR ia 'oe ia ta'u i te hō'ē pūpū « tauturu » (tapa'o Connecter) hō'ē ana'e no te kō. A fa'ahere i tō niuniu : aita e ha'uti, e 'ite te 'api ia 'oe ia ha'uti."
     },
@@ -1391,6 +1404,7 @@
     "labelDate": "Mahana",
     "labelPlace": "Vāhi",
     "labelTime": "Hora",
+    "pupuParticipation": "E 10 pūpū 🐚 horo'a nō te taui no te Te Natira'a",
     "noUpcoming": "Aita ā e Te Natira'a i muri nei i teie nei. A ho'i mai ā muri a'e !",
     "pricesSection": "Nā tārifa",
     "members": "Mau mero",

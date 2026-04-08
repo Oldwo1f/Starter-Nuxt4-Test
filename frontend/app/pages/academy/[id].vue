@@ -606,18 +606,7 @@ const overallProgress = computed(() => {
         <UButton to="/academy" variant="ghost" icon="i-heroicons-arrow-left" class="mb-4">
           {{ t('academyCourse.back') }}
         </UButton>
-        
-        <!-- Thumbnail image -->
-        <div v-if="getImageUrl(academyStore.currentCourse.thumbnailImage)" class="mb-6">
-          <div class="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
-            <img
-              :src="getImageUrl(academyStore.currentCourse.thumbnailImage)"
-              :alt="academyStore.currentCourse.title"
-              class="h-full w-full object-cover"
-            />
-          </div>
-        </div>
-        
+
         <h1 class="text-3xl font-bold">{{ academyStore.currentCourse.title }}</h1>
         <p v-if="academyStore.currentCourse.description" class="mt-2 text-white/70">
           {{ academyStore.currentCourse.description }}

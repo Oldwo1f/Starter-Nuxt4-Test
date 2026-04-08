@@ -5,6 +5,11 @@ export interface Partner {
   id: number
   name: string
   link: string | null
+  email: string | null
+  activity: string | null
+  phone: string | null
+  description: string | null
+  premium: boolean
   bannerHorizontalUrl: string | null
   bannerVerticalUrl: string | null
   createdAt: string
@@ -14,6 +19,11 @@ export interface Partner {
 export interface PartnerForm {
   name: string
   link: string
+  email: string
+  activity: string
+  phone: string
+  description: string
+  premium: boolean
   bannerHorizontal?: File
   bannerVertical?: File
   existingBannerHorizontal?: string | null
@@ -43,6 +53,11 @@ export const usePartnerStore = defineStore('partner', () => {
   const form = ref<PartnerForm>({
     name: '',
     link: '',
+    email: '',
+    activity: '',
+    phone: '',
+    description: '',
+    premium: false,
   })
 
   const fetchPartners = async () => {
@@ -70,6 +85,11 @@ export const usePartnerStore = defineStore('partner', () => {
     form.value = {
       name: '',
       link: '',
+      email: '',
+      activity: '',
+      phone: '',
+      description: '',
+      premium: false,
       deleteBannerHorizontal: false,
       deleteBannerVertical: false,
     }
@@ -82,6 +102,11 @@ export const usePartnerStore = defineStore('partner', () => {
     form.value = {
       name: partner.name,
       link: partner.link || '',
+      email: partner.email || '',
+      activity: partner.activity || '',
+      phone: partner.phone || '',
+      description: partner.description || '',
+      premium: partner.premium === true,
       existingBannerHorizontal: partner.bannerHorizontalUrl,
       existingBannerVertical: partner.bannerVerticalUrl,
       deleteBannerHorizontal: false,
@@ -96,6 +121,11 @@ export const usePartnerStore = defineStore('partner', () => {
     form.value = {
       name: '',
       link: '',
+      email: '',
+      activity: '',
+      phone: '',
+      description: '',
+      premium: false,
       deleteBannerHorizontal: false,
       deleteBannerVertical: false,
     }
@@ -115,6 +145,11 @@ export const usePartnerStore = defineStore('partner', () => {
       if (form.value.link) {
         formData.append('link', form.value.link)
       }
+      formData.append('email', form.value.email.trim())
+      formData.append('activity', form.value.activity.trim())
+      formData.append('phone', form.value.phone.trim())
+      formData.append('description', form.value.description.trim())
+      formData.append('premium', form.value.premium ? 'true' : 'false')
 
       // Ajouter les bannières
       if (form.value.bannerHorizontal) {

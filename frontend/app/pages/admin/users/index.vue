@@ -101,12 +101,12 @@ const handleUpdateUserRole = async (userId: number, newRole: string) => {
   }
 }
 
-// Wrapper pour deleteUser avec gestion des toasts
+// Wrapper pour deleteUser (archivage côté API) avec gestion des toasts
 const handleDeleteUser = async () => {
   const result = await userStore.deleteUser()
   if (result.success) {
     toast.add({
-      title: 'Utilisateur supprimé',
+      title: 'Utilisateur archivé',
       description: result.message,
       color: 'success',
       icon: 'i-heroicons-check-circle',
@@ -121,11 +121,23 @@ const handleDeleteUser = async () => {
   }
 }
 
-// Fonction pour supprimer un utilisateur directement depuis le tableau
+// Archivage depuis le tableau (icône corbeille)
 const handleDeleteUserFromTable = (user: User) => {
-  // Sélectionner l'utilisateur et ouvrir directement le modal de confirmation
   userStore.selectedUser = user
   userStore.confirmDelete()
+}
+
+const canArchiveSelectedUser = computed(() => {
+  const u = userStore.selectedUser
+  if (!u || u.archivedAt) return false
+  if (authStore.user?.id != null && u.id === authStore.user.id) return false
+  return true
+})
+
+const canArchiveUserRow = (user: User) => {
+  if (user.archivedAt) return false
+  if (authStore.user?.id != null && user.id === authStore.user.id) return false
+  return true
 }
 
 // Wrapper pour selectedRole avec gestion des toasts
@@ -152,6 +164,12 @@ const roleOptions = [
 const roleFilterOptions = [
   { value: 'all', label: 'Tous les rôles' },
   ...roleOptions,
+]
+
+const usersScopeFilterOptions = [
+  { value: 'active', label: 'Comptes actifs' },
+  { value: 'archived', label: 'Archivés' },
+  { value: 'all', label: 'Tous' },
 ]
 
 const getRoleLabel = (role: string) => {
@@ -658,6 +676,13 @@ onUnmounted(() => {
                 placeholder="Tous les rôles"
                 class="w-48"
               />
+              <USelect
+                v-model="userStore.usersScope"
+                :items="usersScopeFilterOptions"
+                option-attribute="label"
+                value-attribute="value"
+                class="w-44"
+              />
             </div>
           </div>
         </template>
@@ -684,8 +709,16 @@ onUnmounted(() => {
             }"
           >
           <template #email-cell="{ row }">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <span class="text-white/90">{{ row.original.email }}</span>
+              <UBadge
+                v-if="row.original.archivedAt"
+                color="neutral"
+                variant="subtle"
+                size="xs"
+              >
+                Archivé
+              </UBadge>
               <UIcon
                 v-if="row.original.emailVerified"
                 name="i-heroicons-check-badge"
@@ -770,13 +803,13 @@ onUnmounted(() => {
                 :title="row.original.isCertified ? 'Retirer la certification' : 'Certifier ce membre'"
               />
               <UButton
-                v-if="canModifyRoles"
-                icon="i-heroicons-trash"
-                color="error"
+                v-if="canModifyRoles && canArchiveUserRow(row.original)"
+                icon="i-heroicons-archive-box-arrow-down"
+                color="warning"
                 variant="subtle"
                 size="xs"
                 @click="handleDeleteUserFromTable(row.original)"
-                :title="`Supprimer ${row.original.email}`"
+                :title="`Archiver ${row.original.email}`"
               />
             </div>
           </template>
@@ -1398,17 +1431,31 @@ onUnmounted(() => {
             </div>
           </UCard>
 
-          <!-- Bouton de suppression (si admin/superadmin) -->
-          <UCard v-if="canModifyRoles" class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+          <!-- Archivage (admin / superadmin) -->
+          <UCard
+            v-if="canModifyRoles && userStore.selectedUser?.archivedAt"
+            class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0"
+          >
+            <div class="p-4">
+              <UAlert
+                color="neutral"
+                variant="soft"
+                icon="i-heroicons-archive-box"
+                title="Compte archivé"
+                :description="`Archivé le ${userStore.formatDate(userStore.selectedUser.archivedAt)}. Connexion désactivée, données conservées.`"
+              />
+            </div>
+          </UCard>
+          <UCard v-else-if="canModifyRoles && canArchiveSelectedUser" class="bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
             <div class="p-4">
               <UButton
-                color="error"
+                color="warning"
                 variant="soft"
                 block
-                icon="i-heroicons-trash"
+                icon="i-heroicons-archive-box-arrow-down"
                 @click="userStore.confirmDelete"
               >
-                Supprimer l'utilisateur
+                Archiver l'utilisateur
               </UButton>
             </div>
           </UCard>
@@ -1416,27 +1463,27 @@ onUnmounted(() => {
       </template>
     </UModal>
 
-    <!-- Modal de confirmation de suppression -->
+    <!-- Modal de confirmation d’archivage -->
     <UModal v-model:open="userStore.isDeleteConfirmOpen">
       <template #header>
         <div class="flex items-center gap-2">
-          <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-red-400" />
-          <span class="font-medium">Confirmer la suppression</span>
+          <UIcon name="i-heroicons-archive-box-arrow-down" class="w-5 h-5 text-amber-400" />
+          <span class="font-medium">Confirmer l’archivage</span>
         </div>
       </template>
 
       <template #body>
         <div class="p-6 space-y-4">
           <UAlert
-            color="error"
+            color="warning"
             variant="soft"
-            icon="i-heroicons-exclamation-triangle"
-            title="Action irréversible"
-            description="Cette action est irréversible. Toutes les données associées à cet utilisateur seront définitivement supprimées."
+            icon="i-heroicons-information-circle"
+            title="Archivage du compte"
+            description="Le compte sera désactivé (plus de connexion), les jetons de session seront révoqués. Les données (historique, transactions, etc.) restent en base."
           />
           <template v-if="userStore.selectedUser">
             <p class="text-white/90">
-              Êtes-vous sûr de vouloir supprimer l'utilisateur
+              Archiver l'utilisateur
               <strong class="text-white">{{ userStore.selectedUser.email }}</strong> ?
             </p>
           </template>
@@ -1459,12 +1506,12 @@ onUnmounted(() => {
             Annuler
           </UButton>
           <UButton
-            color="error"
+            color="warning"
             @click="handleDeleteUser"
             :loading="userStore.isDeleting"
             :disabled="userStore.isDeleting"
           >
-            Supprimer
+            Archiver
           </UButton>
         </div>
       </template>

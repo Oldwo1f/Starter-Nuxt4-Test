@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BingoChatMessage } from '~/composables/useBingoSocket'
+import { useGameChatDisplayedMessages } from '~/composables/useGameChatDisplayedMessages'
 
 const CHAT_SOUND_STORAGE_KEY = 'bingo-chat-sound-enabled'
 
@@ -30,9 +31,7 @@ function toggleChatSound() {
   }
 }
 
-const displayedMessages = computed(() =>
-  props.messages.slice(-50),
-)
+const { displayedMessages } = useGameChatDisplayedMessages(() => props.messages)
 
 function scrollToBottom() {
   nextTick(() => {
@@ -41,7 +40,10 @@ function scrollToBottom() {
 }
 
 watch(
-  () => [props.messages.length, props.messages[props.messages.length - 1]?.id],
+  () => [
+    displayedMessages.value.length,
+    displayedMessages.value[displayedMessages.value.length - 1]?.id,
+  ],
   () => scrollToBottom(),
   { flush: 'post' },
 )

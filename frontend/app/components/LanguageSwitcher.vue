@@ -32,7 +32,7 @@ const flagBtnClassMenu =
 </script>
 
 <template>
-  <UPopover :content="{ align: 'end', sideOffset: 8 }">
+  <UPopover :modal="false" :content="{ align: 'end', sideOffset: 8 }">
     <button
       type="button"
       :class="flagBtnClassHeader"

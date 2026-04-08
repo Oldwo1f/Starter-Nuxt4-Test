@@ -288,6 +288,12 @@ onUnmounted(() => {
             {{ t('teNatiraa.noUpcoming') }}
           </p>
 
+          <p
+            class="mx-auto mt-8 max-w-2xl text-center text-lg font-semibold text-primary-200 sm:text-xl"
+          >
+            {{ t('teNatiraa.pupuParticipation') }}
+          </p>
+
           <!-- Section Tarifs -->
           <div class="mt-12">
             <h3 class="mb-8 text-center text-3xl font-bold text-white sm:text-4xl">

@@ -17,12 +17,22 @@ export class PartnersService {
     link?: string,
     bannerHorizontalUrl?: string,
     bannerVerticalUrl?: string,
+    email?: string | null,
+    activity?: string | null,
+    phone?: string | null,
+    description?: string | null,
+    premium?: boolean,
   ): Promise<Partner> {
     const partner = this.partnerRepository.create({
       name,
       link: link || null,
       bannerHorizontalUrl: bannerHorizontalUrl || null,
       bannerVerticalUrl: bannerVerticalUrl || null,
+      email: email ?? null,
+      activity: activity ?? null,
+      phone: phone ?? null,
+      description: description ?? null,
+      premium: premium ?? false,
     });
     return this.partnerRepository.save(partner);
   }
@@ -52,6 +62,11 @@ export class PartnersService {
     link?: string,
     bannerHorizontalUrl?: string,
     bannerVerticalUrl?: string,
+    email?: string | null,
+    activity?: string | null,
+    phone?: string | null,
+    description?: string | null,
+    premium?: boolean,
   ): Promise<Partner> {
     const partner = await this.findOne(id);
 
@@ -60,6 +75,21 @@ export class PartnersService {
     }
     if (link !== undefined) {
       partner.link = link || null;
+    }
+    if (email !== undefined) {
+      partner.email = email;
+    }
+    if (activity !== undefined) {
+      partner.activity = activity;
+    }
+    if (phone !== undefined) {
+      partner.phone = phone;
+    }
+    if (description !== undefined) {
+      partner.description = description;
+    }
+    if (premium !== undefined) {
+      partner.premium = premium;
     }
     if (bannerHorizontalUrl !== undefined) {
       // Supprimer l'ancienne bannière horizontale si elle existe

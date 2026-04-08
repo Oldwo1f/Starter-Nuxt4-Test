@@ -60,7 +60,7 @@ const handleRegister = async () => {
   if (result.success) {
     success.value = t('auth.register.success')
     setTimeout(() => {
-      router.push('/')
+      router.push('/account/profile')
     }, 1000)
   } else {
     error.value = result.error || t('auth.register.errorGeneric')
@@ -95,7 +95,7 @@ const handleRegister = async () => {
 //     if (result.success) {
 //       success.value = t('auth.register.facebookSuccess')
 //       setTimeout(() => {
-//         router.push('/')
+//         router.push('/account/profile')
 //       }, 1000)
 //     } else {
 //       error.value = result.error || t('auth.register.facebookError')

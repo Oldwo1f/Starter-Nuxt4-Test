@@ -40,6 +40,57 @@ const hasPendingManualFlowVerification = computed(() => {
 const isManualFlowConfirmOpen = ref(false)
 const pendingManualFlowChannel = ref<ManualTransferFlowChannel | null>(null)
 
+const manualFlowProofFileByChannel = reactive<
+  Partial<Record<ManualTransferFlowChannel, File>>
+>({})
+const manualFlowProofPreviewUrlByChannel = reactive<
+  Partial<Record<ManualTransferFlowChannel, string>>
+>({})
+
+const resetManualFlowProof = (channel: ManualTransferFlowChannel) => {
+  const url = manualFlowProofPreviewUrlByChannel[channel]
+  if (url) {
+    URL.revokeObjectURL(url)
+  }
+  delete manualFlowProofFileByChannel[channel]
+  delete manualFlowProofPreviewUrlByChannel[channel]
+}
+
+const onManualFlowProofFileChange = (channel: ManualTransferFlowChannel, event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0] ?? null
+  const prev = manualFlowProofPreviewUrlByChannel[channel]
+  if (prev) {
+    URL.revokeObjectURL(prev)
+  }
+  if (file) {
+    manualFlowProofFileByChannel[channel] = file
+    manualFlowProofPreviewUrlByChannel[channel] = URL.createObjectURL(file)
+  } else {
+    delete manualFlowProofFileByChannel[channel]
+    delete manualFlowProofPreviewUrlByChannel[channel]
+  }
+}
+
+const clearManualFlowProofInput = (channel: ManualTransferFlowChannel) => {
+  resetManualFlowProof(channel)
+  if (import.meta.client) {
+    const el = document.getElementById(`cotisation-proof-${channel}`) as HTMLInputElement | null
+    if (el) {
+      el.value = ''
+    }
+  }
+}
+
+onUnmounted(() => {
+  for (const ch of Object.keys(manualFlowProofPreviewUrlByChannel) as ManualTransferFlowChannel[]) {
+    const u = manualFlowProofPreviewUrlByChannel[ch]
+    if (u) {
+      URL.revokeObjectURL(u)
+    }
+  }
+})
+
 watch(isManualFlowConfirmOpen, (open) => {
   if (!open) {
     pendingManualFlowChannel.value = null
@@ -301,11 +352,15 @@ const memberRoleLabel = computed(() => {
 // }
 
 // Gérer la vérification legacy
-const handleManualTransferFlowVerification = async (channel: ManualTransferFlowChannel) => {
-  const res = await billingStore.requestManualTransferFlowVerification(channel)
+const handleManualTransferFlowVerification = async (
+  channel: ManualTransferFlowChannel,
+  proofFile: File,
+) => {
+  const res = await billingStore.requestManualTransferFlowVerification(channel, proofFile)
   if (res.success) {
     await billingStore.fetchMyManualTransferFlowVerification()
     openAccordion.value = null
+    resetManualFlowProof(channel)
   } else {
     toast.add({
       title: t('pollUi.errorTitle'),
@@ -316,6 +371,14 @@ const handleManualTransferFlowVerification = async (channel: ManualTransferFlowC
 }
 
 const openManualFlowConfirm = (channel: ManualTransferFlowChannel) => {
+  if (!manualFlowProofFileByChannel[channel]) {
+    toast.add({
+      title: t('pollUi.errorTitle'),
+      description: t('account.cotisation.toastProofRequired'),
+      color: 'error',
+    })
+    return
+  }
   pendingManualFlowChannel.value = channel
   isManualFlowConfirmOpen.value = true
 }
@@ -329,8 +392,18 @@ const confirmManualFlowVerificationFromModal = async () => {
   if (!channel) {
     return
   }
+  const proofFile = manualFlowProofFileByChannel[channel]
+  if (!proofFile) {
+    toast.add({
+      title: t('pollUi.errorTitle'),
+      description: t('account.cotisation.toastProofRequired'),
+      color: 'error',
+    })
+    isManualFlowConfirmOpen.value = false
+    return
+  }
   try {
-    await handleManualTransferFlowVerification(channel)
+    await handleManualTransferFlowVerification(channel, proofFile)
   } finally {
     isManualFlowConfirmOpen.value = false
   }
@@ -877,6 +950,48 @@ onMounted(async () => {
                       v-if="panel.manualChannel"
                       class="space-y-3 border-t border-white/10 pt-4"
                     >
+                      <p class="text-sm leading-relaxed text-white/75">
+                        {{ t('account.cotisation.transferProofHint') }}
+                      </p>
+                      <div class="space-y-2">
+                        <label
+                          class="flex cursor-pointer flex-col gap-2 rounded-lg border border-dashed border-white/20 bg-black/20 p-4 transition-colors hover:border-orange-500/40 hover:bg-black/30"
+                          :for="'cotisation-proof-' + panel.manualChannel"
+                        >
+                          <span class="text-sm font-medium text-white/90">{{
+                            t('account.cotisation.transferProofLabel')
+                          }}</span>
+                          <input
+                            :id="'cotisation-proof-' + panel.manualChannel"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/*"
+                            class="sr-only"
+                            @change="onManualFlowProofFileChange(panel.manualChannel!, $event)"
+                          />
+                          <span class="text-xs text-white/50">{{
+                            t('account.cotisation.transferProofFormats')
+                          }}</span>
+                        </label>
+                        <div
+                          v-if="manualFlowProofPreviewUrlByChannel[panel.manualChannel]"
+                          class="flex items-start gap-3"
+                        >
+                          <img
+                            :src="manualFlowProofPreviewUrlByChannel[panel.manualChannel]"
+                            alt=""
+                            class="max-h-40 max-w-full rounded-lg border border-white/10 object-contain"
+                          />
+                          <UButton
+                            type="button"
+                            color="neutral"
+                            variant="ghost"
+                            size="xs"
+                            @click.stop="clearManualFlowProofInput(panel.manualChannel!)"
+                          >
+                            {{ t('account.cotisation.transferProofRemove') }}
+                          </UButton>
+                        </div>
+                      </div>
                       <div class="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
                         <p class="text-sm text-red-300">
                           {{ t('account.cotisation.legacyWarning') }}
@@ -887,7 +1002,11 @@ onMounted(async () => {
                         variant="solid"
                         size="lg"
                         block
-                        :disabled="hasPendingManualFlowVerification"
+                        :disabled="
+                          hasPendingManualFlowVerification ||
+                          !panel.manualChannel ||
+                          !manualFlowProofFileByChannel[panel.manualChannel]
+                        "
                         :loading="billingStore.isLoading"
                         class="bg-green-600 hover:bg-green-700 font-semibold text-white"
                         @click.stop="
@@ -928,6 +1047,48 @@ onMounted(async () => {
                       v-if="panel.manualChannel"
                       class="space-y-3 border-t border-white/10 pt-4"
                     >
+                      <p class="text-sm leading-relaxed text-white/75">
+                        {{ t('account.cotisation.transferProofHint') }}
+                      </p>
+                      <div class="space-y-2">
+                        <label
+                          class="flex cursor-pointer flex-col gap-2 rounded-lg border border-dashed border-white/20 bg-black/20 p-4 transition-colors hover:border-orange-500/40 hover:bg-black/30"
+                          :for="'cotisation-proof-' + panel.manualChannel"
+                        >
+                          <span class="text-sm font-medium text-white/90">{{
+                            t('account.cotisation.transferProofLabel')
+                          }}</span>
+                          <input
+                            :id="'cotisation-proof-' + panel.manualChannel"
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/*"
+                            class="sr-only"
+                            @change="onManualFlowProofFileChange(panel.manualChannel!, $event)"
+                          />
+                          <span class="text-xs text-white/50">{{
+                            t('account.cotisation.transferProofFormats')
+                          }}</span>
+                        </label>
+                        <div
+                          v-if="manualFlowProofPreviewUrlByChannel[panel.manualChannel]"
+                          class="flex items-start gap-3"
+                        >
+                          <img
+                            :src="manualFlowProofPreviewUrlByChannel[panel.manualChannel]"
+                            alt=""
+                            class="max-h-40 max-w-full rounded-lg border border-white/10 object-contain"
+                          />
+                          <UButton
+                            type="button"
+                            color="neutral"
+                            variant="ghost"
+                            size="xs"
+                            @click.stop="clearManualFlowProofInput(panel.manualChannel!)"
+                          >
+                            {{ t('account.cotisation.transferProofRemove') }}
+                          </UButton>
+                        </div>
+                      </div>
                       <div class="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
                         <p class="text-sm text-red-300">
                           {{ t('account.cotisation.legacyWarning') }}
@@ -938,7 +1099,11 @@ onMounted(async () => {
                         variant="solid"
                         size="lg"
                         block
-                        :disabled="hasPendingManualFlowVerification"
+                        :disabled="
+                          hasPendingManualFlowVerification ||
+                          !panel.manualChannel ||
+                          !manualFlowProofFileByChannel[panel.manualChannel]
+                        "
                         :loading="billingStore.isLoading"
                         class="bg-green-600 hover:bg-green-700 font-semibold text-white"
                         @click.stop="

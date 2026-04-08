@@ -74,6 +74,7 @@ export class UsersService {
         'role',
         'emailVerified',
         'isActive',
+        'archivedAt',
         'isCertified',
         'respectAnciensBadgeGranted',
         'lastLogin',
@@ -100,6 +101,7 @@ export class UsersService {
       email?: string;
       commune?: string;
     },
+    usersScope: 'active' | 'archived' | 'all' = 'active',
   ) {
     const queryBuilder = this.usersRepository.createQueryBuilder('user');
 
@@ -113,6 +115,7 @@ export class UsersService {
       'user.role',
       'user.emailVerified',
       'user.isActive',
+      'user.archivedAt',
       'user.isCertified',
       'user.respectAnciensBadgeGranted',
       'user.lastLogin',
@@ -164,8 +167,27 @@ export class UsersService {
       queryBuilder.andWhere('user.commune ILIKE :commune', { commune: `%${filters.commune}%` });
     }
 
+    if (usersScope === 'active') {
+      queryBuilder.andWhere('user.archivedAt IS NULL');
+    } else if (usersScope === 'archived') {
+      queryBuilder.andWhere('user.archivedAt IS NOT NULL');
+    }
+
     // Apply sorting
-    const validSortColumns = ['id', 'email', 'firstName', 'lastName', 'phoneNumber', 'role', 'emailVerified', 'isActive', 'lastLogin', 'createdAt', 'updatedAt'];
+    const validSortColumns = [
+      'id',
+      'email',
+      'firstName',
+      'lastName',
+      'phoneNumber',
+      'role',
+      'emailVerified',
+      'isActive',
+      'archivedAt',
+      'lastLogin',
+      'createdAt',
+      'updatedAt',
+    ];
     const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'id';
     queryBuilder.orderBy(`user.${sortColumn}`, sortOrder);
 
@@ -261,11 +283,27 @@ export class UsersService {
     return user;
   }
 
-  async remove(userId: number): Promise<void> {
-    const result = await this.usersRepository.delete(userId);
-    if (result.affected === 0) {
-      throw new Error('User not found');
+  /**
+   * Archive un utilisateur : désactive le compte, enregistre la date d’archivage,
+   * révoque les refresh tokens. Ne supprime pas les données (transactions, etc.).
+   */
+  async archiveUser(userId: number, actorUserId: number): Promise<void> {
+    if (userId === actorUserId) {
+      throw new BadRequestException('Vous ne pouvez pas archiver votre propre compte.');
     }
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (user.archivedAt) {
+      throw new BadRequestException('Cet utilisateur est déjà archivé.');
+    }
+    const refreshTokenRepo = this.dataSource.getRepository(RefreshToken);
+    await refreshTokenRepo.createQueryBuilder().delete().where('userId = :userId', { userId }).execute();
+    await this.usersRepository.update(userId, {
+      isActive: false,
+      archivedAt: new Date(),
+    });
   }
 
   async updateLastLogin(userId: number): Promise<void> {

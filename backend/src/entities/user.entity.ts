@@ -61,6 +61,10 @@ export class User {
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
+  /** Date d’archivage admin (compte désactivé, données conservées) */
+  @Column({ type: 'timestamp', nullable: true })
+  archivedAt: Date | null;
+
   @Column({ type: 'boolean', default: false })
   isCertified: boolean;
 

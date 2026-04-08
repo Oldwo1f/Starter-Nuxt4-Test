@@ -35,6 +35,11 @@ export const createPartnerTool = {
       properties: {
         name: { type: 'string', description: 'Nom du partenaire' },
         link: { type: 'string', description: 'Lien du site partenaire' },
+        email: { type: 'string', description: 'Email de contact' },
+        activity: { type: 'string', description: 'Activité / secteur' },
+        phone: { type: 'string', description: 'Téléphone' },
+        description: { type: 'string', description: 'Texte de présentation (public)' },
+        premium: { type: 'boolean', description: 'Partenaire premium' },
         bannerHorizontalUrl: { type: 'string', description: 'URL bannière horizontale' },
         bannerVerticalUrl: { type: 'string', description: 'URL bannière verticale' },
       },
@@ -54,6 +59,11 @@ export const updatePartnerTool = {
         id: { type: 'number', description: 'ID du partenaire' },
         name: { type: 'string' },
         link: { type: 'string' },
+        email: { type: 'string' },
+        activity: { type: 'string' },
+        phone: { type: 'string' },
+        description: { type: 'string' },
+        premium: { type: 'boolean' },
         bannerHorizontalUrl: { type: 'string' },
         bannerVerticalUrl: { type: 'string' },
       },
@@ -90,6 +100,11 @@ export async function executeCreatePartner(
   args: {
     name: string;
     link?: string;
+    email?: string | null;
+    activity?: string | null;
+    phone?: string | null;
+    description?: string | null;
+    premium?: boolean;
     bannerHorizontalUrl?: string;
     bannerVerticalUrl?: string;
   },
@@ -99,6 +114,11 @@ export async function executeCreatePartner(
     args.link,
     args.bannerHorizontalUrl,
     args.bannerVerticalUrl,
+    args.email ?? null,
+    args.activity ?? null,
+    args.phone ?? null,
+    args.description ?? null,
+    args.premium ?? false,
   );
   return JSON.stringify(partner, null, 2);
 }
@@ -109,6 +129,11 @@ export async function executeUpdatePartner(
     id: number;
     name?: string;
     link?: string;
+    email?: string | null;
+    activity?: string | null;
+    phone?: string | null;
+    description?: string | null;
+    premium?: boolean;
     bannerHorizontalUrl?: string;
     bannerVerticalUrl?: string;
   },
@@ -119,6 +144,11 @@ export async function executeUpdatePartner(
     args.link,
     args.bannerHorizontalUrl,
     args.bannerVerticalUrl,
+    args.email,
+    args.activity,
+    args.phone,
+    args.description,
+    args.premium,
   );
   return JSON.stringify(partner, null, 2);
 }

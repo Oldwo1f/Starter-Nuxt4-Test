@@ -773,12 +773,23 @@ export class BillingService {
 
   // --- Manual transfer flow (CCP / Déblock RIB / Déblock instantané), listed under admin « Virements » ---
 
-  async requestManualTransferFlowVerification(userId: number, channel: ManualTransferFlowChannel) {
+  async requestManualTransferFlowVerification(
+    userId: number,
+    channel: ManualTransferFlowChannel,
+    proofImageUrl: string,
+  ) {
     const existing = await this.manualTransferFlowRepository.findOne({
       where: { userId, status: ManualTransferFlowStatus.PENDING },
     });
     if (existing) {
       return { ok: true, alreadyRequested: true, verificationId: existing.id };
+    }
+
+    const proof = proofImageUrl?.trim();
+    if (!proof) {
+      throw new BadRequestException(
+        'Une capture d’écran ou une image de preuve de virement est obligatoire.',
+      );
     }
 
     const now = new Date();
@@ -793,6 +804,7 @@ export class BillingService {
         channel,
         status: ManualTransferFlowStatus.PENDING,
         pupuInscriptionReceived: false,
+        proofImageUrl: proof,
       });
       await manualRepo.save(verification);
 
@@ -840,6 +852,7 @@ export class BillingService {
         id: verification.id,
         channel: verification.channel,
         status: verification.status,
+        proofImageUrl: verification.proofImageUrl ?? null,
         createdAt: verification.createdAt,
       },
       user: user
@@ -862,6 +875,7 @@ export class BillingService {
     return rows.map((v) => ({
       id: v.id,
       channel: v.channel,
+      proofImageUrl: v.proofImageUrl ?? null,
       createdAt: v.createdAt,
       user: {
         id: v.user.id,

@@ -83,77 +83,6 @@ const currentSection = computed(() => {
   return 'heritage'
 })
 
-// Menu pour la section Nuna'a Heritage
-const heritageMenuItems = computed<MenuItem[]>(() => [
-  {
-    label: t('nav.home'),
-    to: '/',
-    icon: 'i-heroicons-home',
-    active: route.path === '/',
-  },
-  {
-    label: t('nav.culture'),
-    to: '/culture',
-    icon: 'i-heroicons-video-camera',
-    active: route.path.startsWith('/culture'),
-  },
-  {
-    label: t('nav.polls'),
-    to: '/polls',
-    icon: 'i-heroicons-chart-bar',
-    active: route.path.startsWith('/polls'),
-  },
-  {
-    label: t('nav.goodies'),
-    to: '/goodies',
-    icon: 'i-heroicons-gift',
-    active: route.path.startsWith('/goodies'),
-  },
-  {
-    label: t('nav.blog'),
-    to: '/blog',
-    icon: 'i-heroicons-document-text',
-    active: route.path.startsWith('/blog'),
-  },
-  {
-    label: t('nav.partners'),
-    to: '/partners',
-    icon: 'i-heroicons-building-office-2',
-    active: route.path.startsWith('/partners'),
-  },
-  {
-    label: t('nav.packs'),
-    to: '/tarifs',
-    icon: 'i-heroicons-cube',
-    active: route.path.startsWith('/tarifs'),
-  },
-  {
-    label: t('nav.teNatiraa'),
-    to: '/te-natiraa',
-    icon: 'i-heroicons-sparkles',
-    active: route.path.startsWith('/te-natiraa'),
-  },
-  {
-    label: t('nav.troc'),
-    to: '/marketplace',
-    icon: 'i-heroicons-shopping-bag',
-    active: route.path.startsWith('/marketplace'),
-    color: 'primary' as const,
-  },
-  {
-    label: t('nav.academy'),
-    to: '/academy',
-    icon: 'i-heroicons-academic-cap',
-    active: route.path.startsWith('/academy'),
-  },
-  {
-    label: t('nav.games'),
-    to: '/games',
-    icon: 'i-heroicons-play',
-    active: route.path.startsWith('/games'),
-  },
-])
-
 // Menu pour la section Marketplace
 const marketplaceMenuItems = computed<MenuItem[]>(() => {
   const items: MenuItem[] = [
@@ -181,15 +110,7 @@ const marketplaceMenuItems = computed<MenuItem[]>(() => {
   return items
 })
 
-// Menu actif selon la section
-const activeMenuItems = computed(() => {
-  if (currentSection.value === 'marketplace') {
-    return marketplaceMenuItems.value
-  }
-  return heritageMenuItems.value
-})
-
-// Desktop Heritage : liens principaux (mobile drawer via heritageMenuItems)
+// Desktop Heritage : liens principaux (drawer mobile : heritageMobileDrawerItems)
 const heritageDesktopPrimaryItems = computed<MenuItem[]>(() => {
   const items: MenuItem[] = [
     {
@@ -253,9 +174,14 @@ const heritageMoreMenuActive = computed(() => {
 const heritageMoreMenuItems = computed<DropdownMenuItem[][]>(() => {
   const row: DropdownMenuItem[] = [
     {
-      label: t('nav.polls'),
-      icon: 'i-heroicons-chart-bar',
-      to: '/polls',
+      label: t('nav.teNatiraa'),
+      icon: 'i-heroicons-sparkles',
+      to: '/te-natiraa',
+    },
+    {
+      label: t('nav.partners'),
+      icon: 'i-heroicons-building-office-2',
+      to: '/partners',
     },
     {
       label: t('nav.goodies'),
@@ -268,9 +194,9 @@ const heritageMoreMenuItems = computed<DropdownMenuItem[][]>(() => {
       to: '/blog',
     },
     {
-      label: t('nav.partners'),
-      icon: 'i-heroicons-building-office-2',
-      to: '/partners',
+      label: t('nav.polls'),
+      icon: 'i-heroicons-chart-bar',
+      to: '/polls',
     },
   ]
   if (!showNosPacksInPrimaryNav.value) {
@@ -280,12 +206,92 @@ const heritageMoreMenuItems = computed<DropdownMenuItem[][]>(() => {
       to: '/tarifs',
     })
   }
-  row.push({
-    label: t('nav.teNatiraa'),
-    icon: 'i-heroicons-sparkles',
-    to: '/te-natiraa',
-  })
   return [row]
+})
+
+/** Drawer mobile (Heritage) : même ordre que la barre desktop + liens « Plus », sans doublon pour /tarifs */
+const heritageMobileDrawerItems = computed<MenuItem[]>(() => {
+  const items: MenuItem[] = [
+    {
+      label: t('nav.culture'),
+      to: '/culture',
+      icon: 'i-heroicons-video-camera',
+      active: route.path.startsWith('/culture'),
+    },
+    {
+      label: t('nav.academy'),
+      to: '/academy',
+      icon: 'i-heroicons-academic-cap',
+      active: route.path.startsWith('/academy'),
+    },
+    {
+      label: t('nav.games'),
+      to: '/games',
+      icon: 'i-heroicons-play',
+      active: route.path.startsWith('/games'),
+    },
+    {
+      label: t('nav.troc'),
+      to: '/marketplace',
+      icon: 'i-heroicons-shopping-bag',
+      active: route.path.startsWith('/marketplace'),
+      color: 'primary' as const,
+    },
+    {
+      label: t('nav.packs'),
+      to: '/tarifs',
+      icon: 'i-heroicons-cube',
+      active: route.path.startsWith('/tarifs'),
+    },
+  ]
+  if (authStore.isAuthenticated) {
+    items.push({
+      label: t('common.mySpace'),
+      to: '/account',
+      icon: 'i-heroicons-user-circle',
+      active: route.path.startsWith('/account'),
+    })
+  }
+  items.push(
+    {
+      label: t('nav.teNatiraa'),
+      to: '/te-natiraa',
+      icon: 'i-heroicons-sparkles',
+      active: route.path.startsWith('/te-natiraa'),
+    },
+    {
+      label: t('nav.partners'),
+      to: '/partners',
+      icon: 'i-heroicons-building-office-2',
+      active: route.path.startsWith('/partners'),
+    },
+    {
+      label: t('nav.goodies'),
+      to: '/goodies',
+      icon: 'i-heroicons-gift',
+      active: route.path.startsWith('/goodies'),
+    },
+    {
+      label: t('nav.blog'),
+      to: '/blog',
+      icon: 'i-heroicons-document-text',
+      active: route.path.startsWith('/blog'),
+    },
+    {
+      label: t('nav.polls'),
+      to: '/polls',
+      icon: 'i-heroicons-chart-bar',
+      active: route.path.startsWith('/polls'),
+    },
+  )
+  return items
+})
+
+const drawerMenuItems = computed<MenuItem[]>(() => {
+  if (currentSection.value === 'marketplace') {
+    return marketplaceMenuItems.value
+  }
+  return heritageMobileDrawerItems.value
 })
 
 // Obtenir le texte pour l'avatar (initiales)
@@ -458,7 +464,7 @@ const isActive = (item: MenuItem) => item.active
               {{ item.label }}
             </UButton>
           </template>
-          <UDropdownMenu :items="heritageMoreMenuItems">
+          <UDropdownMenu :items="heritageMoreMenuItems" :modal="false">
             <UButton
               :color="heritageMoreMenuActive ? 'primary' : 'neutral'"
               :variant="heritageMoreMenuActive ? 'solid' : 'ghost'"
@@ -503,7 +509,7 @@ const isActive = (item: MenuItem) => item.active
 
             <!-- Navigation -->
             <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-              <template v-for="item in activeMenuItems" :key="item.to || item.label">
+              <template v-for="item in drawerMenuItems" :key="item.to || item.label">
                 <a
                   v-if="item.external"
                   :href="item.to"
@@ -537,10 +543,12 @@ const isActive = (item: MenuItem) => item.active
               </template>
             </nav>
 
-            <!-- Auth en bas du drawer (mobile) -->
-            <div class="p-4 border-t border-white/10">
+            <!-- Connexion (Mon espace est déjà dans la liste pour Heritage ; Marketplace inclut Mon espace dans drawerMenuItems) -->
+            <div
+              v-if="!authStore.isAuthenticated"
+              class="p-4 border-t border-white/10"
+            >
               <UButton
-                v-if="!authStore.isAuthenticated"
                 to="/login"
                 color="primary"
                 variant="solid"
@@ -551,22 +559,6 @@ const isActive = (item: MenuItem) => item.active
               >
                 {{ t('common.login') }}
               </UButton>
-              <NuxtLink
-                v-else
-                to="/account"
-                class="block"
-                @click="isDrawerOpen = false"
-              >
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  icon="i-heroicons-user-circle"
-                  size="sm"
-                  class="w-full justify-start"
-                >
-                  {{ t('common.mySpace') }}
-                </UButton>
-              </NuxtLink>
             </div>
           </div>
         </template>
@@ -603,7 +595,7 @@ const isActive = (item: MenuItem) => item.active
               {{ messagesStore.totalUnreadCount > 99 ? '99+' : messagesStore.totalUnreadCount }}
             </UBadge>
           </NuxtLink>
-          <UDropdownMenu :items="userMenuItems">
+          <UDropdownMenu :items="userMenuItems" :modal="false">
           <UButton
             color="neutral"
             variant="ghost"

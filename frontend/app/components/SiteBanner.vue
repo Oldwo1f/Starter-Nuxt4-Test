@@ -23,9 +23,9 @@ const isVisible = computed(() => {
 </script>
 
 <template>
-  <section v-if="isVisible" class="bg-black">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-      <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] border-0">
+  <section v-if="isVisible" class="bg-transparent">
+    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 sm:py-12">
+      <div class="overflow-hidden rounded-2xl border border-white/15 bg-transparent">
         <picture class="block">
           <source v-if="desktopUrl" :srcset="desktopUrl" media="(min-width: 768px)" />
           <img

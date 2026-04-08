@@ -68,6 +68,7 @@ const handleStatusChange = async (newStatus: 'active' | 'sold' | 'archived') => 
 
 <template>
   <UDropdownMenu
+    :modal="false"
     :items="[
       statusOptions
         .filter(opt => opt.value !== currentStatus)

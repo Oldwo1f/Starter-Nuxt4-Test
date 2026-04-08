@@ -4,28 +4,43 @@ definePageMeta({
 })
 
 import { usePartnerStore } from '~/stores/usePartnerStore'
+import type { Partner } from '~/stores/usePartnerStore'
 
 const partnerStore = usePartnerStore()
 const { apiBaseUrl } = useApi()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
-// Charger les partenaires au montage
 onMounted(async () => {
   await partnerStore.fetchPartners()
 })
 
-// Fonction pour obtenir l'URL complète d'une bannière
-const getBannerUrl = (url: string | null | undefined): string | null => {
-  if (!url) return null
-  return `${apiBaseUrl}${url}`
+function comparePartners(a: Partner, b: Partner): number {
+  const loc = locale.value === 'ty' ? 'ty' : 'fr'
+  return a.name.localeCompare(b.name, loc, { sensitivity: 'base' })
 }
 
-// Partenaires triés par ordre alphabétique
-const sortedPartners = computed(() => {
-  return [...partnerStore.partners].sort((a, b) => {
-    return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })
-  })
-})
+const premiumPartnersSorted = computed(() =>
+  partnerStore.partners.filter((p) => p.premium === true).sort(comparePartners),
+)
+
+const regularPartnersSorted = computed(() =>
+  partnerStore.partners.filter((p) => p.premium !== true).sort(comparePartners),
+)
+
+/** Bannière pour la zone large : horizontale en priorité, sinon verticale. */
+function partnerBannerDisplayUrl(partner: Partner): string | null {
+  const path = partner.bannerHorizontalUrl || partner.bannerVerticalUrl
+  if (!path) return null
+  return `${apiBaseUrl}${path}`
+}
+
+const soutienQrAccordionItems = computed(() => [
+  {
+    label: t('partnersPage.soutienQrTitle'),
+    icon: 'i-heroicons-qr-code',
+    content: t('partnersPage.soutienQrDescription'),
+  },
+])
 </script>
 
 <template>
@@ -37,109 +52,86 @@ const sortedPartners = computed(() => {
       </p>
     </div>
 
-    <ParticipationCallout context="partners" />
-
-    <UAlert
-      class="mx-auto mb-10 max-w-3xl"
-      color="primary"
-      variant="subtle"
-      icon="i-heroicons-qr-code"
-      :title="t('partnersPage.soutienQrTitle')"
-      :description="t('partnersPage.soutienQrDescription')"
-    />
-
     <div v-if="partnerStore.isLoading" class="py-12 text-center">
       <UIcon name="i-heroicons-arrow-path" class="mx-auto mb-4 h-12 w-12 animate-spin text-white/60" />
       <p class="text-white/60">{{ t('partnersPage.loading') }}</p>
     </div>
 
-    <div v-else-if="partnerStore.partners.length > 0" class="space-y-8">
-      <UCard
-        v-for="partner in sortedPartners"
-        :key="partner.id"
-        class="overflow-hidden w-full"
-      >
-        <div class="flex flex-col gap-0">
-          <!-- Bannière horizontale sur desktop, verticale sur mobile -->
-          <div class="w-full">
-            <!-- Bannière verticale pour mobile (priorité) -->
+    <template v-else-if="partnerStore.partners.length > 0">
+      <section v-if="premiumPartnersSorted.length" class="mb-12 space-y-5">
+        <UCard
+          v-for="partner in premiumPartnersSorted"
+          :key="`premium-${partner.id}`"
+          class="w-full overflow-hidden border-0 bg-gradient-to-br from-white/[0.08] to-white/[0.02] ring-1 ring-amber-500/30"
+        >
+          <div class="flex flex-col md:flex-row md:items-stretch">
             <div
-              v-if="partner.bannerVerticalUrl && getBannerUrl(partner.bannerVerticalUrl)"
-              class="block md:hidden w-full"
+              class="border-b border-white/10 md:w-1/3 md:shrink-0 md:border-b-0 md:border-r md:border-white/10"
             >
-              <img
-                :src="getBannerUrl(partner.bannerVerticalUrl)!"
-                :alt="partner.name"
-                class="w-full h-auto object-cover"
-              />
+              <div class="p-5">
+                <PartnerAnnuaireFields :partner="partner" />
+              </div>
             </div>
-            <!-- Bannière horizontale pour mobile (fallback si pas de verticale) -->
-            <div
-              v-else-if="partner.bannerHorizontalUrl && getBannerUrl(partner.bannerHorizontalUrl)"
-              class="block md:hidden w-full"
-            >
+            <div class="relative min-h-[200px] w-full bg-white/[0.04] md:w-2/3 md:min-h-[260px]">
               <img
-                :src="getBannerUrl(partner.bannerHorizontalUrl)!"
+                v-if="partnerBannerDisplayUrl(partner)"
+                :src="partnerBannerDisplayUrl(partner)!"
                 :alt="partner.name"
-                class="w-full h-auto object-cover"
+                class="h-56 w-full object-cover md:absolute md:inset-0 md:h-full md:min-h-[260px]"
               />
-            </div>
-            <!-- Bannière horizontale pour desktop -->
-            <div
-              v-if="partner.bannerHorizontalUrl && getBannerUrl(partner.bannerHorizontalUrl)"
-              class="hidden md:block w-full"
-            >
-              <img
-                :src="getBannerUrl(partner.bannerHorizontalUrl)!"
-                :alt="partner.name"
-                class="w-full h-auto object-cover"
-              />
-            </div>
-            <!-- Bannière verticale pour desktop (fallback si pas d'horizontale) -->
-            <div
-              v-else-if="partner.bannerVerticalUrl && getBannerUrl(partner.bannerVerticalUrl)"
-              class="hidden md:block w-full"
-            >
-              <img
-                :src="getBannerUrl(partner.bannerVerticalUrl)!"
-                :alt="partner.name"
-                class="w-full h-auto object-cover"
-              />
-            </div>
-            <!-- Fallback si pas de bannière du tout -->
-            <div
-              v-else
-              class="w-full h-64 md:h-96 flex items-center justify-center bg-gray-800/50"
-            >
-              <UIcon
-                name="i-heroicons-building-office-2"
-                class="h-16 w-16 text-white/40"
-              />
+              <div
+                v-else
+                class="flex h-56 min-h-[200px] items-center justify-center md:absolute md:inset-0 md:h-full"
+              >
+                <UIcon name="i-heroicons-photo" class="h-14 w-14 text-white/25" />
+              </div>
             </div>
           </div>
+        </UCard>
+      </section>
 
-          <!-- Contenu du partenaire -->
-          <div class="p-6 md:p-8 flex flex-col justify-center items-center text-center">
-            <h3 class="text-2xl md:text-3xl font-semibold mb-4">{{ partner.name }}</h3>
-            <UButton
-              v-if="partner.link"
-              :to="partner.link"
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="outline"
-              icon="i-heroicons-arrow-top-right-on-square"
-              size="lg"
-            >
-              {{ t('partnersPage.discover', { name: partner.name }) }}
-            </UButton>
-          </div>
+      <section v-if="regularPartnersSorted.length">
+        <h2
+          v-if="premiumPartnersSorted.length"
+          class="mb-5 text-center text-xl font-semibold text-white/90 sm:text-left"
+        >
+          {{ t('partnersPage.directoryTitle') }}
+        </h2>
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+          <UCard
+            v-for="partner in regularPartnersSorted"
+            :key="partner.id"
+            class="flex h-full flex-col overflow-hidden border-0 bg-gradient-to-br from-white/[0.07] to-white/[0.02] ring-1 ring-white/10"
+          >
+            <div class="p-5">
+              <PartnerAnnuaireFields :partner="partner" />
+            </div>
+          </UCard>
         </div>
-      </UCard>
-    </div>
+      </section>
+    </template>
 
     <div v-else class="py-12 text-center text-white/60">
       <UIcon name="i-heroicons-building-office-2" class="mx-auto mb-4 h-12 w-12" />
       <p>{{ t('partnersPage.empty') }}</p>
+    </div>
+
+    <div class="mt-14 space-y-10 border-t border-white/10 pt-12">
+      <ParticipationCallout context="partners" />
+      <UAccordion
+        type="single"
+        :collapsible="true"
+        :items="soutienQrAccordionItems"
+        class="mx-auto w-full max-w-3xl"
+        :ui="{
+          root: 'rounded-xl ring-1 ring-primary-500/25 bg-primary-500/[0.06]',
+          item: 'border-0',
+          header: 'px-4 py-3 sm:px-5',
+          trigger: 'py-0 text-primary-200 hover:text-primary-100',
+          content: 'px-4 pb-4 pt-0 sm:px-5 sm:pb-5',
+          body: 'text-sm leading-relaxed text-white/75',
+        }"
+      />
     </div>
   </div>
 </template>

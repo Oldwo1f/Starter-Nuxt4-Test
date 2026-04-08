@@ -286,7 +286,7 @@ const accordionSections = computed(() => [
 <template>
   <div class="min-h-screen">
     <!-- Section Hero avec Slogan -->
-    <section class="relative flex min-h-[60vh] items-center justify-center overflow-hidden bg-gradient-to-b from-primary-900/20 via-black to-black px-4 py-20 sm:py-32">
+    <section class="relative flex min-h-[60vh] items-center justify-center overflow-hidden bg-transparent px-4 py-20 sm:py-32">
       <div class="relative z-10 mx-auto max-w-5xl text-center">
         <div class="mb-8 flex justify-center">
           <img :src="logoUrl" :alt="appName" class="h-24 w-auto sm:h-32 md:h-40 lg:h-48" />
@@ -305,17 +305,12 @@ const accordionSections = computed(() => [
           {{ t('home.heroSub') }}
         </p>
       </div>
-      <!-- Effet de fond décoratif -->
-      <div class="absolute inset-0 -z-0">
-        <div class="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-primary-500/10 blur-3xl" />
-        <div class="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-primary-600/10 blur-3xl" />
-      </div>
     </section>
 
     <SiteBanner />
 
     <!-- Section Présentation Naho & Nuna'a Heritage -->
-    <section class="relative bg-black/50 py-16 sm:py-24">
+    <section class="relative bg-transparent py-16 sm:py-24">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid gap-12 lg:grid-cols-2 lg:items-center">
           <!-- Vidéo de présentation -->
@@ -337,10 +332,10 @@ const accordionSections = computed(() => [
               <button
                 v-if="showPlayButton"
                 @click="playVideo"
-                class="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-all hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-black"
+                class="absolute inset-0 z-10 flex items-center justify-center bg-black/25 transition-all hover:bg-black/35 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-black"
                 :aria-label="t('home.playVideoAria')"
               >
-                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-primary-500/90 backdrop-blur-sm transition-all hover:scale-110 hover:bg-primary-500">
+                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-primary-500/90 transition-all hover:scale-110 hover:bg-primary-500">
                   <UIcon
                     name="i-heroicons-play"
                     class="ml-1 h-10 w-10 text-white"
@@ -350,7 +345,7 @@ const accordionSections = computed(() => [
               <!-- Bouton contrôle du son -->
               <button
                 @click="toggleVideoSound"
-                class="absolute bottom-4 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/60 backdrop-blur-sm transition-all hover:bg-black/80 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-black"
+                class="absolute bottom-4 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-black/50 transition-all hover:bg-black/65 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-black"
                 :aria-label="isMuted ? t('home.unmuteAria') : t('home.muteAria')"
               >
                 <UIcon
@@ -375,7 +370,7 @@ const accordionSections = computed(() => [
     </section>
 
     <!-- Accordéon Plein Écran -->
-    <section class="relative min-h-screen bg-black py-8">
+    <section class="relative min-h-screen bg-transparent py-8">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
@@ -390,21 +385,21 @@ const accordionSections = computed(() => [
           <div
             v-for="section in accordionSections"
             :key="section.id"
-            class="group relative overflow-hidden rounded-2xl border-0 bg-gradient-to-br from-white/5 to-white/[0.02] transition-all duration-500"
+            class="group relative overflow-hidden rounded-2xl border border-white/15 bg-transparent transition-all duration-500"
             :class="{
-              'ring-2 ring-primary-500/50 shadow-2xl shadow-primary-500/20': openAccordion === section.id,
+              'ring-2 ring-white/25 shadow-2xl shadow-black/20': openAccordion === section.id,
             }"
           >
             <!-- En-tête du panneau -->
             <button
-              class="flex w-full items-center justify-between p-6 text-left transition-all hover:bg-white/5 sm:p-8"
+              class="flex w-full items-center justify-between p-6 text-left transition-all hover:bg-white/[0.04] sm:p-8"
               @click="toggleAccordion(section.id)"
             >
               <div class="flex items-center gap-4">
                 <div
-                  class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-500/20 transition-all sm:h-16 sm:w-16"
+                  class="flex h-12 w-12 items-center justify-center rounded-xl border border-white/20 bg-transparent transition-all sm:h-16 sm:w-16"
                   :class="{
-                    'bg-primary-500/30 scale-110': openAccordion === section.id,
+                    'border-white/35 bg-white/[0.06] scale-110': openAccordion === section.id,
                   }"
                 >
                   <UIcon
@@ -441,7 +436,7 @@ const accordionSections = computed(() => [
                 'max-h-[800px]': openAccordion === section.id,
               }"
             >
-              <div class="border-t border-white/10 p-6 sm:p-8">
+              <div class="border-t border-white/15 p-6 sm:p-8">
                 <!-- Texte de circonstance -->
                 <p class="mb-6 text-center text-lg text-white/80 sm:text-xl">
                   {{ section.description }}
@@ -451,11 +446,11 @@ const accordionSections = computed(() => [
                   <UCard
                     v-for="item in section.items"
                     :key="item.label"
-                    class="group/item cursor-pointer bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-all hover:scale-105 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/20"
+                    class="group/item cursor-pointer border border-white/15 bg-transparent transition-all hover:scale-105 hover:border-white/25 hover:shadow-lg hover:shadow-black/25"
                     @click="handleItemClick(item)"
                   >
                     <div class="flex items-center gap-4">
-                      <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-primary-500/20 transition-all group-hover/item:bg-primary-500/30">
+                      <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg border border-white/20 bg-transparent transition-all group-hover/item:border-white/30 group-hover/item:bg-white/[0.05]">
                         <UIcon :name="item.icon" class="h-6 w-6 text-primary-400" />
                       </div>
                       <div class="flex-1">
@@ -484,12 +479,12 @@ const accordionSections = computed(() => [
     </section>
 
     <!-- Bandeau Te Natira'a -->
-    <section class="relative overflow-hidden bg-gradient-to-br from-primary-900/40 via-primary-800/30 to-primary-900/40 py-16 sm:py-24">
+    <section class="relative overflow-hidden bg-transparent py-16 sm:py-24">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid gap-12 lg:grid-cols-2 lg:items-center">
           <!-- Contenu texte -->
           <div class="space-y-6 text-center lg:text-left">
-            <div class="inline-flex items-center gap-2 rounded-full bg-primary-500/20 px-4 py-2 text-sm font-semibold text-primary-300">
+            <div class="inline-flex items-center gap-2 rounded-full border border-white/25 bg-transparent px-4 py-2 text-sm font-semibold text-primary-300">
               <UIcon name="i-heroicons-sparkles" class="h-5 w-5" />
               <span>{{ t('home.teNatiraaBadge') }}</span>
             </div>
@@ -537,15 +532,10 @@ const accordionSections = computed(() => [
           </div>
         </div>
       </div>
-      <!-- Effet de fond décoratif -->
-      <div class="pointer-events-none absolute inset-0 -z-0">
-        <div class="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-primary-500/10 blur-3xl" />
-        <div class="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-primary-600/10 blur-3xl" />
-      </div>
     </section>
 
     <!-- Section Sondages en cours -->
-    <section v-if="activePolls.length > 0" class="relative bg-black/50 py-16 sm:py-24">
+    <section v-if="activePolls.length > 0" class="relative bg-transparent py-16 sm:py-24">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
@@ -566,6 +556,7 @@ const accordionSections = computed(() => [
             :key="poll.id"
             :poll="poll"
             :show-response="true"
+            clear-surface
           />
         </div>
 
@@ -588,7 +579,7 @@ const accordionSections = computed(() => [
     </section>
 
     <!-- Bandeau CTA Rejoindre la communauté -->
-    <section class="relative bg-gradient-to-r from-primary-600/20 via-primary-500/20 to-primary-600/20 py-16 sm:py-20">
+    <section class="relative bg-transparent py-16 sm:py-20">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
           <h2 class="mb-4 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
@@ -616,11 +607,6 @@ const accordionSections = computed(() => [
             </UButton>
           </div>
         </div>
-      </div>
-      <!-- Effet de fond décoratif -->
-      <div class="pointer-events-none absolute inset-0 -z-0">
-        <div class="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-primary-500/10 blur-3xl" />
-        <div class="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-primary-600/10 blur-3xl" />
       </div>
     </section>
 
@@ -681,7 +667,7 @@ const accordionSections = computed(() => [
     </section> -->
 
     <!-- Section À la une -->
-    <section v-if="featuredPosts.length > 0" class="relative bg-black/50 py-16 sm:py-24">
+    <section v-if="featuredPosts.length > 0" class="relative bg-transparent py-16 sm:py-24">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mb-12 text-center">
           <h2 class="mb-4 text-4xl font-bold text-white sm:text-5xl">
@@ -700,7 +686,7 @@ const accordionSections = computed(() => [
           <UCard
             v-for="post in featuredPosts"
             :key="post.id"
-            class="group cursor-pointer overflow-hidden bg-gradient-to-br from-white/5 to-white/[0.02] border-0 transition-all hover:scale-[1.02] hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/20"
+            class="group cursor-pointer overflow-hidden border border-white/15 bg-transparent transition-all hover:scale-[1.02] hover:border-white/25 hover:shadow-xl hover:shadow-black/25"
             @click="navigateTo(post.to)"
           >
             <template #header>
@@ -714,7 +700,7 @@ const accordionSections = computed(() => [
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowfullscreen
                 />
-                <div v-else class="flex h-full items-center justify-center bg-white/10">
+                <div v-else class="flex h-full items-center justify-center border border-white/15 bg-transparent">
                   <UIcon name="i-heroicons-video-camera" class="h-12 w-12 text-white/40" />
                 </div>
               </div>
@@ -727,7 +713,7 @@ const accordionSections = computed(() => [
                 />
               </div>
               <!-- Placeholder si ni vidéo ni image -->
-              <div v-else class="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-gradient-to-br from-primary-500/20 to-primary-600/20 flex items-center justify-center">
+              <div v-else class="relative flex aspect-[16/9] w-full items-center justify-center overflow-hidden rounded-lg border border-white/15 bg-transparent">
                 <UIcon name="i-heroicons-document-text" class="h-16 w-16 text-primary-400/60" />
               </div>
             </template>

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Delete, Param, UseGuards, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Body, Patch, Delete, Param, UseGuards, ParseIntPipe, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody, ApiProperty, ApiQuery } from '@nestjs/swagger';
 import { IsEnum, IsString, IsOptional, IsBoolean } from 'class-validator';
 import { UsersService } from './users.service';
@@ -9,6 +9,7 @@ import { UserRole } from '../entities/user.entity';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import { PaginatedUsersResponseDto } from './dto/paginated-response.dto';
 import { AddPointsDeltaDto } from './dto/add-points-delta.dto';
+import { CurrentUser } from '../auth/current-user.decorator';
 
 export class UpdateUserRoleDto {
   @ApiProperty({
@@ -105,6 +106,8 @@ export class UsersController {
       query.createdAt,
       query.sortBy,
       query.sortOrder,
+      undefined,
+      query.usersScope ?? 'active',
     );
   }
 
@@ -176,12 +179,17 @@ export class UsersController {
 
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.SUPERADMIN)
-  @ApiOperation({ summary: 'Delete user', description: 'Delete a user (Admin only)' })
+  @ApiOperation({
+    summary: 'Archiver un utilisateur',
+    description:
+      'Désactive le compte, enregistre la date d’archivage et révoque les sessions (refresh tokens). Les données (transactions, etc.) sont conservées.',
+  })
   @ApiParam({ name: 'id', type: 'number', description: 'User ID' })
-  @ApiResponse({ status: 200, description: 'User deleted successfully' })
+  @ApiResponse({ status: 200, description: 'User archived successfully' })
+  @ApiResponse({ status: 400, description: 'Already archived or cannot archive self' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: { id: number }) {
+    return this.usersService.archiveUser(id, user.id);
   }
 }
 
